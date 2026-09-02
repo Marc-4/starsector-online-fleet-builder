@@ -60,19 +60,23 @@ export default function Screen({ children }: { children?: ReactNode }) {
           <div className="h-12 w-12 animate-spin rounded-full border-4 border-blue-200 border-t-transparent" />
         </div>
       )}
-      <div className="flex flex-col w-[15%] bg-black h-screen overflow-y-scroll">
+      <div className="flex flex-col w-[15%] max-2xl:w-[17%] max-xl:w-[19%] max-lg:w-[21%] max-md:w-[23%] max-sm:w-[25%] bg-black h-screen overflow-y-scroll">
         <button
           type="button"
-          className="w-full h-63 shrink-0 text-2xl font-bold cursor-pointer text-blue-100 hover:text-blue-200"
+          className={`w-full h-63 max-2xl:h-57.5 max-xl:h-47.75 max-lg:h-38.25 max-md:h-28.75 max-sm:h-24 shrink-0 text-2xl font-bold cursor-pointer text-blue-100 hover:text-blue-200`}
         >
-          + Add ship
+          +
         </button>
       </div>
       <div
         ref={gridRef}
         id="grid"
-        className="relative text-blue-200 font-semibold text-lg flex-1 h-screen overflow-hidden"
-        style={ready ? { backgroundImage: `url(src/assets/bgs/${bgImage})` } : undefined}
+        className="relative text-blue-200 bg-black font-semibold text-lg flex-1 h-screen overflow-hidden"
+        style={
+          ready
+            ? { backgroundImage: `url(src/assets/bgs/${bgImage})` }
+            : undefined
+        }
       >
         <div
           id="screen"
