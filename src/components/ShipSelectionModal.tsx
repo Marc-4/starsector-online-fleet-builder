@@ -1,31 +1,61 @@
-export default function ShipSelectionModal({ onClose }: { onClose: any }) {
+import { getAllShips, getShip } from "#/lib/shipParser"
+import type { ship } from "#/types"
+import { useEffect, useState } from "react"
+
+export default function ShipSelectionModal({
+  onClose
+}: {
+  onClose: () => void
+}) {
+  const [shipSelection, setShipSelection] = useState<ship[]>([])
+  const [selectedShips, setSelectedShips] = useState<ship[]>([])
+
+  useEffect(() => {
+    void (async () => {
+      const ships = await getAllShips()
+      setShipSelection(ships)
+    })()
+  }, [])
   return (
-    <button
-      type="button"
-      onClick={() => onClose()}
-      className="absolute left-0 top-0 w-screen h-screen z-50"
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label="Ship selection"
+      className="absolute inset-0 z-50 flex items-center justify-center"
     >
       <button
         type="button"
-        onClick={(e) => {
-          e.stopPropagation()
-        }}
-        className="flex flex-col gap-1 absolute left-[10%] top-[10%] z-60 w-[80%] h-[80%] bg-black opacity-60 p-1 border-2 border-y-transparent border-x-cyan-200"
-      >
+        aria-label="Close modal"
+        onClick={onClose}
+        className="absolute inset-0 bg-black/60"
+      />
+      <div className="relative z-10 flex flex-col gap-1 w-[80%] h-[80%] bg-black p-1 border border-cyan-200">
         <button
           type="button"
           onClick={() => onClose()}
-          className="relative top-0 ml-auto w-7 h-7 font-bold hover:text-white hover:border-white text-2xl text-cyan-200 flex items-center justify-center border border-t-cyan-100 rounded-sm">
+          className="relative cursor-pointer top-0 ml-auto w-7 h-7 font-bold hover:text-white hover:border-white text-2xl text-cyan-200 flex items-center justify-center border border-t-cyan-100 rounded-sm"
+        >
           x
         </button>
         <div className="w-full h-full grid grid-cols-[repeat(auto-fit,13rem)] justify-center gap-2 content-start p-4 overflow-auto">
-          {Array.from(Array(24).keys()).map((i) => {
+          {shipSelection.map((ship, i) => {
             return (
-              <div key={i} className="w-52 shrink-0 h-52 bg-blue-300"></div>
+              <div
+                key={i}
+                className="flex relative items-center justify-center w-52 shrink-0 h-52 cursor-pointer hover:bg-[rgba(255,255,255)]"
+              >
+                <img
+                  src={`/ships${ship.spriteName}`}
+                  alt="ship sprite"
+                  className="max-w-full max-h-full object-center object-contain"
+                />
+                {/*<h1 className="absolute left-1 top-1">{ship.hullName}-class</h1>*/}
+                <h1 className="absolute left-1 top-1">{ship.spriteName}</h1>
+              </div>
             )
           })}
         </div>
-      </button>
-    </button>
+      </div>
+    </div>
   )
 }
