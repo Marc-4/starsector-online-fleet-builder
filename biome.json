@@ -17,7 +17,7 @@
 		]
 	},
 	"formatter": {
-		"enabled": true,
+		"enabled": false,
 		"indentStyle": "tab"
 	},
 	"assist": { "actions": { "source": { "organizeImports": "on" } } },
@@ -33,4 +33,3 @@
 		}
 	}
 }
-
