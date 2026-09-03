@@ -13,7 +13,9 @@ export default function ShipSelectionModal({
   useEffect(() => {
     void (async () => {
       const ships = await getAllShips()
-      setShipSelection(ships)
+      setShipSelection(
+        ships.sort((a, b) => a.hullName.localeCompare(b.hullName))
+      )
     })()
   }, [])
   return (
