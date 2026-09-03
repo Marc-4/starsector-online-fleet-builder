@@ -1,4 +1,5 @@
 import { type ReactNode, useEffect, useRef, useState } from "react"
+import Spinner from "./spinner"
 
 const GRID_SIZE = 25
 
@@ -7,7 +8,7 @@ export default function Screen({ children }: { children?: ReactNode }) {
   const [grid, setGrid] = useState<{ rows: number; cols: number } | null>(null)
   const [bgImage, setBgImage] = useState("")
   useEffect(() => {
-    setBgImage(`background${Math.floor(Math.random() * 8)}.jpg`)
+    setBgImage(`background${Math.floor(Math.random() * 9)}.webp`)
   }, [])
 
   const updateGrid = () => {
@@ -57,7 +58,7 @@ export default function Screen({ children }: { children?: ReactNode }) {
     <div className="relative flex gap-0 flex-row">
       {!ready && (
         <div className="absolute inset-0 z-30 flex items-center justify-center bg-black">
-          <div className="h-12 w-12 animate-spin rounded-full border-4 border-blue-200 border-t-transparent" />
+          <Spinner />
         </div>
       )}
       <div className="flex flex-col w-[15%] max-2xl:w-[17%] max-xl:w-[19%] max-lg:w-[21%] max-md:w-[23%] max-sm:w-[25%] bg-black h-screen overflow-y-scroll">
@@ -73,9 +74,7 @@ export default function Screen({ children }: { children?: ReactNode }) {
         id="grid"
         className="relative text-blue-200 bg-black font-semibold text-lg flex-1 h-screen overflow-hidden"
         style={
-          ready
-            ? { backgroundImage: `url(src/assets/bgs/${bgImage})` }
-            : undefined
+          ready ? { backgroundImage: `url(/bgs/${bgImage})` } : undefined
         }
       >
         <div

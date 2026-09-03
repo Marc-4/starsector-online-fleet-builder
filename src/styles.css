@@ -2,14 +2,14 @@
 
 @font-face {
   font-family: "Orbitron";
-  src: url("assets/Orbitron.ttf") format("truetype");
+  src: url("/Orbitron.ttf") format("truetype");
   font-weight: 100 900;
   font-style: normal;
   font-display: swap;
 }
 @font-face {
   font-family: Insignia;
-  src: url("assets/Insignia.ttf") format("truetype");
+  src: url("/Insignia.ttf") format("truetype");
   font-weight: 100 900;
   font-style: normal;
   font-display: swap;
