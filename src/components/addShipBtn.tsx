@@ -16,7 +16,7 @@ export default function AddShipButton() {
         className={`w-full hover:border-blue-200 border-transparent border h-63 max-2xl:h-57.5 max-xl:h-47.75 max-lg:h-38.25 max-md:h-28.75 max-sm:h-24 shrink-0 text-2xl font-bold cursor-pointer text-blue-100 hover:text-blue-200`}
       >
         <p className="text-4xl">+</p>
-        <p>Add Ship</p>
+        <p>Add Ships</p>
       </button>
       {isShipSelectionModalOpen && (
         <ShipSelectionModal
