@@ -300,10 +300,10 @@ button,
 .island-shell,
 a {
   transition:
-    background-color 180ms ease,
-    color 180ms ease,
-    border-color 180ms ease,
-    transform 180ms ease;
+    background-color 50ms ease-in-out,
+    color 50ms ease-in-out,
+    border-color 50ms ease-in-out,
+    transform 50ms ease-in-out;
 }
 
 .island-kicker {
