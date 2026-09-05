@@ -1,6 +1,7 @@
 import { getAllShips, getShip } from "#/lib/shipParser"
 import type { ship } from "#/types"
 import { useEffect, useState } from "react"
+import CommonButton from "./commonBtn"
 import ShipTile from "./shipTile"
 
 export default function ShipSelectionModal({
@@ -19,6 +20,7 @@ export default function ShipSelectionModal({
       )
     })()
   }, [])
+
   return (
     <div
       role="dialog"
@@ -32,14 +34,13 @@ export default function ShipSelectionModal({
         onClick={onClose}
         className="absolute inset-0 bg-black/60"
       />
-      <div className="relative z-10 flex flex-col gap-1 w-[80%] h-[80%] bg-black p-1 border border-cyan-200">
-        <button
-          type="button"
+      <div className="relative z-10 flex flex-col gap-4 w-[80%] h-[80%] bg-black p-1 border border-cyan-200">
+        <CommonButton
+          text="x"
           onClick={() => onClose()}
-          className="relative cursor-pointer top-0 ml-auto w-7 h-7 font-bold hover:text-white hover:border-white text-2xl text-cyan-200 flex items-center justify-center border border-t-cyan-100 rounded-sm"
-        >
-          x
-        </button>
+          clipPath={false}
+          className="relative cursor-pointer rounded-xs top-2 right-2 ml-auto w-7 h-7 px-2 font-bold hover:brightness-110 text-2xl text-cyan-200 flex items-center justify-center"
+        />
         <div className="w-full h-full grid grid-cols-[repeat(auto-fit,13rem)] justify-center gap-2 content-start p-4 overflow-auto">
           {shipSelection.map((ship, i) => {
             return (
@@ -52,6 +53,11 @@ export default function ShipSelectionModal({
             )
           })}
         </div>
+        <CommonButton
+          text="Ok"
+          className="disabled:brightness-50 shadow-2xl shadow-black w-fit absolute bottom-4 left-1/2"
+          disabled={selectedShips.length === 0}
+        />
       </div>
     </div>
   )
