@@ -4,24 +4,18 @@ import CommonButton from "./commonBtn"
 export default function ShipTile({
   ship,
   selectedShips,
-  setSelectedShips,
+  onClick,
   shipCount,
   onShipIncrement,
   onShipDecrement
 }: {
   ship: ship
   selectedShips: ship[]
-  setSelectedShips: React.Dispatch<React.SetStateAction<ship[]>>
+  onClick: (ship: ship) => void
   shipCount: number
   onShipIncrement: (hullId: string) => void
   onShipDecrement: (hullId: string) => void
 }) {
-  const handleToggle = () => {
-    if (!selectedShips.includes(ship))
-      setSelectedShips((prev) => [...prev, ship])
-    else
-      setSelectedShips((prev) => prev.filter((s) => s.hullId !== ship.hullId))
-  }
   return (
     <div
       tabIndex={0}
@@ -30,10 +24,10 @@ export default function ShipTile({
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") {
           e.preventDefault()
-          handleToggle()
+          onClick(ship)
         }
       }}
-      onClick={() => handleToggle()}
+      onClick={() => onClick(ship)}
       role="button"
       className={`group flex relative items-center justify-center w-52 shrink-0 h-52 cursor-pointer ${selectedShips.includes(ship) ? "bg-cyan-400/30" : "hover:bg-cyan-200/20"}`}
     >
