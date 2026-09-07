@@ -124,11 +124,12 @@ export async function getAllShips(): Promise<ship[]> {
     return fulfilled
   } catch (e) {
     console.log(e)
-    throw new Error("Error fetching manifest")
+    throw new Error("Error fetching manifest. Generate via `npm run generate:manifest`")
   }
 }
 
 export async function getShip({ name }: { name: string }): Promise<ship> {
+  if (name === "cerberus") name = "warhound" //NOTE: ok dude
   const shipKey = `../shipData/${name}.ship`
   if (ships[shipKey]) {
     const loader = ships[shipKey]
