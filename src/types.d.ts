@@ -66,3 +66,63 @@ export type shipSkin = {
   builtInMods?: string[]
   builtInWings?: string[]
 }
+
+export type shipStats = {
+  name: string
+  id: string
+  designation: null
+  "tech/manufacturer": string
+  "system id": string
+  "fleet pts": number
+  hitpoints: number
+  "armor rating": number
+  "max flux": number
+  "8/6/5/4%": number
+  "flux dissipation": number
+  "ordnance points": number
+  "fighter bays": number
+  "max speed": number
+  acceleration: number
+  deceleration: number
+  "max turn rate": number
+  "turn acceleration": number
+  mass: number
+  "shield type": string
+  "defense id": string
+  "shield arc": number
+  "shield upkeep": number
+  "shield efficiency": number
+  "phase cost": number
+  "phase upkeep": number
+  "min crew": number
+  "max crew": number
+  cargo: number
+  fuel: number
+  "fuel/ly": number
+  range: number
+  "max burn": number
+  "base value": number
+  "cr %/day": number
+  "CR to deploy": number
+  "peak CR sec": number
+  "CR loss/sec": number
+  "supplies/rec": number
+  "supplies/mo": number
+  "c/s": number
+  "c/f": number
+  "f/s": number
+  "f/f": number
+  "crew/s": number
+  "crew/f": number
+  hints: string[]
+  tags: string[]
+  "logistics n/a reason": string
+  "codex variant id": string
+  rarity: number
+  breakProb: number
+  minPieces: number
+  maxPieces: number
+  "travel drive": null
+  number: number
+  number: number
+}
