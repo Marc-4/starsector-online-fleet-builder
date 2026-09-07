@@ -12,10 +12,12 @@ export default function ToggleButton({
   onClick,
   disabled,
   active = false,
+  title,
   ...rest
 }: Props) {
   return (
     <button
+      title={title}
       disabled={disabled}
       onClick={onClick}
       type="button"
