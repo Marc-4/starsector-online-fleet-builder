@@ -45,11 +45,17 @@ function parseSkin(raw: string) {
   const noTrailing = noComments.replace(/,\s*([}\]])/g, "$1")
   const normNums = noTrailing.replace(/:\s*\./g, ":0.")
   // Quote bare enum values like :SYNERGY, [CIVILIAN] outside strings
-  const quoted = normNums.replace(/([:\[,]\s*)([A-Z][A-Z0-9_]*)\s*(?=[,\]\}])/g, '$1"$2"')
+  const quoted = normNums.replace(
+    /([:\[,]\s*)([A-Z][A-Z0-9_]*)\s*(?=[,\]\}])/g,
+    '$1"$2"'
+  )
   try {
     return JSON.parse(quoted)
   } catch (e) {
-    console.error("Failed skin JSON near:", quoted.split("\n").slice(30, 40).join("\n"))
+    console.error(
+      "Failed skin JSON near:",
+      quoted.split("\n").slice(30, 40).join("\n")
+    )
     throw e
   }
 }
@@ -100,9 +106,15 @@ function mergeSkin(base: ship, skin: shipSkin): ship {
 export async function getAllShips(): Promise<ship[]> {
   try {
     const names = manifest as string[]
-    const results = await Promise.allSettled(names.map((name) => getShip({ name })))
-    const fulfilled = results.filter((r) => r.status === "fulfilled").map((r) => r.value)
-    const rejected = results.filter((r) => r.status === "rejected") as PromiseRejectedResult[]
+    const results = await Promise.allSettled(
+      names.map((name) => getShip({ name }))
+    )
+    const fulfilled = results
+      .filter((r) => r.status === "fulfilled")
+      .map((r) => r.value)
+    const rejected = results.filter(
+      (r) => r.status === "rejected"
+    ) as PromiseRejectedResult[]
     if (rejected.length) {
       console.warn(
         `Skipped ${rejected.length} hulls with missing base:`,
@@ -136,4 +148,14 @@ export async function getShip({ name }: { name: string }): Promise<ship> {
     const base = await getShip({ name: skin.baseHullId })
     return mergeSkin(base, skin)
   }
+}
+
+export function isModule({ ship }: { ship: ship }): boolean {
+  return (
+    !!ship.moduleAnchor ||
+    ship.hullId.startsWith("module_") ||
+    ship.hullId.endsWith("_module") ||
+    ship.hullId.includes("station") ||
+    ship.hullId.toLowerCase().includes("armour")
+  )
 }
