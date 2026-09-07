@@ -1,6 +1,6 @@
-import { getAllShips, getShip } from "#/lib/shipParser"
+import { useEffect, useState, type KeyboardEventHandler } from "react"
+import { getAllShips } from "#/lib/shipParser"
 import type { ship } from "#/types"
-import { useEffect, useState } from "react"
 import CommonButton from "./commonBtn"
 import ShipTile from "./shipTile"
 
@@ -11,6 +11,9 @@ export default function ShipSelectionModal({
 }) {
   const [shipSelection, setShipSelection] = useState<ship[]>([])
   const [selectedShips, setSelectedShips] = useState<ship[]>([])
+  const [selectedShipCounts, setSelectedShipCounts] = useState<
+    Record<string, number>
+  >({})
 
   useEffect(() => {
     void (async () => {
@@ -20,6 +23,28 @@ export default function ShipSelectionModal({
       )
     })()
   }, [])
+
+  const onShipCountIncrement = (hullId: string) => {
+    setSelectedShipCounts((prev) => ({
+      ...prev,
+      [hullId]: (prev[hullId] ?? 1) + 1
+    }))
+  }
+
+  const onShipCountDecrement = (hullId: string) => {
+    setSelectedShipCounts((prev) => ({
+      ...prev,
+      [hullId]: Math.max(1, (prev[hullId] ?? 0) - 1)
+    }))
+  }
+
+  useEffect(() => {
+    const handler = (ev: KeyboardEvent) => {
+      if (ev.key === "Escape") onClose()
+    }
+    window.addEventListener("keydown", handler)
+    return () => window.removeEventListener("keydown", handler)
+  }, [onClose])
 
   return (
     <div
@@ -48,6 +73,9 @@ export default function ShipSelectionModal({
                 ship={ship}
                 selectedShips={selectedShips}
                 setSelectedShips={setSelectedShips}
+                shipCount={selectedShipCounts[ship.hullId] ?? 1}
+                onShipIncrement={onShipCountIncrement}
+                onShipDecrement={onShipCountDecrement}
                 key={`${ship.hullId}-${ship.hullName}-${i}`}
               />
             )
