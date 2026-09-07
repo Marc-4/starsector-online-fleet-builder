@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { getAllShips } from "#/lib/shipParser"
 import type { ship } from "#/types"
 import CommonButton from "./commonBtn"
@@ -15,29 +15,50 @@ const SHIP_STYLE_FILTERS = [
   "OMEGA"
 ]
 
+const HULL_SIZE_FILTERS = [
+  "FRIGATE",
+  "DESTROYER",
+  "CRUISER",
+  "CAPITAL_SHIP",
+  "FIGHTER"
+]
+
 export default function ShipSelectionModal({
   onClose
 }: {
   onClose: () => void
 }) {
-  const [shipSelection, setShipSelection] = useState<ship[]>([])
+  const [allShips, setAllShips] = useState<ship[]>([])
   const [selectedShips, setSelectedShips] = useState<ship[]>([])
   const [selectedShipCounts, setSelectedShipCounts] = useState<
     Record<string, number>
   >({})
+
+  const totalShipCount = useMemo(() => {
+    return allShips?.length
+  }, [allShips])
+
   const [activeStyleFilters, setActiveStyleFilters] =
     useState<string[]>(SHIP_STYLE_FILTERS)
+  const [activeHullSizeFilters, setActiveHullSizeFilters] =
+    useState<string[]>(HULL_SIZE_FILTERS)
 
-  const [activeHullSizeFilters, setActiveHulSizeFilters] = useState<string[]>(
-    []
-  )
+  const filteredShips = useMemo(() => {
+    return allShips.filter((ship) => {
+      return (
+        activeStyleFilters.includes(ship.style) &&
+        activeHullSizeFilters.includes(ship.hullSize)
+      )
+    })
+  }, [allShips, activeStyleFilters, activeHullSizeFilters])
+  const filteredShipCount = useMemo(() => {
+    return filteredShips.length
+  }, [filteredShips])
 
   useEffect(() => {
     void (async () => {
       const ships = await getAllShips()
-      setShipSelection(
-        ships.sort((a, b) => a.hullName.localeCompare(b.hullName))
-      )
+      setAllShips(ships.sort((a, b) => a.hullName.localeCompare(b.hullName)))
     })()
   }, [])
 
@@ -64,7 +85,7 @@ export default function ShipSelectionModal({
     }))
   }
 
-  const onFilterToggle = (filter: string) => {
+  const onStyleFilterToggle = (filter: string) => {
     if (activeStyleFilters.includes(filter))
       setActiveStyleFilters((prev) => prev.filter((f) => f !== filter))
     else {
@@ -72,6 +93,13 @@ export default function ShipSelectionModal({
     }
   }
 
+  const onHullSizeFilterToggle = (filter: string) => {
+    if (activeHullSizeFilters.includes(filter))
+      setActiveHullSizeFilters((prev) => prev.filter((f) => f !== filter))
+    else {
+      setActiveHullSizeFilters((prev) => [...prev, filter])
+    }
+  }
   useEffect(() => {
     const handler = (ev: KeyboardEvent) => {
       if (ev.key === "Escape") onClose()
@@ -110,12 +138,25 @@ export default function ShipSelectionModal({
                   <ToggleButton
                     key={style}
                     active={activeStyleFilters.includes(style)}
-                    onClick={() => onFilterToggle(style)}
+                    onClick={() => onStyleFilterToggle(style)}
                     text={style.toLowerCase().replace("_", " ")}
                   />
                 ))}
+                {HULL_SIZE_FILTERS.map((size) => (
+                  <ToggleButton
+                    key={size}
+                    active={activeHullSizeFilters.includes(size)}
+                    onClick={() => onHullSizeFilterToggle(size)}
+                    text={size.toLowerCase().replace("_", " ")}
+                  />
+                ))}
               </div>
+              <CommonButton text="reset" onClick={() => {
+                setActiveStyleFilters(SHIP_STYLE_FILTERS)
+                setActiveHullSizeFilters(HULL_SIZE_FILTERS)
+              }} />
             </div>
+            <p className="text-cyan-200 text-xs">{`showing ${filteredShipCount} of ${totalShipCount} ships`}</p>
           </div>
           <CommonButton
             text="x"
@@ -125,7 +166,7 @@ export default function ShipSelectionModal({
           />
         </div>
         <div className="w-full h-full grid grid-cols-[repeat(auto-fit,13rem)] justify-center gap-2 content-start p-4 overflow-auto">
-          {shipSelection.map((ship, i) => {
+          {filteredShips.map((ship, i) => {
             return (
               <ShipTile
                 ship={ship}
