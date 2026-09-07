@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react"
-import { getAllShips } from "#/lib/shipParser"
+import { getAllShips, isModule } from "#/lib/shipParser"
 import type { ship } from "#/types"
 import CommonButton from "./commonBtn"
 import ShipTile from "./shipTile"
@@ -8,19 +8,19 @@ import ToggleButton from "./toggleButton"
 // NOTE: LOW TECH GANG STAYS ON TOP
 const SHIP_STYLE_FILTERS = [
   "LOW_TECH",
-  "HIGH_TECH",
   "MIDLINE",
+  "HIGH_TECH",
   "THREAT",
   "DWELLER",
   "OMEGA"
 ]
 
 const HULL_SIZE_FILTERS = [
+  "FIGHTER",
   "FRIGATE",
   "DESTROYER",
   "CRUISER",
-  "CAPITAL_SHIP",
-  "FIGHTER"
+  "CAPITAL_SHIP"
 ]
 
 export default function ShipSelectionModal({
@@ -33,34 +33,36 @@ export default function ShipSelectionModal({
   const [selectedShipCounts, setSelectedShipCounts] = useState<
     Record<string, number>
   >({})
-
   const totalShipCount = useMemo(() => {
     return allShips?.length
   }, [allShips])
 
-  const [activeStyleFilters, setActiveStyleFilters] =
-    useState<string[]>(SHIP_STYLE_FILTERS)
-  const [activeHullSizeFilters, setActiveHullSizeFilters] =
-    useState<string[]>(HULL_SIZE_FILTERS)
+  const [activeStyleFilters, setActiveStyleFilters] = useState<string[]>([
+    "LOW_TECH",
+    "MIDLINE",
+    "HIGH_TECH"
+  ])
+  const [activeHullSizeFilters, setActiveHullSizeFilters] = useState<string[]>(
+    []
+  )
+  const [showModules, setShowModules] = useState(false)
 
   const filteredShips = useMemo(() => {
     return allShips.filter((ship) => {
-      return (
-        activeStyleFilters.includes(ship.style) &&
+      if (!showModules && isModule({ ship })) return false
+      const stylePass =
+        activeStyleFilters.length === 0 ||
+        activeStyleFilters.includes(ship.style)
+      const hullSizePass =
+        activeHullSizeFilters.length === 0 ||
         activeHullSizeFilters.includes(ship.hullSize)
-      )
+      return stylePass && hullSizePass
     })
-  }, [allShips, activeStyleFilters, activeHullSizeFilters])
+  }, [allShips, activeStyleFilters, activeHullSizeFilters, showModules])
+
   const filteredShipCount = useMemo(() => {
     return filteredShips.length
   }, [filteredShips])
-
-  useEffect(() => {
-    void (async () => {
-      const ships = await getAllShips()
-      setAllShips(ships.sort((a, b) => a.hullName.localeCompare(b.hullName)))
-    })()
-  }, [])
 
   const onShipToggle = (ship: ship) => {
     if (!selectedShips.includes(ship))
@@ -85,7 +87,14 @@ export default function ShipSelectionModal({
     }))
   }
 
-  const onStyleFilterToggle = (filter: string) => {
+  const onStyleFilterToggle = (
+    filter: string,
+    e?: React.MouseEvent<HTMLButtonElement>
+  ) => {
+    if (e?.altKey) {
+      setActiveStyleFilters([filter])
+      return
+    }
     if (activeStyleFilters.includes(filter))
       setActiveStyleFilters((prev) => prev.filter((f) => f !== filter))
     else {
@@ -93,13 +102,31 @@ export default function ShipSelectionModal({
     }
   }
 
-  const onHullSizeFilterToggle = (filter: string) => {
+  const onHullSizeFilterToggle = (
+    filter: string,
+    e?: React.MouseEvent<HTMLButtonElement>
+  ) => {
+    if (e?.altKey) {
+      setActiveHullSizeFilters([filter])
+      return
+    }
     if (activeHullSizeFilters.includes(filter))
       setActiveHullSizeFilters((prev) => prev.filter((f) => f !== filter))
     else {
       setActiveHullSizeFilters((prev) => [...prev, filter])
     }
   }
+
+  const onShowModuleToggle = () => {
+    setShowModules((prev) => !prev)
+  }
+
+  useEffect(() => {
+    void (async () => {
+      const ships = await getAllShips()
+      setAllShips(ships.sort((a, b) => a.hullName.localeCompare(b.hullName)))
+    })()
+  }, [])
   useEffect(() => {
     const handler = (ev: KeyboardEvent) => {
       if (ev.key === "Escape") onClose()
@@ -132,29 +159,47 @@ export default function ShipSelectionModal({
               />
             </div>
             <div className="flex gap-2 items-center">
-              <h2 className="text-cyan-200">Filters: </h2>
+              <h2
+                title="alt+click on filters for inverse behavior."
+                className="text-cyan-200"
+              >
+                Filters:{" "}
+              </h2>
               <div className="flex gap-1 flex-wrap w-full">
                 {SHIP_STYLE_FILTERS.map((style) => (
                   <ToggleButton
+                    title="alt+click on filters for inverse behavior."
                     key={style}
                     active={activeStyleFilters.includes(style)}
-                    onClick={() => onStyleFilterToggle(style)}
+                    onClick={(e) => onStyleFilterToggle(style, e)}
                     text={style.toLowerCase().replace("_", " ")}
                   />
                 ))}
+                <div className="w-px h-8 bg-cyan-200" />
                 {HULL_SIZE_FILTERS.map((size) => (
                   <ToggleButton
+                    title="alt+click on filters for inverse behavior."
                     key={size}
                     active={activeHullSizeFilters.includes(size)}
-                    onClick={() => onHullSizeFilterToggle(size)}
+                    onClick={(e) => onHullSizeFilterToggle(size, e)}
                     text={size.toLowerCase().replace("_", " ")}
                   />
                 ))}
+                <div className="w-px h-8 bg-cyan-200" />
+                <ToggleButton
+                  title="alt+click on filters for inverse behavior."
+                  active={showModules}
+                  onClick={() => onShowModuleToggle()}
+                  text={"Modules"}
+                />
+                <CommonButton
+                  text="reset"
+                  onClick={() => {
+                    setActiveStyleFilters(["LOW_TECH", "MIDLINE", "HIGH_TECH"])
+                    setActiveHullSizeFilters([])
+                  }}
+                />
               </div>
-              <CommonButton text="reset" onClick={() => {
-                setActiveStyleFilters(SHIP_STYLE_FILTERS)
-                setActiveHullSizeFilters(HULL_SIZE_FILTERS)
-              }} />
             </div>
             <p className="text-cyan-200 text-xs">{`showing ${filteredShipCount} of ${totalShipCount} ships`}</p>
           </div>
