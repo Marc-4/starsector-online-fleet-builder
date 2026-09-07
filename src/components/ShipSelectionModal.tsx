@@ -3,25 +3,7 @@ import { getAllShips, isModule } from "#/lib/shipParser"
 import type { ship } from "#/types"
 import CommonButton from "./commonBtn"
 import ShipTile from "./shipTile"
-import ToggleButton from "./toggleButton"
-
-// NOTE: LOW TECH GANG STAYS ON TOP
-const SHIP_STYLE_FILTERS = [
-  "LOW_TECH",
-  "MIDLINE",
-  "HIGH_TECH",
-  "THREAT",
-  "DWELLER",
-  "OMEGA"
-]
-
-const HULL_SIZE_FILTERS = [
-  "FIGHTER",
-  "FRIGATE",
-  "DESTROYER",
-  "CRUISER",
-  "CAPITAL_SHIP"
-]
+import ShipFilters from "./shipFilters"
 
 export default function ShipSelectionModal({
   onClose
@@ -36,6 +18,14 @@ export default function ShipSelectionModal({
   const totalShipCount = useMemo(() => {
     return allShips?.length
   }, [allShips])
+  const totalSelectedShipsCount = useMemo(
+    () =>
+      selectedShips.reduce(
+        (sum, s) => sum + (selectedShipCounts[s.hullId] ?? 1),
+        0
+      ),
+    [selectedShips, selectedShipCounts]
+  )
   const [searchString, setSearchString] = useState("")
 
   const [activeStyleFilters, setActiveStyleFilters] = useState<string[]>([
@@ -98,40 +88,6 @@ export default function ShipSelectionModal({
     }))
   }
 
-  const onStyleFilterToggle = (
-    filter: string,
-    e?: React.MouseEvent<HTMLButtonElement>
-  ) => {
-    if (e?.altKey) {
-      setActiveStyleFilters([filter])
-      return
-    }
-    if (activeStyleFilters.includes(filter))
-      setActiveStyleFilters((prev) => prev.filter((f) => f !== filter))
-    else {
-      setActiveStyleFilters((prev) => [...prev, filter])
-    }
-  }
-
-  const onHullSizeFilterToggle = (
-    filter: string,
-    e?: React.MouseEvent<HTMLButtonElement>
-  ) => {
-    if (e?.altKey) {
-      setActiveHullSizeFilters([filter])
-      return
-    }
-    if (activeHullSizeFilters.includes(filter))
-      setActiveHullSizeFilters((prev) => prev.filter((f) => f !== filter))
-    else {
-      setActiveHullSizeFilters((prev) => [...prev, filter])
-    }
-  }
-
-  const onShowModuleToggle = () => {
-    setShowModules((prev) => !prev)
-  }
-
   useEffect(() => {
     void (async () => {
       const ships = await getAllShips()
@@ -162,10 +118,19 @@ export default function ShipSelectionModal({
       <div className="relative z-10 flex flex-col gap-2 w-[80%] h-[80%] bg-black/30 p-1 border border-cyan-200">
         <div className="flex m-1 mb-0 p-1 pb-0 gap-1 justify-center ">
           <div className="gap-2 flex flex-col">
+            <div className="text-amber-300 ">
+              <p>
+                {`
+                Ship Count:
+                ${totalSelectedShipsCount}
+                `}
+                <p>{`Total DP: ${1}`} </p>
+              </p>
+            </div>
             <div className="flex gap-2 items-center">
               <h2 className="text-cyan-200 ">Search: </h2>
               <input
-                className="border border-cyan-100 w-[50%] text-cyan-200"
+                className="border border-cyan-100 w-56 max-[470px]:w-40 text-cyan-200"
                 type="search"
                 value={searchString}
                 onChange={(e) =>
@@ -173,49 +138,14 @@ export default function ShipSelectionModal({
                 }
               />
             </div>
-            <div className="flex gap-2 items-center">
-              <h2
-                title="alt+click on filters for inverse behavior."
-                className="text-cyan-200"
-              >
-                Filters:{" "}
-              </h2>
-              <div className="flex gap-1 flex-wrap w-full">
-                {SHIP_STYLE_FILTERS.map((style) => (
-                  <ToggleButton
-                    title="alt+click on filters for inverse behavior."
-                    key={style}
-                    active={activeStyleFilters.includes(style)}
-                    onClick={(e) => onStyleFilterToggle(style, e)}
-                    text={style.toLowerCase().replace("_", " ")}
-                  />
-                ))}
-                <div className="w-px h-8 bg-cyan-200" />
-                {HULL_SIZE_FILTERS.map((size) => (
-                  <ToggleButton
-                    title="alt+click on filters for inverse behavior."
-                    key={size}
-                    active={activeHullSizeFilters.includes(size)}
-                    onClick={(e) => onHullSizeFilterToggle(size, e)}
-                    text={size.toLowerCase().replace("_", " ")}
-                  />
-                ))}
-                <div className="w-px h-8 bg-cyan-200" />
-                <ToggleButton
-                  title="alt+click on filters for inverse behavior."
-                  active={showModules}
-                  onClick={() => onShowModuleToggle()}
-                  text={"Modules"}
-                />
-                <CommonButton
-                  text="reset"
-                  onClick={() => {
-                    setActiveStyleFilters(["LOW_TECH", "MIDLINE", "HIGH_TECH"])
-                    setActiveHullSizeFilters([])
-                  }}
-                />
-              </div>
-            </div>
+            <ShipFilters
+              activeHullSizeFilters={activeHullSizeFilters}
+              activeStyleFilters={activeStyleFilters}
+              setActiveHullSizeFilters={setActiveHullSizeFilters}
+              setActiveStyleFilters={setActiveStyleFilters}
+              setShowModules={setShowModules}
+              showModules={showModules}
+            />
             <p className="text-cyan-200 text-xs">{`showing ${filteredShipCount} of ${totalShipCount} ships`}</p>
           </div>
           <CommonButton
@@ -242,7 +172,7 @@ export default function ShipSelectionModal({
         </div>
         <CommonButton
           text="Ok"
-          className="disabled:brightness-50 shadow-2xl shadow-black w-fit absolute bottom-4 left-1/2"
+          className="disabled:brightness-50 shadow-2xl shadow-black w-fit absolute bottom-4 left-0 right-0 mx-auto"
           disabled={selectedShips.length === 0}
         />
       </div>
