@@ -159,8 +159,8 @@ export default function ShipSelectionModal({
         onClick={onClose}
         className="absolute inset-0 bg-black/60"
       />
-      <div className="relative z-10 flex flex-col gap-4 w-[80%] h-[80%] bg-black/30 p-1 border border-cyan-200">
-        <div className="flex m-1 p-1 gap-1 justify-center ">
+      <div className="relative z-10 flex flex-col gap-2 w-[80%] h-[80%] bg-black/30 p-1 border border-cyan-200">
+        <div className="flex m-1 mb-0 p-1 pb-0 gap-1 justify-center ">
           <div className="gap-2 flex flex-col">
             <div className="flex gap-2 items-center">
               <h2 className="text-cyan-200 ">Search: </h2>
