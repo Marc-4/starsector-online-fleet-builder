@@ -34,6 +34,8 @@ export type ship = {
     position?: number[]
   }[]
   width: number
+  moduleAnchor?: number[]
+  hints?: string
 }
 
 export type shipSkin = {
@@ -52,7 +54,10 @@ export type shipSkin = {
   suppliesToRecover?: number
   suppliesPerMonth?: number
   spriteName?: string
-  weaponSlotChanges?: Record<string, Partial<NonNullable<ship["weaponSlots"]>[number]>>
+  weaponSlotChanges?: Record<
+    string,
+    Partial<NonNullable<ship["weaponSlots"]>[number]>
+  >
   removeWeaponSlots?: string[]
   removeEngineSlots?: number[]
   removeBuiltInMods?: string[]
