@@ -36,6 +36,7 @@ export default function ShipSelectionModal({
   const totalShipCount = useMemo(() => {
     return allShips?.length
   }, [allShips])
+  const [searchString, setSearchString] = useState("")
 
   const [activeStyleFilters, setActiveStyleFilters] = useState<string[]>([
     "LOW_TECH",
@@ -49,6 +50,10 @@ export default function ShipSelectionModal({
 
   const filteredShips = useMemo(() => {
     return allShips.filter((ship) => {
+      if (searchString.length > 0) {
+        const haystack = `${ship.hullId} ${ship.hullName}`.toLowerCase()
+        if (!haystack.includes(searchString)) return false
+      }
       if (!showModules && isModule({ ship })) return false
       const stylePass =
         activeStyleFilters.length === 0 ||
@@ -58,7 +63,13 @@ export default function ShipSelectionModal({
         activeHullSizeFilters.includes(ship.hullSize)
       return stylePass && hullSizePass
     })
-  }, [allShips, activeStyleFilters, activeHullSizeFilters, showModules])
+  }, [
+    allShips,
+    activeStyleFilters,
+    activeHullSizeFilters,
+    showModules,
+    searchString
+  ])
 
   const filteredShipCount = useMemo(() => {
     return filteredShips.length
@@ -148,7 +159,7 @@ export default function ShipSelectionModal({
         onClick={onClose}
         className="absolute inset-0 bg-black/60"
       />
-      <div className="relative z-10 flex flex-col gap-4 w-[80%] h-[80%] bg-black p-1 border border-cyan-200">
+      <div className="relative z-10 flex flex-col gap-4 w-[80%] h-[80%] bg-black/30 p-1 border border-cyan-200">
         <div className="flex m-1 p-1 gap-1 justify-center ">
           <div className="gap-2 flex flex-col">
             <div className="flex gap-2 items-center">
@@ -156,6 +167,10 @@ export default function ShipSelectionModal({
               <input
                 className="border border-cyan-100 w-[50%] text-cyan-200"
                 type="search"
+                value={searchString}
+                onChange={(e) =>
+                  setSearchString(e.currentTarget.value.toLowerCase())
+                }
               />
             </div>
             <div className="flex gap-2 items-center">
@@ -210,7 +225,7 @@ export default function ShipSelectionModal({
             className="cursor-pointer rounded-xs ml-auto w-7 h-7 px-2 font-bold hover:brightness-110 text-2xl text-cyan-200 flex items-center justify-center"
           />
         </div>
-        <div className="w-full h-full grid grid-cols-[repeat(auto-fit,13rem)] justify-center gap-2 content-start p-4 overflow-auto">
+        <div className="w-full h-full mb-8 grid grid-cols-[repeat(auto-fit,13rem)] justify-center gap-2 content-start p-4 overflow-auto">
           {filteredShips.map((ship, i) => {
             return (
               <ShipTile
