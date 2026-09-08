@@ -133,6 +133,7 @@ export type completeShip = {
   stats: shipStats
 }
 export type fleetEntry = {
+  id: string
   ship: completeShip
-  count: number
+  cr: number
 }
