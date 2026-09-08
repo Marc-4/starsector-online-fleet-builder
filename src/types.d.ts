@@ -16,6 +16,7 @@ export type ship = {
   }[]
   height: number
   hullId: string
+  baseHullId?: string
   hullName: string
   hullSize: FRIGATE | DESTROYER | CRUISER | CAPITAL_SHIP | FIGHTER
   shieldCenter: number[]
