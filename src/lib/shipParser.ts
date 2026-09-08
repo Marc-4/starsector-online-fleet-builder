@@ -64,6 +64,7 @@ function parseSkin(raw: string) {
 function mergeSkin(base: ship, skin: shipSkin): ship {
   const merged = structuredClone(base)
   merged.hullId = skin.skinHullId
+  merged.baseHullId = skin.baseHullId
   // identity overrides
   if (skin.hullName) merged.hullName = skin.hullName
   if (skin.spriteName)
@@ -124,7 +125,9 @@ export async function getAllShips(): Promise<ship[]> {
     return fulfilled
   } catch (e) {
     console.log(e)
-    throw new Error("Error fetching manifest. Generate via `npm run generate:manifest`")
+    throw new Error(
+      "Error fetching manifest. Generate via `npm run generate:manifest`"
+    )
   }
 }
 
