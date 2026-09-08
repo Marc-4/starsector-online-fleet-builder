@@ -139,15 +139,6 @@ export default function ShipSelectionModal({
       <div className="relative z-10 flex flex-col gap-2 w-[80%] h-[80%] bg-black/30 p-1 border border-cyan-200">
         <div className="flex m-1 mb-0 p-1 pb-0 gap-1 justify-center ">
           <div className="gap-2 flex flex-col">
-            <div className="text-amber-300 ">
-              <p>
-                {`
-                Ship Count:
-                ${totalSelectedShipsCount}
-                `}
-                <p>{`Total DP: ${totalSelectedShipsDPCost}`} </p>
-              </p>
-            </div>
             <div className="flex gap-2 items-center">
               <h2 className="text-cyan-200 ">Search: </h2>
               <input
@@ -158,7 +149,6 @@ export default function ShipSelectionModal({
                   setSearchString(e.currentTarget.value.toLowerCase())
                 }
               />
-              <CommonButton onClick={() => getAllShipStats()} text="parse" />
             </div>
             <ShipFilters
               activeHullSizeFilters={activeHullSizeFilters}
@@ -177,7 +167,7 @@ export default function ShipSelectionModal({
             className="cursor-pointer rounded-xs ml-auto w-7 h-7 px-2 font-bold hover:brightness-110 text-2xl text-cyan-200 flex items-center justify-center"
           />
         </div>
-        <div className="w-full h-full mb-8 grid grid-cols-[repeat(auto-fit,13rem)] justify-center gap-2 content-start p-4 overflow-auto">
+        <div className="w-full h-full mb-4 grid grid-cols-[repeat(auto-fit,13rem)] justify-center gap-2 content-start p-4 overflow-auto">
           {filteredShips.map((ship, i) => {
             return (
               <ShipTile
@@ -194,9 +184,18 @@ export default function ShipSelectionModal({
         </div>
         <CommonButton
           text="Ok"
-          className="disabled:brightness-50 shadow-2xl shadow-black w-fit absolute bottom-4 left-0 right-0 mx-auto"
+          className="disabled:brightness-50 shadow-2xl shadow-black w-fit absolute bottom-2 left-0 right-0 mx-auto"
           disabled={selectedShips.length === 0}
         />
+        <div className="absolute left-0 bottom-0 text-amber-300 flex gap-0 flex-col">
+          <p>
+            {`
+          Ship Count:
+          ${totalSelectedShipsCount}
+          `}
+          </p>
+          <p>{`Total DP: ${totalSelectedShipsDPCost}`} </p>
+        </div>
       </div>
     </div>
   )
