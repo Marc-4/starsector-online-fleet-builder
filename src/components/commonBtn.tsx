@@ -4,12 +4,14 @@ import { twMerge } from "tailwind-merge"
 type Props = {
   text: string
   clipPath?: boolean
+  cutAllCorners?: boolean
 } & Omit<ButtonHTMLAttributes<HTMLButtonElement>, "children">
 
 export default function CommonButton({
   text,
   className,
   clipPath = true,
+  cutAllCorners = false,
   onClick,
   disabled,
   ...rest
@@ -28,7 +30,9 @@ export default function CommonButton({
         backgroundImage:
           "repeating-linear-gradient(0deg, #104e64, #104e64 1px, transparent 1px 2px)",
         clipPath: clipPath
-          ? "polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px))"
+          ? cutAllCorners
+            ? "polygon(8px 0, calc(100% - 8px) 0, 100% 8px, 100% calc(100% - 8px), calc(100% - 8px) 100%, 8px 100%, 0 calc(100% - 8px), 0 8px)"
+            : "polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px))"
           : undefined
       }}
     >
