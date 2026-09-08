@@ -3,7 +3,7 @@ export const MAX_FLUX_CAPS_VENTS_PER_HULL_SIZE = {
   FRIGATE: 10,
   DESTROYER: 20,
   CRUISER: 30,
-  CAPITAL_SHIP: 40,
+  CAPITAL_SHIP: 50,
 } as const
 
 export const DEFAULT_MAX_CAPS_VENTS = 10
