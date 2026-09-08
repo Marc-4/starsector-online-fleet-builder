@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from "react"
+import { getAllShipStats, getShipStats } from "#/lib/csvParser"
 import { getAllShips, isModule } from "#/lib/shipParser"
-import type { ship } from "#/types"
+import type { ship, shipStats } from "#/types"
 import CommonButton from "./commonBtn"
-import ShipTile from "./shipTile"
 import ShipFilters from "./shipFilters"
+import ShipTile from "./shipTile"
 
 export default function ShipSelectionModal({
   onClose
@@ -27,6 +28,20 @@ export default function ShipSelectionModal({
     [selectedShips, selectedShipCounts]
   )
   const [searchString, setSearchString] = useState("")
+  const [allShipStats, setAllShipStats] = useState<shipStats[]>([])
+  const totalSelectedShipsDPCost = useMemo(
+    () =>
+      selectedShips.reduce(
+        (sum, s) =>
+          sum +
+          (getShipStats({ ship: s, shipStats: allShipStats })?.[
+            "supplies/mo"
+          ] ?? 0) *
+            (selectedShipCounts[s.hullId] ?? 1),
+        0
+      ),
+    [selectedShips, allShipStats, selectedShipCounts]
+  )
 
   const [activeStyleFilters, setActiveStyleFilters] = useState<string[]>([
     "LOW_TECH",
@@ -95,6 +110,12 @@ export default function ShipSelectionModal({
     })()
   }, [])
   useEffect(() => {
+    void (async () => {
+      const shipStats = await getAllShipStats()
+      setAllShipStats(shipStats.filter((ship) => ship.id))
+    })()
+  }, [])
+  useEffect(() => {
     const handler = (ev: KeyboardEvent) => {
       if (ev.key === "Escape") onClose()
     }
@@ -124,7 +145,7 @@ export default function ShipSelectionModal({
                 Ship Count:
                 ${totalSelectedShipsCount}
                 `}
-                <p>{`Total DP: ${1}`} </p>
+                <p>{`Total DP: ${totalSelectedShipsDPCost}`} </p>
               </p>
             </div>
             <div className="flex gap-2 items-center">
@@ -137,6 +158,7 @@ export default function ShipSelectionModal({
                   setSearchString(e.currentTarget.value.toLowerCase())
                 }
               />
+              <CommonButton onClick={() => getAllShipStats()} text="parse" />
             </div>
             <ShipFilters
               activeHullSizeFilters={activeHullSizeFilters}
