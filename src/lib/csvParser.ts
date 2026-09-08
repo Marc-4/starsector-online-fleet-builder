@@ -1,5 +1,5 @@
 import Parser from "papaparse"
-import type { shipStats } from "#/types"
+import type { ship, shipStats } from "#/types"
 import shipDataCSV from "../shipData/ship_data.csv?raw"
 
 export async function getAllShipStats() {
@@ -13,14 +13,16 @@ export async function getAllShipStats() {
 }
 
 export function getShipStats({
-  hullId,
+  ship,
   shipStats
 }: {
-  hullId: string
+  ship: ship
   shipStats: shipStats[]
-  }): shipStats | null {
-  console.log(hullId)
-  const stats = shipStats.find((s) => s.id === hullId) ?? null
-  console.log(stats)
+}): shipStats | null {
+  const id =
+    shipStats.find((s) => s.id === ship?.hullId)?.id ??
+    ship.baseHullId ??
+    ship.hullId
+  const stats = shipStats.find((s) => s.id === id) ?? null
   return stats
 }
