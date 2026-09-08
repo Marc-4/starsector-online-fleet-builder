@@ -4,7 +4,6 @@ import ShipSelectionModal from "./ShipSelectionModal"
 export default function AddShipButton() {
   const [isShipSelectionModalOpen, setIsShipSelectionModalOpen] =
     useState(false)
-  const openShipSelectionModal = () => {}
 
   return (
     <>

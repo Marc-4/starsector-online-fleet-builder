@@ -10,16 +10,16 @@ export default function ShipTile({
   onShipDecrement
 }: {
   ship: ship
-  selectedShips: ship[]
+  selectedShips?: ship[]
   onClick: (ship: ship) => void
-  shipCount: number
-  onShipIncrement: (hullId: string) => void
-  onShipDecrement: (hullId: string) => void
+  shipCount?: number
+  onShipIncrement?: (hullId: string) => void
+  onShipDecrement?: (hullId: string) => void
 }) {
   return (
     <div
       tabIndex={0}
-      aria-pressed={selectedShips.includes(ship)}
+      aria-pressed={selectedShips?.includes(ship)}
       aria-label={`Select ${ship.hullName}`}
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") {
@@ -29,7 +29,7 @@ export default function ShipTile({
       }}
       onClick={() => onClick(ship)}
       role="button"
-      className={`group flex relative items-center justify-center w-52 shrink-0 h-52 cursor-pointer ${selectedShips.includes(ship) ? "bg-cyan-400/30" : "hover:bg-cyan-200/20"}`}
+      className={`group flex relative items-center justify-center w-52 shrink-0 h-52 cursor-pointer ${selectedShips?.includes(ship) ? "bg-cyan-400/30" : "hover:bg-cyan-200/20"}`}
     >
       <img
         src={`/ships${ship.spriteName}`}
@@ -40,30 +40,32 @@ export default function ShipTile({
         {!ship.hullName ? "N/A" : `${ship.hullName}-class`}
       </h1>
 
-      {selectedShips.includes(ship) && (
-        <div className="flex absolute bottom-1 left-1 right-1 gap-1 items-center justify-between">
-          <p className="text-amber-300 font-bold mr-auto ml-2">{shipCount}</p>
-          <CommonButton
-            onClick={(e) => {
-              e.stopPropagation()
-              onShipIncrement(ship.hullId)
-            }}
-            text="+"
-            className="px-4"
-            clipPath={false}
-          />
-          <CommonButton
-            disabled={shipCount <= 1}
-            onClick={(e) => {
-              e.stopPropagation()
-              onShipDecrement(ship.hullId)
-            }}
-            text="-"
-            className="px-4 disabled:brightness-70"
-            clipPath={false}
-          />
-        </div>
-      )}
+      {selectedShips?.includes(ship) &&
+        onShipIncrement !== undefined &&
+        onShipDecrement !== undefined && (
+          <div className="flex absolute bottom-1 left-1 right-1 gap-1 items-center justify-between">
+            <p className="text-amber-300 font-bold mr-auto ml-2">{shipCount}</p>
+            <CommonButton
+              onClick={(e) => {
+                e.stopPropagation()
+                onShipIncrement(ship.hullId)
+              }}
+              text="+"
+              className="px-4"
+              clipPath={false}
+            />
+            <CommonButton
+              disabled={shipCount !== undefined && shipCount <= 1}
+              onClick={(e) => {
+                e.stopPropagation()
+                onShipDecrement(ship.hullId)
+              }}
+              text="-"
+              className="px-4 disabled:brightness-70"
+              clipPath={false}
+            />
+          </div>
+        )}
     </div>
   )
 }
