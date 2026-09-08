@@ -138,4 +138,5 @@ export type fleetEntry = {
   cr: number
   capacitors: number
   vents: number
+  customName: string
 }
