@@ -3,7 +3,12 @@ import type { fleetEntry, ship, shipStats } from "#/types"
 import { getShipStats } from "./csvParser"
 import { newFleetId } from "./id"
 
-type Payload = { v: 1; f: string[] }
+type EntryPayload = { h: string; c: number; v: number; cr: number }
+type PayloadV1 = { v: 1; f: string[] }
+type PayloadV2 = { v: 2; f: EntryPayload[] }
+type Payload = PayloadV1 | PayloadV2
+
+export type DecodedEntry = { hullId: string; capacitors: number; vents: number; cr: number }
 
 function toBase64Url(bytes: Uint8Array): string {
   let bin = ""
@@ -22,9 +27,14 @@ function fromBase64Url(s: string): Uint8Array {
 }
 
 export function encodeFleetToHash(fleet: fleetEntry[]): string {
-  const payload: Payload = {
-    v: 1,
-    f: fleet.map((e) => e.ship.meta.hullId),
+  const payload: PayloadV2 = {
+    v: 2,
+    f: fleet.map((e) => ({
+      h: e.ship.meta.hullId,
+      c: e.capacitors ?? 0,
+      v: e.vents ?? 0,
+      cr: e.cr ?? 70,
+    })),
   }
   const json = JSON.stringify(payload)
   const compressed = pako.deflate(json)
@@ -32,6 +42,11 @@ export function encodeFleetToHash(fleet: fleetEntry[]): string {
 }
 
 export function decodeFleetIds(hash: string): string[] | null {
+  const entries = decodeFleetEntries(hash)
+  return entries ? entries.map((e) => e.hullId) : null
+}
+
+export function decodeFleetEntries(hash: string): DecodedEntry[] | null {
   try {
     let raw = hash.trim()
     if (raw.startsWith("#")) raw = raw.slice(1)
@@ -41,21 +56,47 @@ export function decodeFleetIds(hash: string): string[] | null {
     const inflated = pako.inflate(bytes)
     const json = new TextDecoder().decode(inflated)
     const parsed = JSON.parse(json) as Payload
-    if (parsed.v !== 1 || !Array.isArray(parsed.f)) return null
-    return parsed.f.filter((x) => typeof x === "string")
+    if (parsed.v === 2 && Array.isArray(parsed.f)) {
+      // v2: array of objects
+      const out: DecodedEntry[] = []
+      for (const e of parsed.f as EntryPayload[]) {
+        if (typeof e?.h !== "string") continue
+        out.push({
+          hullId: e.h,
+          capacitors: typeof e.c === "number" ? e.c : 0,
+          vents: typeof e.v === "number" ? e.v : 0,
+          cr: typeof e.cr === "number" ? e.cr : 70,
+        })
+      }
+      return out
+    }
+    if (parsed.v === 1 && Array.isArray((parsed as PayloadV1).f)) {
+      // v1 backward compat: only hullIds
+      return (parsed as PayloadV1).f
+        .filter((x) => typeof x === "string")
+        .map((hullId) => ({ hullId, capacitors: 0, vents: 0, cr: 70 }))
+    }
+    return null
   } catch {
     return null
   }
 }
 
 export function hydrateFleet(
-  ids: string[],
+  ids: string[] | DecodedEntry[],
   allShips: ship[],
   allStats: shipStats[]
 ): fleetEntry[] {
+  const entries: DecodedEntry[] =
+    ids.length === 0
+      ? []
+      : typeof ids[0] === "string"
+        ? (ids as string[]).map((hullId) => ({ hullId, capacitors: 0, vents: 0, cr: 70 }))
+        : (ids as DecodedEntry[])
   const shipById = new Map(allShips.map((s) => [s.hullId, s]))
   const out: fleetEntry[] = []
-  for (const hullId of ids) {
+  for (const entry of entries) {
+    const { hullId, capacitors, vents, cr } = entry
     const meta = shipById.get(hullId)
     if (!meta) {
       console.warn(`hydrateFleet: unknown hullId ${hullId}`)
@@ -66,7 +107,7 @@ export function hydrateFleet(
       console.warn(`hydrateFleet: missing stats for ${hullId}`)
       continue
     }
-    out.push({ id: newFleetId(), ship: { meta, stats }, cr: 70 })
+    out.push({ id: newFleetId(), ship: { meta, stats }, cr, capacitors, vents })
   }
   return out
 }
