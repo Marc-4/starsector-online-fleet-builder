@@ -136,4 +136,6 @@ export type fleetEntry = {
   id: string
   ship: completeShip
   cr: number
+  capacitors: number
+  vents: number
 }
