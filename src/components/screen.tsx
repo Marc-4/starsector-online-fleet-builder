@@ -1,4 +1,4 @@
-import { type ReactNode, useEffect, useRef, useState } from "react"
+import { type ReactNode, useEffect, useMemo, useRef, useState } from "react"
 import { getAllShipStats } from "#/lib/csvParser"
 import {
   decodeFleetIds,
@@ -8,10 +8,19 @@ import {
 import { getAllShips } from "#/lib/shipParser"
 import type { fleetEntry } from "#/types"
 import AddShipButton from "./addShipBtn"
-import CommonButton from "./commonBtn"
+import CombatReadinessBar from "./data_screen/combatReadinessBar"
+import StatCluster from "./data_screen/statCluster"
+import SidebarShipTile from "./SidebarShipTile"
 import Spinner from "./spinner"
 
 const GRID_SIZE = 25
+const HULL_SIZE_ORDER: Record<string, number> = {
+  CAPITAL_SHIP: 0,
+  CRUISER: 1,
+  DESTROYER: 2,
+  FRIGATE: 3,
+  FIGHTER: 4
+}
 
 export default function Screen({ children }: { children?: ReactNode }) {
   const gridRef = useRef<HTMLDivElement>(null)
@@ -19,13 +28,27 @@ export default function Screen({ children }: { children?: ReactNode }) {
   const [bgImage, setBgImage] = useState("")
   const ready = bgImage && grid
   const [fleet, setFleet] = useState<fleetEntry[]>([])
+  const [activeTile, setActiveTile] = useState<fleetEntry>()
+  const totalFleetDP = useMemo(
+    () =>
+      fleet.reduce((sum, fe) => sum + (fe.ship.stats["supplies/mo"] ?? 0), 0),
+    [fleet]
+  )
+  const sortedFleet = useMemo(
+    () =>
+      [...fleet].sort((a, b) => {
+        const ao = HULL_SIZE_ORDER[a.ship.meta.hullSize] ?? 99
+        const bo = HULL_SIZE_ORDER[b.ship.meta.hullSize] ?? 99
+        if (ao !== bo) return ao - bo
+        return a.ship.meta.hullName.localeCompare(b.ship.meta.hullName)
+      }),
+    [fleet]
+  )
 
-  const removeOne = (hullId: string) => {
-    const idx = fleet.findIndex((e) => e.ship.meta.hullId === hullId)
-    if (idx === -1) return
-    const next = fleet
-      .map((e, i) => (i === idx ? { ...e, count: e.count - 1 } : e))
-      .filter((e) => e.count > 0)
+  const removeOne = (id: string) => {
+    const next = fleet.filter((e) => e.id !== id)
+    if (next.length === fleet.length) return
+    if (activeTile?.id === id) setActiveTile(undefined)
     setFleet(next)
     if (next.length === 0) {
       history.replaceState(
@@ -61,7 +84,6 @@ export default function Screen({ children }: { children?: ReactNode }) {
       if (onHash) window.removeEventListener("hashchange", onHash)
     }
   }, [])
-
   useEffect(() => {
     setBgImage(`background${Math.floor(Math.random() * 9)}.webp`)
   }, [])
@@ -73,6 +95,10 @@ export default function Screen({ children }: { children?: ReactNode }) {
     return () => window.removeEventListener("resize", updateGrid)
   }, [])
 
+  const onTileClick = (entry: fleetEntry) => {
+    if (activeTile?.id === entry.id) setActiveTile(undefined)
+    else setActiveTile(entry)
+  }
   const updateGrid = () => {
     if (!gridRef.current) return
     const { height, width } = gridRef.current.getBoundingClientRect()
@@ -109,44 +135,32 @@ export default function Screen({ children }: { children?: ReactNode }) {
   return (
     <div className="relative flex gap-0 flex-row">
       {!ready && (
-        <div className="absolute inset-0 z-30 flex items-center justify-center bg-black">
+        <div className="absolute inset-0 z-30 flex items-center justify-center bg-gray-950">
           <Spinner />
         </div>
       )}
-      <div className="flex flex-col w-[15%] max-2xl:w-[17%] max-xl:w-[19%] max-lg:w-[21%] max-md:w-[23%] max-sm:w-[25%] bg-black h-screen overflow-y-scroll">
-        {fleet
-          .flatMap((e) =>
-            Array.from({ length: e.count }, (_, i) => ({
-              entry: e,
-              key: `${e.ship.meta.hullId}-${i}`
-            }))
-          )
-          .map(({ entry, key }) => (
-            <div
-              key={key}
-              className="group flex relative items-center justify-center w-full aspect-square shrink-0 cursor-pointer hover:bg-cyan-200/20"
-            >
-              <img
-                src={`/ships${entry.ship.meta.spriteName}`}
-                alt="ship sprite"
-                className="max-w-full max-h-full brightness-80 group-hover:brightness-100 object-center object-contain"
-              />
-              <h1 className="absolute left-1 top-1 text-cyan-400 text-bold text-xs text-shadow-[0_1px_0px_rgba(0,0,0,1)] shadow-black">
-                {!entry.ship.meta.hullName
-                  ? "N/A"
-                  : `${entry.ship.meta.hullName}-class`}
-              </h1>
-              <CommonButton
-                text="−"
-                clipPath={false}
-                className="absolute top-1 right-1 px-2 py-1 text-sm leading-none"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  removeOne(entry.ship.meta.hullId)
-                }}
-              />
-            </div>
-          ))}
+      <div className="flex flex-col w-[15%] max-2xl:w-[17%] max-xl:w-[19%] max-lg:w-[21%] max-md:w-[23%] max-sm:w-[25%] bg-gray-950 h-screen overflow-y-scroll">
+        <div className="sticky top-0 z-100 bg-gray-950 text-amber-300 flex items-center justify-center gap-4 max-md:gap-2">
+          {(() => {
+            const totalShips = fleet.length
+            return (
+              <>
+                <p>{`${totalShips === 1 ? `${totalShips} ship` : `${totalShips} ships`}`}</p>
+                <div className="w-px h-4 bg-amber-300" />
+                <p>{`${totalFleetDP} DP`}</p>
+              </>
+            )
+          })()}
+        </div>
+        {sortedFleet.map((entry) => (
+          <SidebarShipTile
+            onClick={onTileClick}
+            active={activeTile?.id === entry.id}
+            entry={entry}
+            key={entry.id}
+            removeOne={removeOne}
+          />
+        ))}
         <AddShipButton />
       </div>
       <div
@@ -160,7 +174,41 @@ export default function Screen({ children }: { children?: ReactNode }) {
           className="absolute inset-0 z-0 opacity-20 bg-[#49dbff]"
         ></div>
         {renderGrid()}
-        <div className="relative z-10 w-full h-full">{children}</div>
+        <div className="relative z-10 w-full h-full">
+          {activeTile && (
+            <>
+              <div>
+                <CombatReadinessBar
+                  cr={activeTile.cr}
+                  onChange={(value) => {
+                    setFleet((prev) =>
+                      prev.map((e) =>
+                        e.id === activeTile.id ? { ...e, cr: value } : e
+                      )
+                    )
+                    setActiveTile((prev) =>
+                      prev ? { ...prev, cr: value } : prev
+                    )
+                  }}
+                />
+              </div>
+              <div className="absolute right-1 top-1">
+                <StatCluster
+                  OP={activeTile.ship.stats["ordnance points"]}
+                  topSpeed={activeTile.ship.stats["max speed"]}
+                  armor={activeTile.ship.stats["armor rating"]}
+                  hull={activeTile.ship.stats.hitpoints}
+                  capacitors={30}
+                  vents={30}
+                  fluxCapacity={activeTile.ship.stats["max flux"]}
+                  fluxDissipation={activeTile.ship.stats["flux dissipation"]}
+                  shieldEfficiency={activeTile.ship.stats["shield efficiency"]}
+                />
+              </div>
+            </>
+          )}
+          {children}
+        </div>
       </div>
     </div>
   )
