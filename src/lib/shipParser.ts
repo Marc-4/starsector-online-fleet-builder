@@ -133,7 +133,7 @@ export async function getAllShips(): Promise<ship[]> {
 }
 
 export async function getShip({ name }: { name: string }): Promise<ship> {
-  if (name === "cerberus") name = "warhound" //NOTE: ok dude
+  if (name === "cerberus") name = "warhound" //NOTE: alex man come on
   const shipKey = `../shipData/${name}.ship`
   if (ships[shipKey]) {
     const loader = ships[shipKey]

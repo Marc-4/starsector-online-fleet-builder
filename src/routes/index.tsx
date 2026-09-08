@@ -6,7 +6,7 @@ export const Route = createFileRoute("/")({ component: Home })
 function Home() {
   return (
     <Screen>
-      <div className="absolute bottom-0 text-xs right-1 ">{"made with ❤️ from 🇵🇭"}</div>
+      <div className="absolute bottom-0 text-xs right-1 ">{"made with 🩵 from 🇵🇭"}</div>
     </Screen>
   )
 }
