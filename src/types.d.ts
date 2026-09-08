@@ -127,3 +127,12 @@ export type shipStats = {
   number: number
   number: number
 }
+
+export type completeShip = {
+  meta: ship
+  stats: shipStats
+}
+export type fleetEntry = {
+  ship: completeShip
+  count: number
+}
