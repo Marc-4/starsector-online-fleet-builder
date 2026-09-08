@@ -3,7 +3,7 @@ import { getAllShipStats, getShipStats } from "#/lib/csvParser"
 import { getAllShips, isModule } from "#/lib/shipParser"
 import type { ship, shipStats } from "#/types"
 import {
-  decodeFleetIds,
+  decodeFleetEntries,
   encodeFleetToHash,
   hydrateFleet,
 } from "#/lib/fleetCodec"
@@ -115,9 +115,10 @@ export default function ShipSelectionModal({
         () => s.hullId
       )
     )
-    const existing = decodeFleetIds(window.location.hash) ?? []
-    const mergedIds = [...existing, ...addedIds]
-    const mergedFleet = hydrateFleet(mergedIds, allShips, allShipStats)
+    const existingEntries = decodeFleetEntries(window.location.hash) ?? []
+    const addedEntries = addedIds.map((hullId) => ({ hullId, capacitors: 0, vents: 0, cr: 70 }))
+    const mergedEntries = [...existingEntries, ...addedEntries]
+    const mergedFleet = hydrateFleet(mergedEntries, allShips, allShipStats)
     const hash = encodeFleetToHash(mergedFleet)
     window.location.hash = `fleet=${hash}`
     onClose()
@@ -162,7 +163,7 @@ export default function ShipSelectionModal({
             <div className="flex gap-2 items-center">
               <h2 className="text-cyan-200 ">Search: </h2>
               <input
-                className="border border-cyan-100 w-56 max-[470px]:w-40 text-cyan-200"
+                className="border border-cyan-200 w-56 max-[470px]:w-40 text-cyan-200"
                 type="search"
                 value={searchString}
                 onChange={(e) =>
@@ -205,7 +206,7 @@ export default function ShipSelectionModal({
         <CommonButton
           text="Ok"
           onClick={onConfirm}
-          className="disabled:brightness-50 shadow-2xl shadow-black w-fit absolute bottom-2 left-0 right-0 mx-auto"
+          className="disabled:brightness-50 disabled:cursor-not-allowed shadow-2xl shadow-black w-fit absolute bottom-2 left-0 right-0 mx-auto"
           disabled={selectedShips.length === 0}
         />
         <div className="absolute left-0 bottom-0 text-amber-300 flex gap-0 flex-col">
