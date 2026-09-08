@@ -383,6 +383,12 @@ a {
 @utility ss-label-col {
   @apply flex text-xs text-cyan-50 items-end flex-col;
 }
+@utility ss-soft-text-shadow {
+  @apply drop-shadow-[0_1.2px_1px_rgba(0,0,0,0.9)];
+}
+@utility ss-label-text {
+  @apply font-mono text-sm ss-soft-text-shadow text-cyan-50;
+}
 @utility ss-stat-blue-bar {
   @apply bg-linear-to-b from-[#2b7fff] via-[#00d3f2] to-[#2b7fff] border border-gray-950 rounded-xs;
 }
