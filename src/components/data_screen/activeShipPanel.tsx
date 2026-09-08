@@ -1,6 +1,7 @@
-import type { fleetEntry } from "#/types"
 import { getMaxCapsVents } from "#/lib/fluxLimits"
+import type { fleetEntry } from "#/types"
 import CombatReadinessBar from "./combatReadinessBar"
+import ShipName from "./shipName"
 import StatCluster from "./statCluster"
 
 type Props = {
@@ -10,6 +11,7 @@ type Props = {
   onCapacitorsDecrement: (e?: React.MouseEvent) => void
   onVentsIncrement: (e?: React.MouseEvent) => void
   onVentsDecrement: (e?: React.MouseEvent) => void
+  onCustomNameChange: (value: string) => void
 }
 
 export default function ActiveShipPanel({
@@ -19,6 +21,7 @@ export default function ActiveShipPanel({
   onCapacitorsDecrement,
   onVentsIncrement,
   onVentsDecrement,
+  onCustomNameChange,
 }: Props) {
   return (
     <>
@@ -43,6 +46,13 @@ export default function ActiveShipPanel({
           onCapacitorsDecrement={onCapacitorsDecrement}
           onVentsIncrement={onVentsIncrement}
           onVentsDecrement={onVentsDecrement}
+        />
+      </div>
+      <div className="absolute left-1 bottom-1">
+        <ShipName
+          hullName={activeTile.ship.meta.hullName}
+          customName={activeTile.customName}
+          onCustomNameChange={onCustomNameChange}
         />
       </div>
     </>

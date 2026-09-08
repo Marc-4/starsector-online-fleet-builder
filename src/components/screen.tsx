@@ -103,7 +103,7 @@ export default function Screen({ children }: { children?: ReactNode }) {
     else setActiveTile(entry)
   }
 
-  const updateEntry = (id: string, patch: Partial<Pick<fleetEntry, "capacitors" | "vents" | "cr">>) => {
+  const updateEntry = (id: string, patch: Partial<Pick<fleetEntry, "capacitors" | "vents" | "cr" | "customName">>) => {
     setFleet((prev) => {
       const next = prev.map((e) => (e.id === id ? { ...e, ...patch } : e))
       syncHash(next)
@@ -219,6 +219,11 @@ export default function Screen({ children }: { children?: ReactNode }) {
     if (!activeTile) return
     updateEntry(activeTile.id, { cr: value })
   }
+
+  const onCustomNameChange = (value: string) => {
+    if (!activeTile) return
+    updateEntry(activeTile.id, { customName: value })
+  }
   const updateGrid = () => {
     if (!gridRef.current) return
     const { height, width } = gridRef.current.getBoundingClientRect()
@@ -303,6 +308,7 @@ export default function Screen({ children }: { children?: ReactNode }) {
               onCapacitorsDecrement={onCapacitorsDecrement}
               onVentsIncrement={onVentsIncrement}
               onVentsDecrement={onVentsDecrement}
+              onCustomNameChange={onCustomNameChange}
             />
           )}
           {children}
