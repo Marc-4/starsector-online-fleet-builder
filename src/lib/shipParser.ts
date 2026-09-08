@@ -65,6 +65,7 @@ function mergeSkin(base: ship, skin: shipSkin): ship {
   const merged = structuredClone(base)
   merged.hullId = skin.skinHullId
   merged.baseHullId = skin.baseHullId
+
   // identity overrides
   if (skin.hullName) merged.hullName = skin.hullName
   if (skin.spriteName)
@@ -162,4 +163,28 @@ export function isModule({ ship }: { ship: ship }): boolean {
     ship.hullId.includes("station") ||
     ship.hullId.toLowerCase().includes("armour")
   )
+}
+
+export async function getAllShipSkins(): Promise<shipSkin[]> {
+  const skinNames = (manifest as string[]).filter(
+    (n) => skins[`../shipData/skins/${n}.skin`]
+  )
+  const results = await Promise.allSettled(
+    skinNames.map(async (name) => {
+      const loader = skins[`../shipData/skins/${name}.skin`]
+      return parseSkin(await loader()) as shipSkin
+    })
+  )
+  const fulfilled = results
+    .filter((r) => r.status === "fulfilled")
+    .map((r) => r.value)
+  const rejected = results.filter(
+    (r) => r.status === "rejected"
+  ) as PromiseRejectedResult[]
+  if (rejected.length)
+    console.warn(
+      `Skipped ${rejected.length} skins:`,
+      rejected.map((r) => String(r.reason))
+    )
+  return fulfilled
 }
