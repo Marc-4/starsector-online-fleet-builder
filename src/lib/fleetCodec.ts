@@ -3,12 +3,12 @@ import type { fleetEntry, ship, shipStats } from "#/types"
 import { getShipStats } from "./csvParser"
 import { newFleetId } from "./id"
 
-type EntryPayload = { h: string; c: number; v: number; cr: number }
+type EntryPayload = { h: string; c: number; v: number; cr: number; n?: string }
 type PayloadV1 = { v: 1; f: string[] }
 type PayloadV2 = { v: 2; f: EntryPayload[] }
 type Payload = PayloadV1 | PayloadV2
 
-export type DecodedEntry = { hullId: string; capacitors: number; vents: number; cr: number }
+export type DecodedEntry = { hullId: string; capacitors: number; vents: number; cr: number; customName: string }
 
 function toBase64Url(bytes: Uint8Array): string {
   let bin = ""
@@ -34,6 +34,7 @@ export function encodeFleetToHash(fleet: fleetEntry[]): string {
       c: e.capacitors ?? 0,
       v: e.vents ?? 0,
       cr: e.cr ?? 70,
+      n: e.customName || undefined,
     })),
   }
   const json = JSON.stringify(payload)
@@ -66,6 +67,7 @@ export function decodeFleetEntries(hash: string): DecodedEntry[] | null {
           capacitors: typeof e.c === "number" ? e.c : 0,
           vents: typeof e.v === "number" ? e.v : 0,
           cr: typeof e.cr === "number" ? e.cr : 70,
+          customName: typeof e.n === "string" ? e.n : "",
         })
       }
       return out
@@ -74,7 +76,7 @@ export function decodeFleetEntries(hash: string): DecodedEntry[] | null {
       // v1 backward compat: only hullIds
       return (parsed as PayloadV1).f
         .filter((x) => typeof x === "string")
-        .map((hullId) => ({ hullId, capacitors: 0, vents: 0, cr: 70 }))
+        .map((hullId) => ({ hullId, capacitors: 0, vents: 0, cr: 70, customName: "" }))
     }
     return null
   } catch {
@@ -91,12 +93,12 @@ export function hydrateFleet(
     ids.length === 0
       ? []
       : typeof ids[0] === "string"
-        ? (ids as string[]).map((hullId) => ({ hullId, capacitors: 0, vents: 0, cr: 70 }))
+        ? (ids as string[]).map((hullId) => ({ hullId, capacitors: 0, vents: 0, cr: 70, customName: "" }))
         : (ids as DecodedEntry[])
   const shipById = new Map(allShips.map((s) => [s.hullId, s]))
   const out: fleetEntry[] = []
   for (const entry of entries) {
-    const { hullId, capacitors, vents, cr } = entry
+    const { hullId, capacitors, vents, cr, customName } = entry
     const meta = shipById.get(hullId)
     if (!meta) {
       console.warn(`hydrateFleet: unknown hullId ${hullId}`)
@@ -107,7 +109,7 @@ export function hydrateFleet(
       console.warn(`hydrateFleet: missing stats for ${hullId}`)
       continue
     }
-    out.push({ id: newFleetId(), ship: { meta, stats }, cr, capacitors, vents })
+    out.push({ id: newFleetId(), ship: { meta, stats }, cr, capacitors, vents, customName })
   }
   return out
 }
