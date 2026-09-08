@@ -21,6 +21,7 @@ export default function CommonButton({
       disabled={disabled}
       onClick={onClick}
       type="button"
+      {...rest}
       className={twMerge(
         "text-cyan-200 cursor-pointer bg-cyan-700 hover:brightness-110 p-1 px-6",
         className
