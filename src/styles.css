@@ -363,6 +363,31 @@ a {
   background: color-mix(in oklab, var(--header-bg) 84%, transparent 16%);
 }
 
+@utility ss-amber {
+  @apply text-amber-300 text-shadow-[0_1px_0px_rgba(0,0,0,1)];
+}
+@utility ss-amber-lg {
+  @apply text-amber-300 text-shadow-[1.5px_1.5px_0px_rgba(0,0,0,1)];
+}
+@utility ss-cyan-title {
+  @apply text-cyan-400 text-shadow-[0_1px_0px_rgba(0,0,0,1)] shadow-black;
+}
+@utility ss-label-col {
+  @apply flex text-xs text-cyan-50 items-end flex-col;
+}
+@utility ss-stat-blue-bar {
+  @apply bg-linear-to-b from-[#2b7fff] via-[#00d3f2] to-[#2b7fff] border border-gray-950 rounded-xs;
+}
+@utility ss-cr-bar {
+  @apply bg-linear-to-b from-[#cefafe] via-white to-[#cefafe] border border-cyan-700 rounded-xs overflow-hidden;
+}
+@utility ss-ship-card {
+  @apply flex relative items-center justify-center shrink-0 cursor-pointer;
+}
+@utility ss-ship-img {
+  @apply max-w-full max-h-full brightness-80 object-center object-contain;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
