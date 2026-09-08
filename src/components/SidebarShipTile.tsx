@@ -16,14 +16,14 @@ export default function SidebarShipTile({
     <button
       type="button"
       onClick={() => onClick(entry)}
-      className={`group flex relative items-center justify-center w-full aspect-square shrink-0 cursor-pointer  ${active ? "bg-cyan-300/30" : "hover:bg-cyan-200/20"}`}
+      className={`group ss-ship-card w-full aspect-square ${active ? "bg-cyan-300/30" : "hover:bg-cyan-200/20"}`}
     >
       <img
         src={`/ships${entry.ship.meta.spriteName}`}
         alt="ship sprite"
-        className="max-w-full max-h-full brightness-80 group-hover:brightness-100 object-center object-contain"
+        className="ss-ship-img group-hover:brightness-100"
       />
-      <h1 className="absolute left-1 max-w-[50%] top-1 text-cyan-400 text-bold text-xs text-shadow-[0_1px_0px_rgba(0,0,0,1)] shadow-black">
+      <h1 className="absolute left-1 max-w-[50%] top-1 ss-cyan-title text-xs">
         {!entry.ship.meta.hullName
           ? "N/A"
           : `${entry.ship.meta.hullName}-class`}

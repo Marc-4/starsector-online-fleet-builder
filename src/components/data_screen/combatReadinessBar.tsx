@@ -8,7 +8,7 @@ export default function CombatReadinessBar({
   return (
     <div className="flex p-2 w-fit flex-col justify-center shadow-md">
       <div className="flex gap-2 items-center">
-        <div className="relative w-80 h-4 rounded-xs border border-cyan-700 bg-linear-to-b from-[#cefafe] via-white to-[#cefafe] overflow-hidden">
+        <div className="relative w-80 h-4 ss-cr-bar">
           <div
             className="absolute inset-y-0 left-0 bg-gray-950 pointer-events-none"
             style={{ width: `${100 - cr}%`, right: 0, left: "auto" }}
@@ -32,7 +32,7 @@ export default function CombatReadinessBar({
             aria-label="Combat Readiness"
           />
         </div>
-        <p className="text-amber-300 text-base w-12 text-right">{cr}%</p>
+        <p className="ss-amber text-base w-12 text-right">{cr}%</p>
       </div>
       <h1 className="text-cyan-100">Combat Readiness</h1>
     </div>
