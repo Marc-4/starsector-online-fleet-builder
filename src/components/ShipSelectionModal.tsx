@@ -1,12 +1,11 @@
 import { useEffect, useMemo, useState } from "react"
 import { getAllShipStats, getShipStats } from "#/lib/csvParser"
 import { getAllShips, isModule } from "#/lib/shipParser"
-import type { fleetEntry, ship, shipStats } from "#/types"
+import type { ship, shipStats } from "#/types"
 import {
   decodeFleetIds,
   encodeFleetToHash,
   hydrateFleet,
-  mergeFleetIds,
 } from "#/lib/fleetCodec"
 import CommonButton from "./commonBtn"
 import ShipFilters from "./shipFilters"
@@ -41,7 +40,7 @@ export default function ShipSelectionModal({
         (sum, s) =>
           sum +
           (getShipStats({ ship: s, shipStats: allShipStats })?.[
-            "supplies/mo"
+            "fleet pts"
           ] ?? 0) *
             (selectedShipCounts[s.hullId] ?? 1),
         0
@@ -110,33 +109,16 @@ export default function ShipSelectionModal({
   }
 
   const onConfirm = () => {
-    const addedIds = selectedShips.map((s) => ({
-      id: s.hullId,
-      c: selectedShipCounts[s.hullId] ?? 1,
-    }))
-    const existing = decodeFleetIds(window.location.hash)
-    const mergedIds = mergeFleetIds(existing, addedIds)
-    // need full fleetEntry[] to encode (hydrate then encode)
+    const addedIds = selectedShips.flatMap((s) =>
+      Array.from(
+        { length: selectedShipCounts[s.hullId] ?? 1 },
+        () => s.hullId
+      )
+    )
+    const existing = decodeFleetIds(window.location.hash) ?? []
+    const mergedIds = [...existing, ...addedIds]
     const mergedFleet = hydrateFleet(mergedIds, allShips, allShipStats)
-    // fallback if stats not yet loaded for some (e.g. skins missing stats) — encode via ids directly
-    const fleetToEncode =
-      mergedFleet.length === mergedIds.length
-        ? mergedFleet
-        : (() => {
-            // construct minimal entries for missing stats to avoid dropping
-            const byId = new Map(allShips.map((s) => [s.hullId, s]))
-            return mergedIds
-              .map(({ id, c }) => {
-                const meta = byId.get(id)
-                const stats = meta
-                  ? getShipStats({ ship: meta, shipStats: allShipStats })
-                  : null
-                if (!meta || !stats) return null
-                return { ship: { meta, stats }, count: c } as fleetEntry
-              })
-              .filter((x): x is fleetEntry => x !== null)
-          })()
-    const hash = encodeFleetToHash(fleetToEncode)
+    const hash = encodeFleetToHash(mergedFleet)
     window.location.hash = `fleet=${hash}`
     onClose()
   }
