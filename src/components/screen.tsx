@@ -1,15 +1,15 @@
 import { type ReactNode, useEffect, useMemo, useRef, useState } from "react"
 import { getAllShipStats } from "#/lib/csvParser"
 import {
-  decodeFleetIds,
+  decodeFleetEntries,
   encodeFleetToHash,
   hydrateFleet
 } from "#/lib/fleetCodec"
 import { getAllShips } from "#/lib/shipParser"
 import type { fleetEntry } from "#/types"
 import AddShipButton from "./addShipBtn"
-import CombatReadinessBar from "./data_screen/combatReadinessBar"
-import StatCluster from "./data_screen/statCluster"
+import ActiveShipPanel from "./data_screen/activeShipPanel"
+import { getMaxCapsVents } from "#/lib/fluxLimits"
 import SidebarShipTile from "./SidebarShipTile"
 import Spinner from "./spinner"
 
@@ -45,20 +45,23 @@ export default function Screen({ children }: { children?: ReactNode }) {
     [fleet]
   )
 
+  const syncHash = (next: fleetEntry[]) => {
+    if (next.length === 0) {
+      history.replaceState(null, "", window.location.pathname + window.location.search)
+    } else {
+      const hash = encodeFleetToHash(next)
+      // use replaceState to avoid triggering hashchange which would re-hydrate
+      // with new random ids and break activeTile identity (subsequent +/- would miss)
+      history.replaceState(null, "", `${window.location.pathname}${window.location.search}#fleet=${hash}`)
+    }
+  }
+
   const removeOne = (id: string) => {
     const next = fleet.filter((e) => e.id !== id)
     if (next.length === fleet.length) return
     if (activeTile?.id === id) setActiveTile(undefined)
     setFleet(next)
-    if (next.length === 0) {
-      history.replaceState(
-        null,
-        "",
-        window.location.pathname + window.location.search
-      )
-    } else {
-      window.location.hash = `fleet=${encodeFleetToHash(next)}`
-    }
+    syncHash(next)
   }
 
   useEffect(() => {
@@ -70,10 +73,10 @@ export default function Screen({ children }: { children?: ReactNode }) {
         getAllShipStats()
       ])
       if (cancelled) return
-      const ids = decodeFleetIds(window.location.hash)
-      if (ids) setFleet(hydrateFleet(ids, ships, stats))
+      const entries = decodeFleetEntries(window.location.hash)
+      if (entries) setFleet(hydrateFleet(entries, ships, stats))
       onHash = () => {
-        const next = decodeFleetIds(window.location.hash)
+        const next = decodeFleetEntries(window.location.hash)
         if (next) setFleet(hydrateFleet(next, ships, stats))
         else setFleet([])
       }
@@ -98,6 +101,123 @@ export default function Screen({ children }: { children?: ReactNode }) {
   const onTileClick = (entry: fleetEntry) => {
     if (activeTile?.id === entry.id) setActiveTile(undefined)
     else setActiveTile(entry)
+  }
+
+  const updateEntry = (id: string, patch: Partial<Pick<fleetEntry, "capacitors" | "vents" | "cr">>) => {
+    setFleet((prev) => {
+      const next = prev.map((e) => (e.id === id ? { ...e, ...patch } : e))
+      syncHash(next)
+      return next
+    })
+    setActiveTile((prev) => (prev?.id === id ? { ...prev, ...patch } : prev))
+  }
+
+  const onCapacitorsIncrement = (e?: React.MouseEvent) => {
+    if (!activeTile) return
+    const step = e?.shiftKey ? 5 : 1
+    const id = activeTile.id
+    const max = getMaxCapsVents(activeTile.ship.meta.hullSize)
+    const availableOp = activeTile.ship.stats["ordnance points"]
+    // functional update to stay correct under rapid hold repeats
+    setFleet((prev) => {
+      const idx = prev.findIndex((p) => p.id === id)
+      if (idx === -1) return prev
+      const cur = prev[idx].capacitors
+      if (cur >= max) return prev
+      const nxt = Math.min(max, cur + step)
+      // also clamp to OP (spentOp = caps + vents)
+      const clamped = Math.min(nxt, availableOp - (prev[idx].vents ?? 0))
+      if (clamped <= cur) return prev
+      const next = [...prev]
+      next[idx] = { ...next[idx], capacitors: clamped }
+      syncHash(next)
+      return next
+    })
+    setActiveTile((prev) => {
+      if (!prev || prev.id !== id) return prev
+      if (prev.capacitors >= max) return prev
+      const nxt = Math.min(max, prev.capacitors + step)
+      const clamped = Math.min(nxt, availableOp - prev.vents)
+      return clamped <= prev.capacitors ? prev : { ...prev, capacitors: clamped }
+    })
+  }
+  const onCapacitorsDecrement = (e?: React.MouseEvent) => {
+    if (!activeTile) return
+    const step = e?.shiftKey ? 5 : 1
+    const id = activeTile.id
+    setFleet((prev) => {
+      const idx = prev.findIndex((p) => p.id === id)
+      if (idx === -1) return prev
+      const cur = prev[idx].capacitors
+      if (cur <= 0) return prev
+      const nxt = Math.max(0, cur - step)
+      if (nxt === cur) return prev
+      const next = [...prev]
+      next[idx] = { ...next[idx], capacitors: nxt }
+      syncHash(next)
+      return next
+    })
+    setActiveTile((prev) => {
+      if (!prev || prev.id !== id) return prev
+      if (prev.capacitors <= 0) return prev
+      const nxt = Math.max(0, prev.capacitors - step)
+      return nxt === prev.capacitors ? prev : { ...prev, capacitors: nxt }
+    })
+  }
+  const onVentsIncrement = (e?: React.MouseEvent) => {
+    if (!activeTile) return
+    const step = e?.shiftKey ? 5 : 1
+    const id = activeTile.id
+    const max = getMaxCapsVents(activeTile.ship.meta.hullSize)
+    const availableOp = activeTile.ship.stats["ordnance points"]
+    setFleet((prev) => {
+      const idx = prev.findIndex((p) => p.id === id)
+      if (idx === -1) return prev
+      const cur = prev[idx].vents
+      if (cur >= max) return prev
+      const nxt = Math.min(max, cur + step)
+      const clamped = Math.min(nxt, availableOp - (prev[idx].capacitors ?? 0))
+      if (clamped <= cur) return prev
+      const next = [...prev]
+      next[idx] = { ...next[idx], vents: clamped }
+      syncHash(next)
+      return next
+    })
+    setActiveTile((prev) => {
+      if (!prev || prev.id !== id) return prev
+      if (prev.vents >= max) return prev
+      const nxt = Math.min(max, prev.vents + step)
+      const clamped = Math.min(nxt, availableOp - prev.capacitors)
+      return clamped <= prev.vents ? prev : { ...prev, vents: clamped }
+    })
+  }
+  const onVentsDecrement = (e?: React.MouseEvent) => {
+    if (!activeTile) return
+    const step = e?.shiftKey ? 5 : 1
+    const id = activeTile.id
+    setFleet((prev) => {
+      const idx = prev.findIndex((p) => p.id === id)
+      if (idx === -1) return prev
+      const cur = prev[idx].vents
+      if (cur <= 0) return prev
+      const nxt = Math.max(0, cur - step)
+      if (nxt === cur) return prev
+      const next = [...prev]
+      next[idx] = { ...next[idx], vents: nxt }
+      syncHash(next)
+      return next
+    })
+    setActiveTile((prev) => {
+      if (!prev || prev.id !== id) return prev
+      if (prev.vents <= 0) return prev
+      const nxt = Math.max(0, prev.vents - step)
+      return nxt === prev.vents ? prev : { ...prev, vents: nxt }
+    })
+  }
+
+  const onCrChange = (value: number) => {
+    if (!activeTile) return
+    updateEntry(activeTile.id, { cr: value })
   }
   const updateGrid = () => {
     if (!gridRef.current) return
@@ -176,36 +296,14 @@ export default function Screen({ children }: { children?: ReactNode }) {
         {renderGrid()}
         <div className="relative z-10 w-full h-full">
           {activeTile && (
-            <>
-              <div>
-                <CombatReadinessBar
-                  cr={activeTile.cr}
-                  onChange={(value) => {
-                    setFleet((prev) =>
-                      prev.map((e) =>
-                        e.id === activeTile.id ? { ...e, cr: value } : e
-                      )
-                    )
-                    setActiveTile((prev) =>
-                      prev ? { ...prev, cr: value } : prev
-                    )
-                  }}
-                />
-              </div>
-              <div className="absolute right-1 top-1">
-                <StatCluster
-                  OP={activeTile.ship.stats["ordnance points"]}
-                  topSpeed={activeTile.ship.stats["max speed"]}
-                  armor={activeTile.ship.stats["armor rating"]}
-                  hull={activeTile.ship.stats.hitpoints}
-                  capacitors={30}
-                  vents={30}
-                  fluxCapacity={activeTile.ship.stats["max flux"]}
-                  fluxDissipation={activeTile.ship.stats["flux dissipation"]}
-                  shieldEfficiency={activeTile.ship.stats["shield efficiency"]}
-                />
-              </div>
-            </>
+            <ActiveShipPanel
+              activeTile={activeTile}
+              onCrChange={onCrChange}
+              onCapacitorsIncrement={onCapacitorsIncrement}
+              onCapacitorsDecrement={onCapacitorsDecrement}
+              onVentsIncrement={onVentsIncrement}
+              onVentsDecrement={onVentsDecrement}
+            />
           )}
           {children}
         </div>
