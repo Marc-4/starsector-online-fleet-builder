@@ -40,7 +40,7 @@ export default function ShipSelectionModal({
         (sum, s) =>
           sum +
           (getShipStats({ ship: s, shipStats: allShipStats })?.[
-            "fleet pts"
+            "supplies/mo"
           ] ?? 0) *
             (selectedShipCounts[s.hullId] ?? 1),
         0
@@ -116,7 +116,7 @@ export default function ShipSelectionModal({
       )
     )
     const existingEntries = decodeFleetEntries(window.location.hash) ?? []
-    const addedEntries = addedIds.map((hullId) => ({ hullId, capacitors: 0, vents: 0, cr: 70 }))
+    const addedEntries = addedIds.map((hullId) => ({ hullId, capacitors: 0, vents: 0, cr: 70, customName: "" }))
     const mergedEntries = [...existingEntries, ...addedEntries]
     const mergedFleet = hydrateFleet(mergedEntries, allShips, allShipStats)
     const hash = encodeFleetToHash(mergedFleet)
