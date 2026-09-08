@@ -1,10 +1,10 @@
 import * as pako from "pako"
 import type { fleetEntry, ship, shipStats } from "#/types"
 import { getShipStats } from "./csvParser"
+import { newFleetId } from "./id"
 
-type Payload = { v: 1; f: { id: string; c: number }[] }
+type Payload = { v: 1; f: string[] }
 
-//WARN: all of this is unreviewed AI code.
 function toBase64Url(bytes: Uint8Array): string {
   let bin = ""
   for (const b of bytes) bin += String.fromCharCode(b)
@@ -24,16 +24,14 @@ function fromBase64Url(s: string): Uint8Array {
 export function encodeFleetToHash(fleet: fleetEntry[]): string {
   const payload: Payload = {
     v: 1,
-    f: fleet.map((e) => ({ id: e.ship.meta.hullId, c: e.count })),
+    f: fleet.map((e) => e.ship.meta.hullId),
   }
   const json = JSON.stringify(payload)
   const compressed = pako.deflate(json)
   return toBase64Url(compressed)
 }
 
-export function decodeFleetIds(
-  hash: string
-): { id: string; c: number }[] | null {
+export function decodeFleetIds(hash: string): string[] | null {
   try {
     let raw = hash.trim()
     if (raw.startsWith("#")) raw = raw.slice(1)
@@ -44,43 +42,31 @@ export function decodeFleetIds(
     const json = new TextDecoder().decode(inflated)
     const parsed = JSON.parse(json) as Payload
     if (parsed.v !== 1 || !Array.isArray(parsed.f)) return null
-    return parsed.f.filter(
-      (x) => typeof x.id === "string" && typeof x.c === "number"
-    )
+    return parsed.f.filter((x) => typeof x === "string")
   } catch {
     return null
   }
 }
 
-export function mergeFleetIds(
-  existing: { id: string; c: number }[] | null,
-  added: { id: string; c: number }[]
-): { id: string; c: number }[] {
-  const map = new Map<string, number>()
-  for (const e of existing ?? []) map.set(e.id, (map.get(e.id) ?? 0) + e.c)
-  for (const e of added) map.set(e.id, (map.get(e.id) ?? 0) + e.c)
-  return [...map.entries()].map(([id, c]) => ({ id, c }))
-}
-
 export function hydrateFleet(
-  ids: { id: string; c: number }[],
+  ids: string[],
   allShips: ship[],
   allStats: shipStats[]
 ): fleetEntry[] {
   const shipById = new Map(allShips.map((s) => [s.hullId, s]))
   const out: fleetEntry[] = []
-  for (const { id, c } of ids) {
-    const meta = shipById.get(id)
+  for (const hullId of ids) {
+    const meta = shipById.get(hullId)
     if (!meta) {
-      console.warn(`hydrateFleet: unknown hullId ${id}`)
+      console.warn(`hydrateFleet: unknown hullId ${hullId}`)
       continue
     }
     const stats = getShipStats({ ship: meta, shipStats: allStats })
     if (!stats) {
-      console.warn(`hydrateFleet: missing stats for ${id}`)
+      console.warn(`hydrateFleet: missing stats for ${hullId}`)
       continue
     }
-    out.push({ ship: { meta, stats }, count: c })
+    out.push({ id: newFleetId(), ship: { meta, stats }, cr: 70 })
   }
   return out
 }
