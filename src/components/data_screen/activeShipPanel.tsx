@@ -6,9 +6,9 @@ import CombatReadinessBar from "./combatReadinessBar"
 import ShipName from "./shipName"
 import StatCluster from "./statCluster"
 
-const MIN_ZOOM = 0.25
-const MAX_ZOOM_DESKTOP = 2.5
-const MAX_ZOOM_MOBILE = 1.25
+const MIN_ZOOM = 1
+const MAX_ZOOM_DESKTOP = 2
+const MAX_ZOOM_MOBILE = 1.5
 const ZOOM_STEP = 0.25
 
 type Props = {
