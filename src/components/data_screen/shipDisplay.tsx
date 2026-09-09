@@ -10,10 +10,12 @@ import type { ship, weaponSlot } from "#/types"
 
 export default function ShipDisplay({
   ship,
-  zoom
+  zoom,
+  onSlotClick
 }: {
   ship: ship
   zoom: number
+  onSlotClick?: (slot: weaponSlot) => void
 }) {
   const slotStyle: Record<weaponSlot["type"], string> = {
     MISSILE: "text-lime-400",
@@ -94,9 +96,10 @@ export default function ShipDisplay({
   }) {
     const angle = -(slot.angle ?? 0)
     const arc = slot.arc ?? 0
+    const isFullCircle = arc >= 360
     const showArc = arc > 0 && arc < 360
 
-    const r = 150
+    const r = 200
     const cx = 50
     const cy = 50
     let pathD: string | null = null
@@ -114,17 +117,21 @@ export default function ShipDisplay({
       pathD = `M ${cx} ${cy} L ${x1} ${y1} A ${r} ${r} 0 ${large} 1 ${x2} ${y2} Z`
     }
 
+    if (!showArc && !isFullCircle) return null
+
     return (
       <div className="absolute inset-0 pointer-events-none">
-        {pathD && (
-          <svg
-            role="img"
-            aria-label="svg"
-            viewBox="0 0 100 100"
-            className={`absolute inset-0 w-full h-full overflow-visible transition-opacity duration-150 ${forceShow ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}
-          >
-            <path
-              d={pathD}
+        <svg
+          role="img"
+          aria-label="svg"
+          viewBox="0 0 100 100"
+          className={`absolute inset-0 w-full h-full overflow-visible transition-opacity duration-150 ${forceShow ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}
+        >
+          {isFullCircle ? (
+            <circle
+              cx={cx}
+              cy={cy}
+              r={r}
               fill="currentColor"
               fillOpacity={0}
               stroke="currentColor"
@@ -132,8 +139,20 @@ export default function ShipDisplay({
               strokeWidth={0.8}
               vectorEffect="non-scaling-stroke"
             />
-          </svg>
-        )}
+          ) : (
+            pathD && (
+              <path
+                d={pathD}
+                fill="currentColor"
+                fillOpacity={0}
+                stroke="currentColor"
+                strokeOpacity={1}
+                strokeWidth={0.8}
+                vectorEffect="non-scaling-stroke"
+              />
+            )
+          )}
+        </svg>
       </div>
     )
   }
@@ -159,19 +178,29 @@ export default function ShipDisplay({
       {weaponSlots?.map(
         (slot, i) =>
           slot.mount !== "HIDDEN" && (
-            <div
+            <button
+              type="button"
               key={`${slot.id}-${i}`}
+              role={onSlotClick ? "button" : undefined}
+              tabIndex={onSlotClick ? 0 : undefined}
+              onClick={() => onSlotClick?.(slot)}
+              onKeyDown={(e) => {
+                if (onSlotClick && (e.key === "Enter" || e.key === " ")) {
+                  e.preventDefault()
+                  onSlotClick(slot)
+                }
+              }}
               style={{
                 left: ship.center[0] - (slot.locations?.[1] ?? 0),
                 top: ship.height - ship.center[1] - (slot.locations?.[0] ?? 0),
                 transform: "translate(-50%, -50%)"
               }}
-              className={`${buildSlotStyle(slot)} cursor-pointer group absolute z-10 opacity-70 hover:opacity-100 shrink-0 drop-shadow-[0_1px_1px_rgba(0,0,0,0.9)]`}
+              className={`${buildSlotStyle(slot)} group absolute z-10 opacity-70 hover:opacity-100 shrink-0 drop-shadow-[0_1px_1px_rgba(0,0,0,0.9)] ${onSlotClick ? "cursor-pointer pointer-events-auto" : "pointer-events-auto"}`}
               title={`${slot.id} • ${slot.type} ${slot.size} ${slot.mount}`}
             >
               <SlotIcon type={slot.type} />
               <SlotAngle slot={slot} forceShow={altHeld} />
-            </div>
+            </button>
           )
       )}
     </div>
