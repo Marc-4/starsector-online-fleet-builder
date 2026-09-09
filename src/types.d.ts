@@ -163,3 +163,98 @@ export type engineSlot = {
   style: string
   width: number
 }
+
+export type weapon = {
+  id: string
+  specClass: string
+  type: weaponType
+  size: weaponSize
+  displayArcRadius?: number
+  turretSprite?: string
+  turretGlowSprite?: string
+  turretGunSprite?: string
+  hardpointSprite?: string
+  hardpointGlowSprite?: string
+  hardpointGunSprite?: string
+  visualRecoil?: number
+  renderHints?: string[]
+  turretOffsets?: number[]
+  hardpointOffsets?: number[]
+  turretAngleOffsets?: number[]
+  hardpointAngleOffsets?: number[]
+  barrelMode?: string
+  animationType?: string
+  projectileSpecId?: string
+  fireSoundOne?: string
+  fireSoundTwo?: string
+  fringeColor?: number[]
+  coreColor?: number[]
+  glowColor?: number[]
+  width?: number
+  textureType?: string | string[]
+  textureScrollSpeed?: number
+  pixelsPerTexel?: number
+  pierceSet?: string[]
+  impactMass?: number
+  darkCore?: boolean
+  turretFireSound?: string
+  // allow extra fields from .wpn (beam, projectile, etc.)
+  [key: string]: any
+}
+
+export type weaponStats = {
+  name: string
+  id: string
+  tier: number | string | null
+  rarity: number | string | null
+  "base value": number | null
+  range: number | null
+  "damage/second": number | string | null
+  "damage/shot": number | string | null
+  emp: number | string | null
+  impact: number | string | null
+  "turn rate": number | string | null
+  OPs: number | null
+  ammo: number | string | null
+  "ammo/sec": number | string | null
+  "reload size": number | string | null
+  type: string | null
+  "energy/shot": number | string | null
+  "energy/second": number | string | null
+  chargeup: number | string | null
+  chargedown: number | string | null
+  "burst size": number | string | null
+  "burst delay": number | string | null
+  "min spread": number | string | null
+  "max spread": number | string | null
+  "spread/shot": number | string | null
+  "spread decay/sec": number | string | null
+  "beam speed": number | string | null
+  "proj speed": number | string | null
+  "launch speed": number | string | null
+  "flight time": number | string | null
+  "proj hitpoints": number | string | null
+  autofireAccBonus: number | string | null
+  extraArcForAI: number | string | null
+  hints: string | null
+  tags: string | null
+  groupTag: string | null
+  "tech/manufacturer": string | null
+  primaryRoleStr?: string | null
+  speedStr?: string | null
+  trackingStr?: string | null
+  turnRateStr?: string | null
+  accuracyStr?: string | null
+  customPrimary?: string | null
+  customPrimaryHL?: string | null
+  customAncillary?: string | null
+  customAncillaryHL?: string | null
+  noDPSInTooltip?: string | boolean | null
+  number: number | null
+  [key: string]: any
+}
+
+export type completeWeapon = {
+  meta: weapon
+  stats: weaponStats
+}
