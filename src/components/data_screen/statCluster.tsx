@@ -98,9 +98,9 @@ export default function StatCluster({
 
 
   return (
-    <div className="flex flex-col w-fit m-1 ml-2">
+    <div className="flex flex-col w-fit m-1 ml-2 max-sm:m-0.5">
       <div
-        className="relative flex self-end items-center justify-center w-96 h-8 bg-gray-950 border border-gray-950 rounded-xs overflow-hidden"
+        className="relative flex self-end items-center justify-center w-[300px] sm:w-96 h-7 sm:h-8 bg-gray-950 border border-gray-950 rounded-xs overflow-hidden"
         role="group"
         aria-label={`Ordnance Points ${spentOp} of ${availableOp ?? "N/A"}`}
       >
@@ -127,35 +127,35 @@ export default function StatCluster({
           {availableOp ? `${spentOp} / ${availableOp}` : "N/A"}
         </p>
       </div>
-      <div className="flex gap-12 self-end">
+      <div className="flex gap-4 sm:gap-12 self-end max-sm:gap-3">
         <div className="ss-label-col">
-          <p className="ss-label-text">TOP SPEED</p>
-          <p className="text-lg">{topSpeed ?? "N/A"}</p>
+          <p className="ss-label-text max-sm:text-xs">TOP SPEED</p>
+          <p className="text-base sm:text-lg">{topSpeed ?? "N/A"}</p>
         </div>
         <div className="ss-label-col">
-          <p className="ss-label-text">ARMOR</p>
-          <p className="text-lg">{armor ?? "N/A"}</p>
+          <p className="ss-label-text max-sm:text-xs">ARMOR</p>
+          <p className="text-base sm:text-lg">{armor ?? "N/A"}</p>
         </div>
         <div className="ss-label-col">
-          <p className="ss-label-text">HULL</p>
-          <p className="text-lg">{hull ?? "N/A"}</p>
+          <p className="ss-label-text max-sm:text-xs">HULL</p>
+          <p className="text-base sm:text-lg">{hull ?? "N/A"}</p>
         </div>
       </div>
-      <div className="flex mt-2 gap-1">
-        <div className="flex flex-col gap-4">
-          <div className="flex gap-3 items-center self-end">
-            <p>Capacitors</p>
+      <div className="flex mt-2 gap-1 max-sm:gap-0.5">
+        <div className="flex flex-col gap-2 sm:gap-4">
+          <div className="flex gap-2 sm:gap-3 items-center self-end">
+            <p className="text-sm sm:text-base">Capacitors</p>
             <CommonButton
-              className="px-3 py-0.5 disabled:opacity-50 disabled:brightness-50 disabled:cursor-not-allowed select-none touch-manipulation"
+              className="px-2 sm:px-3 py-0.5 disabled:opacity-50 disabled:brightness-50 disabled:cursor-not-allowed select-none touch-manipulation text-sm sm:text-base"
               text="-"
               cutAllCorners
               onClick={onCapacitorsDecrement}
               disabled={capacitors <= 0}
               {...capsDecHold}
             />
-            <p className="ss-amber min-w-6 text-center">{capacitors}</p>
+            <p className="ss-amber min-w-5 sm:min-w-6 text-center text-sm sm:text-base">{capacitors}</p>
             <CommonButton
-              className="px-3 py-0.5 disabled:opacity-50 disabled:brightness-50 disabled:cursor-not-allowed select-none touch-manipulation"
+              className="px-2 sm:px-3 py-0.5 disabled:opacity-50 disabled:brightness-50 disabled:cursor-not-allowed select-none touch-manipulation text-sm sm:text-base"
               text="+"
               cutAllCorners
               onClick={onCapacitorsIncrement}
@@ -170,19 +170,19 @@ export default function StatCluster({
               {...capsIncHold}
             />
           </div>
-          <div className="flex gap-3 items-center self-end">
-            <p>Vents</p>
+          <div className="flex gap-2 sm:gap-3 items-center self-end">
+            <p className="text-sm sm:text-base">Vents</p>
             <CommonButton
-              className="px-3 py-0.5 disabled:opacity-50 disabled:brightness-50 disabled:cursor-not-allowed select-none touch-manipulation"
+              className="px-2 sm:px-3 py-0.5 disabled:opacity-50 disabled:brightness-50 disabled:cursor-not-allowed select-none touch-manipulation text-sm sm:text-base"
               text="-"
               cutAllCorners
               onClick={onVentsDecrement}
               disabled={vents <= 0}
               {...ventsDecHold}
             />
-            <p className="ss-amber min-w-6 text-center">{vents}</p>
+            <p className="ss-amber min-w-5 sm:min-w-6 text-center text-sm sm:text-base">{vents}</p>
             <CommonButton
-              className="px-3 py-0.5 disabled:opacity-50 disabled:brightness-50 disabled:cursor-not-allowed select-none touch-manipulation"
+              className="px-2 sm:px-3 py-0.5 disabled:opacity-50 disabled:brightness-50 disabled:cursor-not-allowed select-none touch-manipulation text-sm sm:text-base"
               text="+"
               cutAllCorners
               onClick={onVentsIncrement}
@@ -198,22 +198,22 @@ export default function StatCluster({
             />
           </div>
         </div>
-        <div className="flex flex-col gap-0 items-end ml-auto">
+        <div className="flex flex-col gap-0 items-end ml-auto max-sm:text-xs">
           <div className="flex flex-col">
-            <p className="ss-label-text">FLUX CAPACITY</p>
-            <p className="self-end">{fluxCapacity ?? "N/A"}</p>
+            <p className="ss-label-text max-sm:text-[11px]">FLUX CAPACITY</p>
+            <p className="self-end text-sm sm:text-base">{fluxCapacity ?? "N/A"}</p>
           </div>
           <div className="flex flex-col">
-            <p className="ss-label-text">FLUX DISSPATION</p>
-            <p className="self-end">{fluxDissipation ?? "N/A"}</p>
+            <p className="ss-label-text max-sm:text-[11px]">FLUX DISSPATION</p>
+            <p className="self-end text-sm sm:text-base">{fluxDissipation ?? "N/A"}</p>
           </div>
           <div className="flex flex-col">
-            <p className="ss-label-text">SHIELD FLUX/DAM</p>
-            <p className="self-end">{shieldEfficiency ?? "N/A"}</p>
+            <p className="ss-label-text max-sm:text-[11px]">SHIELD FLUX/DAM</p>
+            <p className="self-end text-sm sm:text-base">{shieldEfficiency ?? "N/A"}</p>
           </div>
           <div className="flex flex-col">
-            <p className="ss-label-text">WEAPON FLUX/SEC</p>
-            <p className="self-end">{weaponFluxPerSecond ?? "N/A"}</p>
+            <p className="ss-label-text max-sm:text-[11px]">WEAPON FLUX/SEC</p>
+            <p className="self-end text-sm sm:text-base">{weaponFluxPerSecond ?? "N/A"}</p>
           </div>
         </div>
       </div>
