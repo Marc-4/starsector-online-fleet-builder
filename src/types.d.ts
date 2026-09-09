@@ -24,16 +24,7 @@ export type ship = {
   spriteName: string
   style: HIGH_TECH | MIDLINE | LOW_TECH | THREAT | DWELLER | OMEGA | string
   viewOffset: number
-  weaponSlots?: {
-    angle: number
-    arc: number
-    id: string
-    locations: [number, number]
-    mount: weaponMount
-    size: weaponSize
-    type: weaponType
-    position?: [number, number]
-  }[]
+  weaponSlots?: weaponSlot[]
   width: number
   moduleAnchor?: [number, number]
   hints?: string
@@ -147,27 +138,28 @@ export type weaponSize = "SMALL" | "MEDIUM" | "LARGE"
 export type weaponType =
   | "ENERGY"
   | "MISSILE"
-  | "BALISTIC"
+  | "BALLISTIC"
   | "HYBRID"
   | "COMPOSITE"
+  | "SYNERGY"
   | "UNIVERSAL"
+  | "SYSTEM"
+  | "DECORATIVE"
 
-export type shipSlots = {
-  engineSlots?: {
-    angle: number
-    contrailSize: number
-    length: number
-    location: [number, number]
-    style: string
-    width: number
-  }[]
-  weaponSlots?: {
-    angle: number
-    arc: number
-    id: string
-    locations: [number, number]
-    mount: weaponMount
-    size: weaponSize
-    type: weaponType
-    }[]
+export type weaponSlot = {
+  angle?: number
+  arc?: number
+  id: string
+  locations?: [number, number]
+  mount: weaponMount
+  size: weaponSize
+  type: weaponType
+}
+export type engineSlot = {
+  angle: number
+  contrailSize: number
+  length: number
+  location: [number, number]
+  style: string
+  width: number
 }
