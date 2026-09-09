@@ -3,14 +3,14 @@ export type ship = {
   builtInMods?: string[]
   builtInWeapons?: Record<string, string>
   builtInWings?: string[]
-  center: number[]
+  center: [number, number]
   collisionRadius: number
   coversColor?: string
   engineSlots?: {
     angle: number
     contrailSize: number
     length: number
-    location: number[]
+    location: [number, number]
     style: string
     width: number
   }[]
@@ -19,7 +19,7 @@ export type ship = {
   baseHullId?: string
   hullName: string
   hullSize: FRIGATE | DESTROYER | CRUISER | CAPITAL_SHIP | FIGHTER
-  shieldCenter: number[]
+  shieldCenter: [number, number]
   shieldRadius: number
   spriteName: string
   style: HIGH_TECH | MIDLINE | LOW_TECH | THREAT | DWELLER | OMEGA | string
@@ -28,14 +28,14 @@ export type ship = {
     angle: number
     arc: number
     id: string
-    locations: number[]
-    mount: TURRET | HARDPOINT | HIDDEN | string
-    size: SMALL | MEDIUM | LARGE | string
-    type: string
-    position?: number[]
+    locations: [number, number]
+    mount: weaponMount
+    size: weaponSize
+    type: weaponType
+    position?: [number, number]
   }[]
   width: number
-  moduleAnchor?: number[]
+  moduleAnchor?: [number, number]
   hints?: string
 }
 
@@ -132,6 +132,7 @@ export type completeShip = {
   meta: ship
   stats: shipStats
 }
+
 export type fleetEntry = {
   id: string
   ship: completeShip
@@ -140,3 +141,14 @@ export type fleetEntry = {
   vents: number
   customName: string
 }
+
+export type weaponMount = "TURRET" | "HARDPOINT" | "HIDDEN"
+export type weaponSize = "SMALL" | "MEDIUM" | "LARGE"
+export type weaponType =
+  | "ENERGY"
+  | "MISSILE"
+  | "BALISTIC"
+  | "HYBRID"
+  | "COMPOSITE"
+  | "UNIVERSAL"
+
