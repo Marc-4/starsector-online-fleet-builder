@@ -120,14 +120,12 @@ export default function Screen({ children }: { children?: ReactNode }) {
     const id = activeTile.id
     const max = getMaxCapsVents(activeTile.ship.meta.hullSize)
     const availableOp = activeTile.ship.stats["ordnance points"]
-    // functional update to stay correct under rapid hold repeats
     setFleet((prev) => {
       const idx = prev.findIndex((p) => p.id === id)
       if (idx === -1) return prev
       const cur = prev[idx].capacitors
       if (cur >= max) return prev
       const nxt = Math.min(max, cur + step)
-      // also clamp to OP (spentOp = caps + vents)
       const clamped = Math.min(nxt, availableOp - (prev[idx].vents ?? 0))
       if (clamped <= cur) return prev
       const next = [...prev]
@@ -266,7 +264,6 @@ export default function Screen({ children }: { children?: ReactNode }) {
           <Spinner />
         </div>
       )}
-      {/* mobile drawer backdrop */}
       {drawerOpen && (
         <button
           type="button"
@@ -275,7 +272,6 @@ export default function Screen({ children }: { children?: ReactNode }) {
           className="hidden max-sm:block fixed inset-0 z-30 bg-black/50"
         />
       )}
-      {/* mobile drawer toggle - hidden on >=640px */}
       <button
         type="button"
         aria-label={drawerOpen ? "Close fleet drawer" : "Open fleet drawer"}
