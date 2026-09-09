@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useState } from "react"
 import { getMaxCapsVents } from "#/lib/fluxLimits"
 import type { fleetEntry } from "#/types"
-import CommonButton from "../commonBtn"
 import CombatReadinessBar from "./combatReadinessBar"
 import ShipName from "./shipName"
 import StatCluster from "./statCluster"
+import ZoomControls from "./zoomControls"
 
 const MIN_ZOOM = 1
 const MAX_ZOOM_DESKTOP = 2
@@ -46,21 +46,6 @@ export default function ActiveShipPanel({
     setZoom((z) => Math.min(z, maxZoom))
   }, [maxZoom])
 
-  const zoomIn = useCallback(
-    () =>
-      setZoom((z) =>
-        Math.min(maxZoom, Math.round((z + ZOOM_STEP) * 100) / 100)
-      ),
-    [maxZoom]
-  )
-  const zoomOut = useCallback(
-    () =>
-      setZoom((z) =>
-        Math.max(MIN_ZOOM, Math.round((z - ZOOM_STEP) * 100) / 100)
-      ),
-    []
-  )
-  const resetZoom = useCallback(() => setZoom(1), [])
   const handleWheel = useCallback(
     (e: React.WheelEvent) => {
       e.preventDefault()
@@ -155,39 +140,13 @@ export default function ActiveShipPanel({
           customName={activeTile.customName}
           onCustomNameChange={onCustomNameChange}
         />
-        <div className=" w-fit z-10 flex items-center gap-1 bg-black/40 border border-cyan-900 rounded-xs px-1 py-1 backdrop-blur-sm">
-          <CommonButton
-            text="−"
-            cutAllCorners
-            className="px-3 py-0.5 text-sm disabled:opacity-40"
-            onClick={zoomOut}
-            disabled={zoom <= MIN_ZOOM}
-            aria-label="Zoom out"
-            title="Zoom out (scroll down)"
-          />
-          <span className="text-cyan-100 text-xs font-mono w-12 text-center select-none">
-            {Math.round(zoom * 100)}%
-          </span>
-          <CommonButton
-            text="+"
-            cutAllCorners
-            className="px-3 py-0.5 text-sm disabled:opacity-40"
-            onClick={zoomIn}
-            disabled={zoom >= maxZoom}
-            aria-label="Zoom in"
-            title="Zoom in (scroll up)"
-          />
-          <div className="w-px h-6 bg-cyan-900 mx-1" />
-          <CommonButton
-            text="⟲"
-            cutAllCorners
-            className="px-2 py-0.5 text-xs"
-            onClick={resetZoom}
-            disabled={zoom === 1}
-            aria-label="Reset zoom"
-            title="Reset zoom"
-          />
-        </div>
+        <ZoomControls
+          maxZoom={maxZoom}
+          MIN_ZOOM={MIN_ZOOM}
+          ZOOM_STEP={ZOOM_STEP}
+          setZoom={setZoom}
+          zoom={zoom}
+        />
       </div>
     </>
   )
