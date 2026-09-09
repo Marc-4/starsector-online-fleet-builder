@@ -46,7 +46,16 @@ function parseWeapon(raw: string): weapon {
     '$1"$2"'
   )
   try {
-    return JSON.parse(quoted) as weapon
+    const parsed = JSON.parse(quoted) as weapon
+    for (const key of Object.keys(parsed)) {
+      if (key.toLowerCase().includes("sprite") && typeof (parsed as Record<string, unknown>)[key] === "string") {
+        const val = (parsed as Record<string, unknown>)[key] as string
+        if (val.length >= 16) {
+          ;(parsed as Record<string, unknown>)[key] = val.slice(16).replace(/\.png$/i, ".webp")
+        }
+      }
+    }
+    return parsed
   } catch (e) {
     console.error(
       "Failed weapon JSON near:",
