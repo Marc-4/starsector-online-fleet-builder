@@ -1,8 +1,14 @@
+import { useCallback, useState } from "react"
 import { getMaxCapsVents } from "#/lib/fluxLimits"
 import type { fleetEntry } from "#/types"
+import CommonButton from "../commonBtn"
 import CombatReadinessBar from "./combatReadinessBar"
 import ShipName from "./shipName"
 import StatCluster from "./statCluster"
+
+const MIN_ZOOM = 0.25
+const MAX_ZOOM = 2
+const ZOOM_STEP = 0.25
 
 type Props = {
   activeTile: fleetEntry
@@ -21,14 +27,40 @@ export default function ActiveShipPanel({
   onCapacitorsDecrement,
   onVentsIncrement,
   onVentsDecrement,
-  onCustomNameChange,
+  onCustomNameChange
 }: Props) {
+  const [zoom, setZoom] = useState(1)
+
+  const zoomIn = useCallback(
+    () =>
+      setZoom((z) =>
+        Math.min(MAX_ZOOM, Math.round((z + ZOOM_STEP) * 100) / 100)
+      ),
+    []
+  )
+  const zoomOut = useCallback(
+    () =>
+      setZoom((z) =>
+        Math.max(MIN_ZOOM, Math.round((z - ZOOM_STEP) * 100) / 100)
+      ),
+    []
+  )
+  const resetZoom = useCallback(() => setZoom(1), [])
+  const handleWheel = useCallback((e: React.WheelEvent) => {
+    e.preventDefault()
+    const delta = e.deltaY > 0 ? -ZOOM_STEP : ZOOM_STEP
+    setZoom((z) => {
+      const next = Math.round((z + delta) * 100) / 100
+      return Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, next))
+    })
+  }, [])
+
   return (
     <>
-      <div>
+      <div className="max-md:scale-[0.88] max-sm:scale-[0.78] origin-top-left">
         <CombatReadinessBar cr={activeTile.cr} onChange={onCrChange} />
       </div>
-      <div className="absolute right-1 top-1">
+      <div className="z-10 absolute right-1 top-1 max-md:right-0.5 max-md:top-0.5 max-md:scale-[0.88] max-sm:scale-[0.75] origin-top-right">
         <StatCluster
           spentOp={activeTile.capacitors + activeTile.vents}
           availableOp={activeTile.ship.stats["ordnance points"]}
@@ -48,12 +80,85 @@ export default function ActiveShipPanel({
           onVentsDecrement={onVentsDecrement}
         />
       </div>
-      <div className="absolute left-1 bottom-1">
+      <div
+        className="absolute left-1/2 -translate-x-1/2 top-[55%] max-md:top-[52%] -translate-y-1/2 flex items-center justify-center pointer-events-auto w-[72vw] h-[28vh] sm:w-[420px] sm:h-[280px] md:w-[520px] md:h-[340px] lg:w-130 lg:h-90 max-w-[90vw] max-h-[42vh] sm:max-h-[52vh] touch-manipulation"
+        onWheel={handleWheel}
+        onTouchStart={(e) => {
+          // pinch-to-zoom baseline for mobile
+          if (e.touches.length === 2) {
+            const dx = e.touches[0].clientX - e.touches[1].clientX
+            const dy = e.touches[0].clientY - e.touches[1].clientY
+            ;(e.currentTarget as HTMLDivElement).dataset.pinchDist = String(Math.hypot(dx, dy))
+          }
+        }}
+        onTouchMove={(e) => {
+          if (e.touches.length === 2) {
+            e.preventDefault()
+            const dx = e.touches[0].clientX - e.touches[1].clientX
+            const dy = e.touches[0].clientY - e.touches[1].clientY
+            const cur = Math.hypot(dx, dy)
+            const prev = Number((e.currentTarget as HTMLDivElement).dataset.pinchDist || cur)
+            const delta = (cur - prev) / 200
+            if (Math.abs(delta) > 0.02) {
+              setZoom((z) => Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, Math.round((z + delta) * 100) / 100)))
+              ;(e.currentTarget as HTMLDivElement).dataset.pinchDist = String(cur)
+            }
+          }
+        }}
+        title="Scroll or pinch to zoom"
+      >
+        <img
+          src={`ships/${activeTile.ship.meta.spriteName}`}
+          alt="ship sprite"
+          className="w-full h-full object-contain select-none [image-rendering:pixelated]"
+          style={{
+            imageRendering: "pixelated",
+            transform: `scale(${zoom})`,
+            transformOrigin: "center center"
+          }}
+          draggable={false}
+        />
+      </div>
+
+      <div className="z-10 absolute left-1 bottom-1 gap-2 sm:gap-4 flex flex-col max-md:bottom-0.5 max-md:left-0.5 max-md:scale-[0.90] max-sm:scale-[0.80] origin-bottom-left">
         <ShipName
           hullName={activeTile.ship.meta.hullName}
           customName={activeTile.customName}
           onCustomNameChange={onCustomNameChange}
         />
+        <div className=" w-fit z-10 flex items-center gap-1 bg-black/40 border border-cyan-900 rounded-xs px-1 py-1 backdrop-blur-sm">
+          <CommonButton
+            text="−"
+            cutAllCorners
+            className="px-3 py-0.5 text-sm disabled:opacity-40"
+            onClick={zoomOut}
+            disabled={zoom <= MIN_ZOOM}
+            aria-label="Zoom out"
+            title="Zoom out (scroll down)"
+          />
+          <span className="text-cyan-100 text-xs font-mono w-12 text-center select-none">
+            {Math.round(zoom * 100)}%
+          </span>
+          <CommonButton
+            text="+"
+            cutAllCorners
+            className="px-3 py-0.5 text-sm disabled:opacity-40"
+            onClick={zoomIn}
+            disabled={zoom >= MAX_ZOOM}
+            aria-label="Zoom in"
+            title="Zoom in (scroll up)"
+          />
+          <div className="w-px h-6 bg-cyan-900 mx-1" />
+          <CommonButton
+            text="⟲"
+            cutAllCorners
+            className="px-2 py-0.5 text-xs"
+            onClick={resetZoom}
+            disabled={zoom === 1}
+            aria-label="Reset zoom"
+            title="Reset zoom"
+          />
+        </div>
       </div>
     </>
   )
