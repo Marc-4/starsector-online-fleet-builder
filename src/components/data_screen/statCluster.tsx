@@ -18,7 +18,7 @@ export default function StatCluster({
   onCapacitorsIncrement,
   onCapacitorsDecrement,
   onVentsIncrement,
-  onVentsDecrement,
+  onVentsDecrement
 }: {
   spentOp?: number
   availableOp?: number
@@ -83,7 +83,7 @@ export default function StatCluster({
           clearHold()
         },
         onPointerLeave: clearHold,
-        onPointerCancel: clearHold,
+        onPointerCancel: clearHold
       } as const
     },
     [clearHold]
@@ -96,12 +96,10 @@ export default function StatCluster({
 
   useEffect(() => () => clearHold(), [clearHold])
 
-
   return (
     <div className="flex flex-col w-fit m-1 ml-2 max-sm:m-0.5">
-      <div
+      <fieldset
         className="relative flex self-end items-center justify-center w-[300px] sm:w-96 h-7 sm:h-8 bg-gray-950 border border-gray-950 rounded-xs overflow-hidden"
-        role="group"
         aria-label={`Ordnance Points ${spentOp} of ${availableOp ?? "N/A"}`}
       >
         <div
@@ -126,7 +124,7 @@ export default function StatCluster({
         <p className="relative z-10 mx-auto ss-amber-lg pointer-events-none">
           {availableOp ? `${spentOp} / ${availableOp}` : "N/A"}
         </p>
-      </div>
+      </fieldset>
       <div className="flex gap-4 sm:gap-12 self-end max-sm:gap-3">
         <div className="ss-label-col">
           <p className="ss-label-text max-sm:text-xs">TOP SPEED</p>
@@ -153,13 +151,18 @@ export default function StatCluster({
               disabled={capacitors <= 0}
               {...capsDecHold}
             />
-            <p className="ss-amber min-w-5 sm:min-w-6 text-center text-sm sm:text-base">{capacitors}</p>
+            <p className="ss-amber min-w-5 sm:min-w-6 text-center text-sm sm:text-base">
+              {capacitors}
+            </p>
             <CommonButton
               className="px-2 sm:px-3 py-0.5 disabled:opacity-50 disabled:brightness-50 disabled:cursor-not-allowed select-none touch-manipulation text-sm sm:text-base"
               text="+"
               cutAllCorners
               onClick={onCapacitorsIncrement}
-              disabled={capacitors >= maxCapacitors || (availableOp !== undefined && spentOp >= availableOp)}
+              disabled={
+                capacitors >= maxCapacitors ||
+                (availableOp !== undefined && spentOp >= availableOp)
+              }
               title={
                 capacitors >= maxCapacitors
                   ? `Max ${maxCapacitors}`
@@ -180,13 +183,18 @@ export default function StatCluster({
               disabled={vents <= 0}
               {...ventsDecHold}
             />
-            <p className="ss-amber min-w-5 sm:min-w-6 text-center text-sm sm:text-base">{vents}</p>
+            <p className="ss-amber min-w-5 sm:min-w-6 text-center text-sm sm:text-base">
+              {vents}
+            </p>
             <CommonButton
               className="px-2 sm:px-3 py-0.5 disabled:opacity-50 disabled:brightness-50 disabled:cursor-not-allowed select-none touch-manipulation text-sm sm:text-base"
               text="+"
               cutAllCorners
               onClick={onVentsIncrement}
-              disabled={vents >= maxVents || (availableOp !== undefined && spentOp >= availableOp)}
+              disabled={
+                vents >= maxVents ||
+                (availableOp !== undefined && spentOp >= availableOp)
+              }
               title={
                 vents >= maxVents
                   ? `Max ${maxVents}`
@@ -201,19 +209,27 @@ export default function StatCluster({
         <div className="flex flex-col gap-0 items-end ml-auto max-sm:text-xs">
           <div className="flex flex-col">
             <p className="ss-label-text max-sm:text-[11px]">FLUX CAPACITY</p>
-            <p className="self-end text-sm sm:text-base">{fluxCapacity ?? "N/A"}</p>
+            <p className="self-end text-sm sm:text-base">
+              {fluxCapacity ?? "N/A"}
+            </p>
           </div>
           <div className="flex flex-col">
             <p className="ss-label-text max-sm:text-[11px]">FLUX DISSPATION</p>
-            <p className="self-end text-sm sm:text-base">{fluxDissipation ?? "N/A"}</p>
+            <p className="self-end text-sm sm:text-base">
+              {fluxDissipation ?? "N/A"}
+            </p>
           </div>
           <div className="flex flex-col">
             <p className="ss-label-text max-sm:text-[11px]">SHIELD FLUX/DAM</p>
-            <p className="self-end text-sm sm:text-base">{shieldEfficiency ?? "N/A"}</p>
+            <p className="self-end text-sm sm:text-base">
+              {shieldEfficiency ?? "N/A"}
+            </p>
           </div>
           <div className="flex flex-col">
             <p className="ss-label-text max-sm:text-[11px]">WEAPON FLUX/SEC</p>
-            <p className="self-end text-sm sm:text-base">{weaponFluxPerSecond ?? "N/A"}</p>
+            <p className="self-end text-sm sm:text-base">
+              {weaponFluxPerSecond ?? "N/A"}
+            </p>
           </div>
         </div>
       </div>
