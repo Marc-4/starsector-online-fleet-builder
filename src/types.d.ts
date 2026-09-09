@@ -152,3 +152,22 @@ export type weaponType =
   | "COMPOSITE"
   | "UNIVERSAL"
 
+export type shipSlots = {
+  engineSlots?: {
+    angle: number
+    contrailSize: number
+    length: number
+    location: [number, number]
+    style: string
+    width: number
+  }[]
+  weaponSlots?: {
+    angle: number
+    arc: number
+    id: string
+    locations: [number, number]
+    mount: weaponMount
+    size: weaponSize
+    type: weaponType
+    }[]
+}
