@@ -7,6 +7,8 @@ import ShipName from "./shipName"
 import StatCluster from "./statCluster"
 import ZoomControls from "./zoomControls"
 import FighterBay from "./fighterBay"
+import WeaponSelectionModal from "../weaponSelectionModal"
+import type { weaponSlot } from "#/types"
 
 const MIN_ZOOM = 1
 const MAX_ZOOM_DESKTOP = 2
@@ -34,6 +36,7 @@ export default function ActiveShipPanel({
 }: Props) {
   const [zoom, setZoom] = useState(1)
   const [isMobile, setIsMobile] = useState(false)
+  const [selectedSlot, setSelectedSlot] = useState<weaponSlot | null>(null)
   const maxZoom = isMobile ? MAX_ZOOM_MOBILE : MAX_ZOOM_DESKTOP
 
   useEffect(() => {
@@ -131,8 +134,11 @@ export default function ActiveShipPanel({
         }}
         title="Scroll to zoom"
       >
-        <ShipDisplay ship={activeTile.ship.meta} zoom={zoom} />
+        <ShipDisplay ship={activeTile.ship.meta} zoom={zoom} onSlotClick={setSelectedSlot} />
       </div>
+      {selectedSlot && (
+        <WeaponSelectionModal slot={selectedSlot} onClose={() => setSelectedSlot(null)} />
+      )}
 
       <div className="z-10 absolute left-1 bottom-1 gap-2 flex flex-col max-md:bottom-0.5 max-md:left-0.5 max-md:scale-[0.90] max-sm:scale-[0.80] origin-bottom-left">
         <ShipName
