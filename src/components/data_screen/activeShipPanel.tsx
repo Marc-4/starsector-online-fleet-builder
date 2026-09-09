@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react"
 import { getMaxCapsVents } from "#/lib/fluxLimits"
 import type { fleetEntry } from "#/types"
 import CombatReadinessBar from "./combatReadinessBar"
+import ShipDisplay from "./shipDisplay"
 import ShipName from "./shipName"
 import StatCluster from "./statCluster"
 import ZoomControls from "./zoomControls"
@@ -121,17 +122,7 @@ export default function ActiveShipPanel({
         }}
         title="Scroll to zoom"
       >
-        <img
-          src={`ships/${activeTile.ship.meta.spriteName}`}
-          alt="ship sprite"
-          className="w-fit h-fit transition-all duration-200 ease-in object-contain select-none"
-          style={{
-            imageRendering: "smooth",
-            transform: `scale(${zoom})`,
-            transformOrigin: "center center"
-          }}
-          draggable={false}
-        />
+        <ShipDisplay ship={activeTile.ship.meta} zoom={zoom} />
       </div>
 
       <div className="z-10 absolute left-1 bottom-1 gap-2 flex flex-col max-md:bottom-0.5 max-md:left-0.5 max-md:scale-[0.90] max-sm:scale-[0.80] origin-bottom-left">
