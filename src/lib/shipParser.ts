@@ -188,3 +188,17 @@ export async function getAllShipSkins(): Promise<shipSkin[]> {
     )
   return fulfilled
 }
+
+// export function getShipSlots({
+//   hullId,
+//   allShips
+// }: {
+//   hullId: string
+//   allShips: ship[]
+// }): shipSlots {
+//   const ship = allShips.filter((s) => s.hullId === hullId)[0]
+//   var slots: shipSlots = {}
+//   slots.weaponSlots = ship.weaponSlots ?? undefined
+//   slots.engineSlots = ship.engineSlots ?? undefined
+//   return slots
+// }
