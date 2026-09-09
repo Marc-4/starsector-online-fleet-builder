@@ -144,7 +144,7 @@ export default function StatCluster({
           <div className="flex gap-2 sm:gap-3 items-center self-end">
             <p className="text-sm sm:text-base">Capacitors</p>
             <CommonButton
-              className="px-2 sm:px-3 py-0.5 disabled:opacity-50 disabled:brightness-50 disabled:cursor-not-allowed select-none touch-manipulation text-sm sm:text-base"
+              className="px-2 sm:px-3 py-0.5 disabled:brightness-60 disabled:cursor-not-allowed select-none touch-manipulation text-sm sm:text-base"
               text="-"
               cutAllCorners
               onClick={onCapacitorsDecrement}
@@ -155,7 +155,7 @@ export default function StatCluster({
               {capacitors}
             </p>
             <CommonButton
-              className="px-2 sm:px-3 py-0.5 disabled:opacity-50 disabled:brightness-50 disabled:cursor-not-allowed select-none touch-manipulation text-sm sm:text-base"
+              className="px-2 sm:px-3 py-0.5 disabled:brightness-60 disabled:cursor-not-allowed select-none touch-manipulation text-sm sm:text-base"
               text="+"
               cutAllCorners
               onClick={onCapacitorsIncrement}
@@ -176,7 +176,7 @@ export default function StatCluster({
           <div className="flex gap-2 sm:gap-3 items-center self-end">
             <p className="text-sm sm:text-base">Vents</p>
             <CommonButton
-              className="px-2 sm:px-3 py-0.5 disabled:opacity-50 disabled:brightness-50 disabled:cursor-not-allowed select-none touch-manipulation text-sm sm:text-base"
+              className="px-2 sm:px-3 py-0.5 disabled:brightness-60 disabled:cursor-not-allowed select-none touch-manipulation text-sm sm:text-base"
               text="-"
               cutAllCorners
               onClick={onVentsDecrement}
@@ -187,7 +187,7 @@ export default function StatCluster({
               {vents}
             </p>
             <CommonButton
-              className="px-2 sm:px-3 py-0.5 disabled:opacity-50 disabled:brightness-50 disabled:cursor-not-allowed select-none touch-manipulation text-sm sm:text-base"
+              className="px-2 sm:px-3 py-0.5 disabled:brightness-60 disabled:cursor-not-allowed select-none touch-manipulation text-sm sm:text-base"
               text="+"
               cutAllCorners
               onClick={onVentsIncrement}
