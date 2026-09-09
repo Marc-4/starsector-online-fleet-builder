@@ -29,6 +29,7 @@ export default function Screen({ children }: { children?: ReactNode }) {
   const ready = bgImage && grid
   const [fleet, setFleet] = useState<fleetEntry[]>([])
   const [activeTile, setActiveTile] = useState<fleetEntry>()
+  const [drawerOpen, setDrawerOpen] = useState(false)
   const totalFleetDP = useMemo(
     () =>
       fleet.reduce((sum, fe) => sum + (fe.ship.stats["supplies/mo"] ?? 0), 0),
@@ -101,6 +102,7 @@ export default function Screen({ children }: { children?: ReactNode }) {
   const onTileClick = (entry: fleetEntry) => {
     if (activeTile?.id === entry.id) setActiveTile(undefined)
     else setActiveTile(entry)
+    if (window.matchMedia("(max-width: 640px)").matches) setDrawerOpen(false)
   }
 
   const updateEntry = (id: string, patch: Partial<Pick<fleetEntry, "capacitors" | "vents" | "cr" | "customName">>) => {
@@ -264,8 +266,32 @@ export default function Screen({ children }: { children?: ReactNode }) {
           <Spinner />
         </div>
       )}
-      <div className="flex flex-col w-[15%] max-2xl:w-[17%] max-xl:w-[19%] max-lg:w-[21%] max-md:w-[23%] max-sm:w-[25%] bg-gray-950 h-screen overflow-y-scroll">
-        <div className="sticky top-0 z-100 bg-gray-950 text-amber-300 flex items-center justify-center gap-4 max-md:gap-2">
+      {/* mobile drawer backdrop */}
+      {drawerOpen && (
+        <button
+          type="button"
+          aria-label="Close fleet drawer"
+          onClick={() => setDrawerOpen(false)}
+          className="hidden max-sm:block fixed inset-0 z-30 bg-black/50"
+        />
+      )}
+      {/* mobile drawer toggle - hidden on >=640px */}
+      <button
+        type="button"
+        aria-label={drawerOpen ? "Close fleet drawer" : "Open fleet drawer"}
+        aria-expanded={drawerOpen}
+        onClick={() => setDrawerOpen((v) => !v)}
+        className="hidden max-sm:flex fixed top-2 left-2 z-50 h-9 w-9 items-center justify-center rounded-xs bg-gray-900 border border-cyan-900 text-cyan-100 shadow-lg"
+      >
+        <span className="text-lg leading-none">{drawerOpen ? "✕" : "☰"}</span>
+      </button>
+      <div
+        className={`flex flex-col bg-gray-950 h-screen overflow-y-scroll
+          w-[15%] max-2xl:w-[17%] max-xl:w-[19%] max-lg:w-[21%] max-md:w-[23%]
+          max-sm:fixed max-sm:inset-y-0 max-sm:left-0 max-sm:z-40 max-sm:w-[78%] max-sm:max-w-[320px] max-sm:shadow-2xl max-sm:transition-transform max-sm:duration-200 max-sm:ease-out
+          ${drawerOpen ? "max-sm:translate-x-0" : "max-sm:-translate-x-full"}`}
+      >
+        <div className="sticky top-0 z-100 bg-gray-950 text-amber-300 flex items-center justify-center gap-4 max-md:gap-2 max-sm:pl-10">
           {(() => {
             const totalShips = fleet.length
             return (
