@@ -7,8 +7,8 @@ import ShipName from "./shipName"
 import StatCluster from "./statCluster"
 
 const MIN_ZOOM = 0.25
-const MAX_ZOOM_DESKTOP = 2
-const MAX_ZOOM_MOBILE = 1
+const MAX_ZOOM_DESKTOP = 2.5
+const MAX_ZOOM_MOBILE = 1.25
 const ZOOM_STEP = 0.25
 
 type Props = {
@@ -35,7 +35,7 @@ export default function ActiveShipPanel({
   const maxZoom = isMobile ? MAX_ZOOM_MOBILE : MAX_ZOOM_DESKTOP
 
   useEffect(() => {
-    const mq = window.matchMedia("(max-width: 640px)")
+    const mq = window.matchMedia("(max-width: 1200px)")
     const onChange = () => setIsMobile(mq.matches)
     onChange()
     mq.addEventListener("change", onChange)
@@ -47,11 +47,17 @@ export default function ActiveShipPanel({
   }, [maxZoom])
 
   const zoomIn = useCallback(
-    () => setZoom((z) => Math.min(maxZoom, Math.round((z + ZOOM_STEP) * 100) / 100)),
+    () =>
+      setZoom((z) =>
+        Math.min(maxZoom, Math.round((z + ZOOM_STEP) * 100) / 100)
+      ),
     [maxZoom]
   )
   const zoomOut = useCallback(
-    () => setZoom((z) => Math.max(MIN_ZOOM, Math.round((z - ZOOM_STEP) * 100) / 100)),
+    () =>
+      setZoom((z) =>
+        Math.max(MIN_ZOOM, Math.round((z - ZOOM_STEP) * 100) / 100)
+      ),
     []
   )
   const resetZoom = useCallback(() => setZoom(1), [])
@@ -75,23 +81,23 @@ export default function ActiveShipPanel({
         </div>
         <div className="pointer-events-auto lg:ml-auto max-lg:self-end origin-top-right">
           <StatCluster
-          spentOp={activeTile.capacitors + activeTile.vents}
-          availableOp={activeTile.ship.stats["ordnance points"]}
-          topSpeed={activeTile.ship.stats["max speed"]}
-          armor={activeTile.ship.stats["armor rating"]}
-          hull={activeTile.ship.stats.hitpoints}
-          capacitors={activeTile.capacitors}
-          maxCapacitors={getMaxCapsVents(activeTile.ship.meta.hullSize)}
-          vents={activeTile.vents}
-          maxVents={getMaxCapsVents(activeTile.ship.meta.hullSize)}
-          fluxCapacity={activeTile.ship.stats["max flux"]}
-          fluxDissipation={activeTile.ship.stats["flux dissipation"]}
-          shieldEfficiency={activeTile.ship.stats["shield efficiency"]}
-          onCapacitorsIncrement={onCapacitorsIncrement}
-          onCapacitorsDecrement={onCapacitorsDecrement}
-          onVentsIncrement={onVentsIncrement}
-          onVentsDecrement={onVentsDecrement}
-        />
+            spentOp={activeTile.capacitors + activeTile.vents}
+            availableOp={activeTile.ship.stats["ordnance points"]}
+            topSpeed={activeTile.ship.stats["max speed"]}
+            armor={activeTile.ship.stats["armor rating"]}
+            hull={activeTile.ship.stats.hitpoints}
+            capacitors={activeTile.capacitors}
+            maxCapacitors={getMaxCapsVents(activeTile.ship.meta.hullSize)}
+            vents={activeTile.vents}
+            maxVents={getMaxCapsVents(activeTile.ship.meta.hullSize)}
+            fluxCapacity={activeTile.ship.stats["max flux"]}
+            fluxDissipation={activeTile.ship.stats["flux dissipation"]}
+            shieldEfficiency={activeTile.ship.stats["shield efficiency"]}
+            onCapacitorsIncrement={onCapacitorsIncrement}
+            onCapacitorsDecrement={onCapacitorsDecrement}
+            onVentsIncrement={onVentsIncrement}
+            onVentsDecrement={onVentsDecrement}
+          />
         </div>
       </div>
       <div
@@ -101,7 +107,9 @@ export default function ActiveShipPanel({
           if (e.touches.length === 2) {
             const dx = e.touches[0].clientX - e.touches[1].clientX
             const dy = e.touches[0].clientY - e.touches[1].clientY
-            ;(e.currentTarget as HTMLDivElement).dataset.pinchDist = String(Math.hypot(dx, dy))
+            ;(e.currentTarget as HTMLDivElement).dataset.pinchDist = String(
+              Math.hypot(dx, dy)
+            )
           }
         }}
         onTouchMove={(e) => {
@@ -110,11 +118,19 @@ export default function ActiveShipPanel({
             const dx = e.touches[0].clientX - e.touches[1].clientX
             const dy = e.touches[0].clientY - e.touches[1].clientY
             const cur = Math.hypot(dx, dy)
-            const prev = Number((e.currentTarget as HTMLDivElement).dataset.pinchDist || cur)
+            const prev = Number(
+              (e.currentTarget as HTMLDivElement).dataset.pinchDist || cur
+            )
             const delta = (cur - prev) / 200
             if (Math.abs(delta) > 0.02) {
-              setZoom((z) => Math.min(maxZoom, Math.max(MIN_ZOOM, Math.round((z + delta) * 100) / 100)))
-              ;(e.currentTarget as HTMLDivElement).dataset.pinchDist = String(cur)
+              setZoom((z) =>
+                Math.min(
+                  maxZoom,
+                  Math.max(MIN_ZOOM, Math.round((z + delta) * 100) / 100)
+                )
+              )
+              ;(e.currentTarget as HTMLDivElement).dataset.pinchDist =
+                String(cur)
             }
           }
         }}
@@ -123,9 +139,9 @@ export default function ActiveShipPanel({
         <img
           src={`ships/${activeTile.ship.meta.spriteName}`}
           alt="ship sprite"
-          className="w-full h-full object-contain select-none [image-rendering:pixelated]"
+          className="w-fit h-fit transition-all duration-200 ease-in object-contain select-none"
           style={{
-            imageRendering: "pixelated",
+            imageRendering: "smooth",
             transform: `scale(${zoom})`,
             transformOrigin: "center center"
           }}
