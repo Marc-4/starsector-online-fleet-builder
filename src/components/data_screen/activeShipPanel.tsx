@@ -6,6 +6,7 @@ import ShipDisplay from "./shipDisplay"
 import ShipName from "./shipName"
 import StatCluster from "./statCluster"
 import ZoomControls from "./zoomControls"
+import FighterBay from "./fighterBay"
 
 const MIN_ZOOM = 1
 const MAX_ZOOM_DESKTOP = 2
@@ -85,6 +86,14 @@ export default function ActiveShipPanel({
             onVentsDecrement={onVentsDecrement}
           />
         </div>
+      </div>
+      <div className="flex flex-col gap-1 absolute left-2 top-[25%] w-fit h-fit">
+        {Array.from(
+          { length: activeTile.ship.stats["fighter bays"] },
+          (_, i) => i + 1
+        ).map((fb) => (
+          <FighterBay key={fb} />
+        ))}
       </div>
       <div
         className="absolute left-1/2 -translate-x-1/2 top-[60%] lg:top-[50%] -translate-y-1/2 flex items-center justify-center pointer-events-auto w-[72vw] h-[28vh] sm:w-[420px] sm:h-[280px] md:w-[520px] md:h-[340px] lg:w-130 lg:h-90 max-w-[90vw] max-h-[42vh] sm:max-h-[52vh] touch-manipulation"
