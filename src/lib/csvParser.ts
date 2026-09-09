@@ -1,6 +1,7 @@
 import Parser from "papaparse"
-import type { ship, shipStats } from "#/types"
+import type { ship, shipStats, weapon, weaponStats } from "#/types"
 import shipDataCSV from "../shipData/ship_data.csv?raw"
+import weaponDataCSV from "../weaponData/weapon_data.csv?raw"
 import { getAllShipSkins } from "./shipParser"
 
 export async function getAllShipStats(): Promise<shipStats[]> {
@@ -55,4 +56,57 @@ export function getShipStats({
     ship.hullId
   const stats = shipStats.find((s) => s.id === id) ?? null
   return stats
+}
+
+export function getAllWeaponStats(): weaponStats[] {
+  const data = Parser.parse(weaponDataCSV, {
+    header: true,
+    skipEmptyLines: true,
+    dynamicTyping: true
+  }).data as weaponStats[]
+  // filter empty rows (name/id empty)
+  return data.filter((w) => w.id && String(w.id).trim() !== "")
+}
+
+export function getWeaponStats({
+  weapon,
+  weaponStats
+}: {
+  weapon: weapon
+  weaponStats: weaponStats[]
+}): weaponStats | null {
+  const stats = weaponStats.find((s) => s.id === weapon.id) ?? null
+  return stats
+}
+
+export function isWeaponSelectable(stats: weaponStats | null): boolean {
+  if (!stats) return false
+  const hints = (stats.hints || "").toUpperCase()
+  const tags = (stats.tags || "").toLowerCase()
+  const groupTag = (stats.groupTag || "").trim()
+  // System / fighter / bomb bay weapons
+  if (hints.includes("SYSTEM")) return false
+  // Explicitly not sold / not droppable (built-in hull weapons like bomb, heavy_adjudicator variants)
+  if (
+    tags.includes("no_sell") ||
+    // tags.includes("no_drop") ||
+    tags.includes("no_drop_salvage")
+    // tags.includes("no_dealer") ||
+    // tags.includes("no_standard_data")
+  )
+    return false
+  // Hull-restricted weapons (H_A_only, TPC_only, pusherplate, Lion's Guard etc.)
+  if (groupTag !== "") return false
+  // Must have OP cost to be mountable
+  if (stats.OPs == null || String(stats.OPs).trim() === "") return false
+  return true
+}
+
+// Tags like threat/omega/dweller are selectable but hidden by default via UI toggle, not hard-filtered
+export const SPECIAL_WEAPON_TAGS = ["threat", "omega", "dweller", "fragment"] as const
+
+export function getWeaponSpecialTags(stats: weaponStats | null): string[] {
+  if (!stats) return []
+  const tags = (stats.tags || "").toLowerCase()
+  return SPECIAL_WEAPON_TAGS.filter((t) => tags.includes(t))
 }
