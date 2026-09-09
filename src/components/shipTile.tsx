@@ -32,6 +32,7 @@ export default function ShipTile({
       className={`group ss-ship-card w-52 h-52 ${selectedShips.includes(ship) ? "bg-cyan-400/30" : "hover:bg-cyan-200/20"}`}
     >
       <img
+        draggable={false}
         src={`/ships${ship.spriteName}`}
         alt="ship sprite"
         className="ss-ship-img group-hover:brightness-100"

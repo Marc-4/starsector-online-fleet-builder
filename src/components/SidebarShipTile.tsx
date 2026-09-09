@@ -19,6 +19,7 @@ export default function SidebarShipTile({
       className={`group ss-ship-card w-full aspect-square ${active ? "bg-cyan-300/30" : "hover:bg-cyan-200/20"}`}
     >
       <img
+        draggable={false}
         src={`/ships${entry.ship.meta.spriteName}`}
         alt="ship sprite"
         className="ss-ship-img group-hover:brightness-100"
