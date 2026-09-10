@@ -6,28 +6,41 @@ type Props = {
   weapon: weapon
   allWeaponStats: weaponStats[]
   onSelect?: (weapon: weapon) => void
+  onRemove?: (weapon: weapon) => void
+  mounted?: boolean
+  onClose: () => void
 }
 
 export default function WeaponTile({
   weapon: w,
   allWeaponStats,
-  onSelect
+  onSelect,
+  onRemove,
+  onClose,
+  mounted
 }: Props) {
   const stats = getWeaponStats({ weapon: w, weaponStats: allWeaponStats })
   const manufacturer = (stats?.["tech/manufacturer"] || "Common")
     .toString()
     .trim()
 
-  // Static mount preview rendered by BuildSprite (see weaponSpriteAnalysis.md
-  // §§1-2: layered under/base/gun + loaded missiles at offsets, all at
-  // natural PNG size). Beams: base only. Rotary (numFrames): first frame.
-  // Missiles with RENDER_LOADED_MISSILES: base + missile sprites at offsets.
-
   return (
     <button
       type="button"
-      onClick={() => onSelect?.(w)}
-      className="w-full min-h-14 cursor-pointer flex items-center gap-3 px-3 py-2 border border-cyan-800 bg-gray-950/40 hover:bg-cyan-900/40 hover:border-cyan-600 text-left pointer-events-auto shrink-0"
+      onClick={() => {
+        if (mounted) {
+          onRemove?.(w)
+        } else {
+          onSelect?.(w)
+        }
+        onClose()
+      }}
+      title={
+        mounted
+          ? "Mounted — click to unmount"
+          : "Click to mount"
+      }
+      className={`w-full min-h-14 cursor-pointer flex items-center gap-3 px-3 py-2 border bg-gray-950/40 hover:bg-cyan-900/40 hover:border-cyan-600 text-left pointer-events-auto shrink-0 ${mounted ? "border-amber-300" : "border-cyan-800"}`}
     >
       <div className="relative w-20 h-20 shrink-0 flex items-center justify-center overflow-hidden">
         <BuildSprite weapon={w} naturalSize />
