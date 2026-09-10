@@ -4,6 +4,7 @@ import { getMaxCapsVents } from "#/lib/fluxLimits"
 import { canMountWeapon } from "#/lib/weaponCompat"
 import { getWeapon } from "#/lib/weaponParser"
 import type { fleetEntry, weapon, weaponSlot } from "#/types"
+import CommonButton from "../commonBtn"
 import WeaponSelectionModal from "../modals/weaponSelectionModal"
 import CombatReadinessBar from "./combatReadinessBar"
 import FighterBay from "./fighterBay"
@@ -11,12 +12,11 @@ import ShipDisplay from "./shipDisplay"
 import ShipName from "./shipName"
 import StatCluster from "./statCluster"
 import ZoomControls from "./zoomControls"
-import CommonButton from "../commonBtn"
 
 const MIN_ZOOM = 1
 const MAX_ZOOM_DESKTOP = 2
 const MAX_ZOOM_MOBILE = 1.5
-const ZOOM_STEP = 0.25
+const ZOOM_STEP = 0.1
 
 type Props = {
   activeTile: fleetEntry
