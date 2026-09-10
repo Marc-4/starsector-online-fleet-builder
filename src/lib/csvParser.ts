@@ -83,7 +83,6 @@ export function isWeaponSelectable(stats: weaponStats | null): boolean {
   if (!stats) return false
   const hints = (stats.hints || "").toUpperCase()
   const tags = (stats.tags || "").toLowerCase()
-  const groupTag = (stats.groupTag || "").trim()
   // System / fighter / bomb bay weapons
   if (hints.includes("SYSTEM")) return false
   // Explicitly not sold / not droppable (built-in hull weapons like bomb, heavy_adjudicator variants)
@@ -95,9 +94,10 @@ export function isWeaponSelectable(stats: weaponStats | null): boolean {
     // tags.includes("no_standard_data")
   )
     return false
-  // Hull-restricted weapons (H_A_only, TPC_only, pusherplate, Lion's Guard etc.)
-  if (groupTag !== "") return false
-  // Must have OP cost to be mountable
+  // NOTE: groupTag no longer filtered. Only 3 weapons use it
+  // (amblaster, tpc, heavy_adjudicator), nothing hull-side
+  // references those values, and filtering it hides the AM Blaster from every slot.
+  // The SYSTEM / no-sell rules above still catch the tpc and heavy_adjudicator.
   if (stats.OPs == null || String(stats.OPs).trim() === "") return false
   return true
 }
