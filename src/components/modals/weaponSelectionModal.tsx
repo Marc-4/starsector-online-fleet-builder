@@ -6,39 +6,17 @@ import {
   isWeaponSelectable,
   SPECIAL_WEAPON_TAGS
 } from "#/lib/csvParser"
+import {
+  canFitWeaponMount,
+  isWeaponSizeCompatible
+} from "#/lib/weaponCompat"
 import { getAllWeapons } from "#/lib/weaponParser"
 import type { weapon, weaponSlot, weaponStats } from "#/types"
 import CommonButton from "../commonBtn"
 import WeaponFilters from "../weaponFilters"
 import WeaponTile from "../weaponTile"
 
-function canFit(
-  slotType: weaponSlot["type"],
-  weaponType: weapon["type"]
-): boolean {
-  if (slotType === "UNIVERSAL") return true
-  if (slotType === weaponType) return true
-  if (
-    slotType === "HYBRID" &&
-    (weaponType === "BALLISTIC" || weaponType === "ENERGY")
-  )
-    return true
-  if (
-    slotType === "COMPOSITE" &&
-    (weaponType === "BALLISTIC" || weaponType === "MISSILE")
-  )
-    return true
-  if (
-    slotType === "SYNERGY" &&
-    (weaponType === "ENERGY" || weaponType === "MISSILE")
-  )
-    return true
-
-  if (weaponType === "UNIVERSAL") return true
-  return false
-}
-
-export default function WeaponSelectionModal({ slot, onClose }: {slot: weaponSlot, onClose: () => void}) {
+export default function WeaponSelectionModal({ slot, onClose, onSelect, onRemoveWeapon, mountedWeaponIds }: {slot: weaponSlot, onClose: () => void, onSelect?: (weapon: weapon) => void, onRemoveWeapon?: (weapon: weapon) => void, mountedWeaponIds?: Record<string, string>}) {
   const [allWeapons, setAllWeapons] = useState<weapon[]>([])
   const [allWeaponStats, setAllWeaponStats] = useState<weaponStats[]>([])
   const [searchString, setSearchString] = useState("")
@@ -55,31 +33,14 @@ export default function WeaponSelectionModal({ slot, onClose }: {slot: weaponSlo
     LARGE: 2
   }
 
-  const isSizeCompatible = (
-    slotSize: weaponSlot["size"],
-    weaponSize: weapon["size"],
-    slotType: weaponSlot["type"],
-    weaponType: weapon["type"]
-  ) => {
-    if (weaponSize === slotSize) return true
-    // medium/large can take one size smaller, but only if same type as mount
-    if (
-      sizeOrder[weaponSize] === sizeOrder[slotSize] - 1 &&
-      weaponType === slotType
-    )
-      return true
-    return false
-  }
-
   const toggle = (list: string[], set: (v: string[]) => void, val: string) => {
     set(list.includes(val) ? list.filter((x) => x !== val) : [...list, val])
   }
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: isSizeCompatible changes every render
   const slotCompatibleWeapons = useMemo(() => {
     return allWeapons.filter((w) => {
-      if (!isSizeCompatible(slot.size, w.size, slot.type, w.type)) return false
-      if (!canFit(slot.type, w.type)) return false
+      if (!isWeaponSizeCompatible(slot.size, w.size, slot.type, w.type)) return false
+      if (!canFitWeaponMount(slot.type, w.type)) return false
       const stats = getWeaponStats({ weapon: w, weaponStats: allWeaponStats })
       if (!isWeaponSelectable(stats)) return false
       return true
@@ -145,13 +106,18 @@ export default function WeaponSelectionModal({ slot, onClose }: {slot: weaponSlo
     return relevantMountTypes.filter((t) => (counts.get(t) ?? 0) > 0)
   }, [slotCompatibleWeapons, relevantMountTypes])
 
+  const mountedIds = useMemo(
+    () => new Set(Object.values(mountedWeaponIds ?? {})),
+    [mountedWeaponIds]
+  )
+
   // biome-ignore lint: isSizeCompatible changes every render
   const filteredWeapons = useMemo(() => {
     return allWeapons
       .filter((w) => {
-        if (!isSizeCompatible(slot.size, w.size, slot.type, w.type))
+        if (!isWeaponSizeCompatible(slot.size, w.size, slot.type, w.type))
           return false
-        if (!canFit(slot.type, w.type)) return false
+        if (!canFitWeaponMount(slot.type, w.type)) return false
         const stats = getWeaponStats({ weapon: w, weaponStats: allWeaponStats })
         if (!isWeaponSelectable(stats)) return false
         const specialTags = getWeaponSpecialTags(stats)
@@ -271,7 +237,10 @@ export default function WeaponSelectionModal({ slot, onClose }: {slot: weaponSlo
               key={w.id}
               weapon={w}
               allWeaponStats={allWeaponStats}
-              onSelect={() => {}}
+              onSelect={onSelect}
+              onRemove={onRemoveWeapon}
+              onClose={onClose}
+              mounted={mountedIds.has(w.id)}
             />
           ))}
           {filteredWeapons.length === 0 && (
