@@ -6,16 +6,27 @@ import HybridIcon from "#/assets/slotIcons/hybrid.svg?react"
 import MissileIcon from "#/assets/slotIcons/missile.svg?react"
 import SynergyIcon from "#/assets/slotIcons/synergy.svg?react"
 import UniversalIcon from "#/assets/slotIcons/universal.svg?react"
-import type { ship, weaponSlot } from "#/types"
+import { BuildSprite } from "#/lib/weaponSpriteHelper"
+import { getWeapon } from "#/lib/weaponParser"
+import type { ship, weapon, weaponSlot } from "#/types"
 
 export default function ShipDisplay({
   ship,
   zoom,
-  onSlotClick
+  onSlotClick,
+  onSlotRightClick,
+  onSlotShiftClick,
+  mountedWeaponIds
 }: {
   ship: ship
   zoom: number
   onSlotClick?: (slot: weaponSlot) => void
+  /** Right-click on a mounted slot (unmount). Empty slots always open. */
+  onSlotRightClick?: (slot: weaponSlot) => void
+  /** Shift-click on a slot (quick-mount last weapon). */
+  onSlotShiftClick?: (slot: weaponSlot) => void
+  /** Mounted loadout decoded from the URL hash: weaponSlot id -> weapon id. */
+  mountedWeaponIds?: Record<string, string>
 }) {
   const slotStyle: Record<weaponSlot["type"], string> = {
     MISSILE: "text-lime-400",
@@ -37,11 +48,43 @@ export default function ShipDisplay({
 
   const weaponSlots = useMemo(() => ship.weaponSlots, [ship])
 
+  // Decode mounted weapon ids (from the URL hash) into full weapon data for
+  // rendering. Re-runs whenever the loadout changes, including hash changes.
+  const [resolvedWeapons, setResolvedWeapons] = useState<
+    Record<string, weapon>
+  >({})
+  const loadoutKey = JSON.stringify(mountedWeaponIds ?? {})
+
+  // biome-ignore lint: keyed on serialized loadout
+  useEffect(() => {
+    let cancelled = false
+    const ids = [...new Set(Object.values(mountedWeaponIds ?? {}))]
+    if (ids.length === 0) {
+      setResolvedWeapons({})
+      return
+    }
+    void (async () => {
+      const results = await Promise.allSettled(
+        ids.map((id) => getWeapon({ id }))
+      )
+      if (cancelled) return
+      const next: Record<string, weapon> = {}
+      ids.forEach((id, idx) => {
+        const r = results[idx]
+        if (r.status === "fulfilled") next[id] = r.value
+        else console.warn(`ShipDisplay: unknown weapon id ${id}`)
+      })
+      setResolvedWeapons(next)
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [loadoutKey])
+
   const [altHeld, setAltHeld] = useState(false)
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Alt" || e.altKey) {
-        // prevent browser menu stealing focus
         if (e.key === "Alt") e.preventDefault()
         setAltHeld(true)
       }
@@ -175,15 +218,26 @@ export default function ShipDisplay({
         style={{ imageRendering: "smooth" }}
         draggable={false}
       />
-      {weaponSlots?.map(
-        (slot, i) =>
+      {weaponSlots?.map((slot, i) => {
+        const mountedId = mountedWeaponIds?.[slot.id]
+        const mounted = mountedId ? resolvedWeapons[mountedId] : undefined
+        return (
           slot.mount !== "HIDDEN" && (
             <button
               type="button"
               key={`${slot.id}-${i}`}
               role={onSlotClick ? "button" : undefined}
               tabIndex={onSlotClick ? 0 : undefined}
-              onClick={() => onSlotClick?.(slot)}
+              onClick={(e) => {
+                if (e.shiftKey) onSlotShiftClick?.(slot)
+                else onSlotClick?.(slot)
+              }}
+              onContextMenu={(e) => {
+                if (mountedId) {
+                  e.preventDefault()
+                  onSlotRightClick?.(slot)
+                }
+              }}
               onKeyDown={(e) => {
                 if (onSlotClick && (e.key === "Enter" || e.key === " ")) {
                   e.preventDefault()
@@ -195,14 +249,36 @@ export default function ShipDisplay({
                 top: ship.height - ship.center[1] - (slot.locations?.[0] ?? 0),
                 transform: "translate(-50%, -50%)"
               }}
-              className={`${buildSlotStyle(slot)} group absolute z-10 opacity-70 hover:opacity-100 shrink-0 drop-shadow-[0_1px_1px_rgba(0,0,0,0.9)] ${onSlotClick ? "cursor-pointer pointer-events-auto" : "pointer-events-auto"}`}
-              title={`${slot.id} • ${slot.type} ${slot.size} ${slot.mount}`}
+              className={`${buildSlotStyle(slot)} group absolute z-10 shrink-0 drop-shadow-[0_1px_1px_rgba(0,0,0,0.9)] ${mounted ? "opacity-100" : "opacity-70 hover:opacity-100"} ${onSlotClick ? "cursor-pointer pointer-events-auto" : "pointer-events-auto"}`}
+              title={`${slot.id} • ${slot.type} ${slot.size} ${slot.mount}${mountedId ? " • Right-click to unmount" : ""}`}
             >
-              <SlotIcon type={slot.type} />
+              {mounted ? (
+                <div
+                  className="absolute pointer-events-none w-fit h-fit"
+                  style={{
+                    left: "50%",
+                    top: "50%",
+                    width: 80,
+                    height: 80,
+                    // Slot angles are counterclockwise-positive from
+                    // up-forward; CSS rotation is clockwise-positive.
+                    transform: `translate(-50%, -50%) rotate(${-(slot.angle ?? 0)}deg)`
+                  }}
+                >
+                  <BuildSprite
+                    weapon={mounted}
+                    mount={slot.mount}
+                    naturalSize
+                  />
+                </div>
+              ) : (
+                <SlotIcon type={slot.type} />
+              )}
               <SlotAngle slot={slot} forceShow={altHeld} />
             </button>
           )
-      )}
+        )
+      })}
     </div>
   )
 }
