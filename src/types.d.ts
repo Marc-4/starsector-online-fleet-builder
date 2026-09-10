@@ -131,6 +131,8 @@ export type fleetEntry = {
   capacitors: number
   vents: number
   customName: string
+  /** Mounted loadout: weaponSlot id -> weapon id. Synced into the URL hash. */
+  weapons?: Record<string, string>
 }
 
 export type weaponMount = "TURRET" | "HARDPOINT" | "HIDDEN"
