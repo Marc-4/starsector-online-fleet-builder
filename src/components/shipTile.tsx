@@ -33,7 +33,7 @@ export default function ShipTile({
     >
       <img
         draggable={false}
-        src={`/ships${ship.spriteName}`}
+        src={`ships${ship.spriteName}`}
         alt="ship sprite"
         className="ss-ship-img group-hover:brightness-100"
         style={{ imageRendering: "smooth" }}

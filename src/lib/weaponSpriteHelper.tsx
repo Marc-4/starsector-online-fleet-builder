@@ -196,7 +196,7 @@ export function BuildSprite({
     <img
       style={{ imageRendering: "pixelated" }}
       draggable={false}
-      src={`/weapons/${gunSprite}`}
+      src={`weapons/${gunSprite}`}
       alt=""
       className={
         naturalSize
@@ -223,7 +223,7 @@ export function BuildSprite({
         <img
           style={{ imageRendering: "pixelated" }}
           draggable={false}
-          src={`/weapons/${underSprite}`}
+          src={`weapons/${underSprite}`}
           alt=""
           className={
             naturalSize
@@ -236,7 +236,7 @@ export function BuildSprite({
       {baseSprite ? (
         <img
           draggable={false}
-          src={`/weapons/${baseSprite}`}
+          src={`weapons/${baseSprite}`}
           alt={isBeam ? "beam weapon" : w.id}
           className={
             naturalSize

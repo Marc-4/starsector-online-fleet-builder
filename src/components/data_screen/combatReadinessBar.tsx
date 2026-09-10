@@ -6,7 +6,7 @@ export default function CombatReadinessBar({
   onChange: (value: number) => void
 }) {
   return (
-    <div className="flex p-2 w-fit flex-col justify-center shadow-md">
+    <div className="flex p-2 w-fit flex-col justify-center">
       <div className="flex gap-2 items-center">
         <div className="relative w-80 max-sm:w-56 h-4 ss-cr-bar">
           <div

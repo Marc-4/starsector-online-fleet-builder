@@ -21,7 +21,7 @@ export default function SidebarShipTile({
     >
       <img
         draggable={false}
-        src={`/ships${entry.ship.meta.spriteName}`}
+        src={`ships${entry.ship.meta.spriteName}`}
         alt="ship sprite"
         className="ss-ship-img group-hover:brightness-100"
         style={{ imageRendering: "smooth" }}
