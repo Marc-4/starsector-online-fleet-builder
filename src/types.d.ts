@@ -260,3 +260,16 @@ export type completeWeapon = {
   meta: weapon
   stats: weaponStats
 }
+
+export type projectile = {
+  id: string
+  specClass?: string
+  missileType?: string
+  /** Source art path from the .proj file (e.g. graphics/missiles/x.png). */
+  sprite?: string
+  /** Display box in game px the PNG is fit into (possibly non-uniform). */
+  size?: [number, number]
+  /** Anchor point in box units, Cartesian origin bottom-left, nose = +Y. */
+  center?: [number, number]
+  [key: string]: any
+}
