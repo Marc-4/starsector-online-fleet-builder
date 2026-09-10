@@ -16,7 +16,7 @@ import CommonButton from "../commonBtn"
 import WeaponFilters from "../weaponFilters"
 import WeaponTile from "../weaponTile"
 
-export default function WeaponSelectionModal({ slot, onClose, onSelect, onRemoveWeapon, mountedWeaponIds }: {slot: weaponSlot, onClose: () => void, onSelect?: (weapon: weapon) => void, onRemoveWeapon?: (weapon: weapon) => void, mountedWeaponIds?: Record<string, string>}) {
+export default function WeaponSelectionModal({ slot, onClose, onSelect, onRemoveWeapon, mountedWeaponIds, remainingOpForSlot }: {slot: weaponSlot, onClose: () => void, onSelect?: (weapon: weapon) => void, onRemoveWeapon?: (weapon: weapon) => void, mountedWeaponIds?: Record<string, string>, remainingOpForSlot?: number}) {
   const [allWeapons, setAllWeapons] = useState<weapon[]>([])
   const [allWeaponStats, setAllWeaponStats] = useState<weaponStats[]>([])
   const [searchString, setSearchString] = useState("")
@@ -142,6 +142,16 @@ export default function WeaponSelectionModal({ slot, onClose, onSelect, onRemove
       .sort((a, b) => {
         const d = sizeOrder[b.size] - sizeOrder[a.size]
         if (d !== 0) return d
+        const opA = Number(
+          getWeaponStats({ weapon: a, weaponStats: allWeaponStats })?.OPs
+        )
+        const opB = Number(
+          getWeaponStats({ weapon: b, weaponStats: allWeaponStats })?.OPs
+        )
+        const aFinite = Number.isFinite(opA)
+        const bFinite = Number.isFinite(opB)
+        if (aFinite && bFinite && opA !== opB) return opB - opA
+        if (aFinite !== bFinite) return aFinite ? -1 : 1
         return a.id.localeCompare(b.id)
       })
   }, [
@@ -229,17 +239,28 @@ export default function WeaponSelectionModal({ slot, onClose, onSelect, onRemove
         </div>
 
         <div className="w-full flex-1 flex flex-col gap-1 p-2 overflow-auto">
-          {filteredWeapons.map((w) => (
-            <WeaponTile
-              key={w.id}
-              weapon={w}
-              allWeaponStats={allWeaponStats}
-              onSelect={onSelect}
-              onRemove={onRemoveWeapon}
-              onClose={onClose}
-              mounted={mountedIdForSlot === w.id}
-            />
-          ))}
+          {filteredWeapons.map((w) => {
+            const op = Number(
+              getWeaponStats({ weapon: w, weaponStats: allWeaponStats })?.OPs
+            )
+            const unaffordable =
+              remainingOpForSlot != null &&
+              Number.isFinite(op) &&
+              mountedIdForSlot !== w.id &&
+              op > remainingOpForSlot
+            return (
+              <WeaponTile
+                key={w.id}
+                weapon={w}
+                allWeaponStats={allWeaponStats}
+                onSelect={onSelect}
+                onRemove={onRemoveWeapon}
+                onClose={onClose}
+                mounted={mountedIdForSlot === w.id}
+                disabled={unaffordable}
+              />
+            )
+          })}
           {filteredWeapons.length === 0 && (
             <p className="text-cyan-200/60 text-sm text-center py-8">
               No weapons fit {slot.type} {slot.size}
