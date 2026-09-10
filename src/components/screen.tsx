@@ -5,11 +5,11 @@ import {
   encodeFleetToHash,
   hydrateFleet
 } from "#/lib/fleetCodec"
+import { getMaxCapsVents } from "#/lib/fluxLimits"
 import { getAllShips } from "#/lib/shipParser"
 import type { fleetEntry } from "#/types"
 import AddShipButton from "./addShipBtn"
 import ActiveShipPanel from "./data_screen/activeShipPanel"
-import { getMaxCapsVents } from "#/lib/fluxLimits"
 import SidebarShipTile from "./SidebarShipTile"
 import Spinner from "./spinner"
 
@@ -105,7 +105,7 @@ export default function Screen({ children }: { children?: ReactNode }) {
     if (window.matchMedia("(max-width: 640px)").matches) setDrawerOpen(false)
   }
 
-  const updateEntry = (id: string, patch: Partial<Pick<fleetEntry, "capacitors" | "vents" | "cr" | "customName">>) => {
+  const updateEntry = (id: string, patch: Partial<Pick<fleetEntry, "capacitors" | "vents" | "cr" | "customName" | "weapons">>) => {
     setFleet((prev) => {
       const next = prev.map((e) => (e.id === id ? { ...e, ...patch } : e))
       syncHash(next)
@@ -224,6 +224,11 @@ export default function Screen({ children }: { children?: ReactNode }) {
     if (!activeTile) return
     updateEntry(activeTile.id, { customName: value })
   }
+
+  const onWeaponsChange = (weapons: Record<string, string>) => {
+    if (!activeTile) return
+    updateEntry(activeTile.id, { weapons })
+  }
   const updateGrid = () => {
     if (!gridRef.current) return
     const { height, width } = gridRef.current.getBoundingClientRect()
@@ -331,6 +336,7 @@ export default function Screen({ children }: { children?: ReactNode }) {
               onVentsIncrement={onVentsIncrement}
               onVentsDecrement={onVentsDecrement}
               onCustomNameChange={onCustomNameChange}
+              onWeaponsChange={onWeaponsChange}
             />
           )}
           {children}

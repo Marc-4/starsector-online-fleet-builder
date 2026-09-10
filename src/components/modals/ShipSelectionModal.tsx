@@ -116,7 +116,7 @@ export default function ShipSelectionModal({
       )
     )
     const existingEntries = decodeFleetEntries(window.location.hash) ?? []
-    const addedEntries = addedIds.map((hullId) => ({ hullId, capacitors: 0, vents: 0, cr: 70, customName: "" }))
+    const addedEntries = addedIds.map((hullId) => ({ hullId, capacitors: 0, vents: 0, cr: 70, customName: "", weapons: {} }))
     const mergedEntries = [...existingEntries, ...addedEntries]
     const mergedFleet = hydrateFleet(mergedEntries, allShips, allShipStats)
     const hash = encodeFleetToHash(mergedFleet)

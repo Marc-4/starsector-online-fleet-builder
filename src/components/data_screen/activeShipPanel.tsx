@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from "react"
 import { getMaxCapsVents } from "#/lib/fluxLimits"
-import type { fleetEntry, weaponSlot } from "#/types"
+import { canMountWeapon } from "#/lib/weaponCompat"
+import { getWeapon } from "#/lib/weaponParser"
+import type { fleetEntry, weapon, weaponSlot } from "#/types"
 import WeaponSelectionModal from "../modals/weaponSelectionModal"
 import CombatReadinessBar from "./combatReadinessBar"
 import FighterBay from "./fighterBay"
@@ -22,6 +24,7 @@ type Props = {
   onVentsIncrement: (e?: React.MouseEvent) => void
   onVentsDecrement: (e?: React.MouseEvent) => void
   onCustomNameChange: (value: string) => void
+  onWeaponsChange: (weapons: Record<string, string>) => void
 }
 
 export default function ActiveShipPanel({
@@ -31,12 +34,30 @@ export default function ActiveShipPanel({
   onCapacitorsDecrement,
   onVentsIncrement,
   onVentsDecrement,
-  onCustomNameChange
+  onCustomNameChange,
+  onWeaponsChange
 }: Props) {
   const [zoom, setZoom] = useState(1)
   const [isMobile, setIsMobile] = useState(false)
   const [selectedSlot, setSelectedSlot] = useState<weaponSlot | null>(null)
+  const [lastSlottedId, setLastSlottedId] = useState<string | null>(null)
   const maxZoom = isMobile ? MAX_ZOOM_MOBILE : MAX_ZOOM_DESKTOP
+
+  // Shift-click a slot: mount the last-slotted weapon if it fits, else nothing.
+  const handleSlotShiftClick = useCallback(
+    async (slot: weaponSlot) => {
+      if (!lastSlottedId) return
+      let w: weapon
+      try {
+        w = await getWeapon({ id: lastSlottedId })
+      } catch {
+        return
+      }
+      if (!canMountWeapon(slot, w)) return
+      onWeaponsChange({ ...activeTile.weapons, [slot.id]: w.id })
+    },
+    [lastSlottedId, activeTile.weapons, onWeaponsChange]
+  )
 
   useEffect(() => {
     const mq = window.matchMedia("(max-width: 1200px)")
@@ -49,6 +70,11 @@ export default function ActiveShipPanel({
   useEffect(() => {
     setZoom((z) => Math.min(z, maxZoom))
   }, [maxZoom])
+
+  // biome-ignore lint: activeTile is required to reset selectedSlot.
+  useEffect(() => {
+    setSelectedSlot(null)
+  }, [activeTile])
 
   const handleWheel = useCallback(
     (e: React.WheelEvent) => {
@@ -133,10 +159,37 @@ export default function ActiveShipPanel({
         }}
         title="Scroll to zoom"
       >
-        <ShipDisplay ship={activeTile.ship.meta} zoom={zoom} onSlotClick={setSelectedSlot} />
+        <ShipDisplay
+          ship={activeTile.ship.meta}
+          zoom={zoom}
+          onSlotClick={setSelectedSlot}
+          onSlotShiftClick={handleSlotShiftClick}
+          onSlotRightClick={(slot) => {
+            if (!activeTile.weapons?.[slot.id]) return
+            const next = { ...activeTile.weapons }
+            delete next[slot.id]
+            onWeaponsChange(next)
+          }}
+          mountedWeaponIds={activeTile.weapons ?? {}}
+        />
       </div>
       {selectedSlot && (
-        <WeaponSelectionModal slot={selectedSlot} onClose={() => setSelectedSlot(null)} />
+        <WeaponSelectionModal
+          slot={selectedSlot}
+          onClose={() => setSelectedSlot(null)}
+          onSelect={(w) => {
+            onWeaponsChange({ ...activeTile.weapons, [selectedSlot.id]: w.id })
+            setLastSlottedId(w.id)
+          }}
+          mountedWeaponIds={activeTile.weapons ?? {}}
+          onRemoveWeapon={(w) => {
+            // Unmount only from the currently open slot.
+            if (activeTile.weapons?.[selectedSlot.id] !== w.id) return
+            const next = { ...activeTile.weapons }
+            delete next[selectedSlot.id]
+            onWeaponsChange(next)
+          }}
+        />
       )}
 
       <div className="z-10 absolute left-1 bottom-1 gap-2 flex flex-col max-md:bottom-0.5 max-md:left-0.5 max-md:scale-[0.90] max-sm:scale-[0.80] origin-bottom-left">
