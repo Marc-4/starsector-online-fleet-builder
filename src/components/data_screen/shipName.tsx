@@ -12,6 +12,7 @@ export default function ShipName({
       <input
         type="text"
         value={customName ?? ""}
+        maxLength={20}
         onChange={(e) => onCustomNameChange?.(e.target.value)}
         placeholder="name"
         className="flex text-center items-center bg-cyan-950 border border-cyan-800 w-56 max-[470px]:w-40 text-cyan-100 placeholder:text-cyan-100/60"
