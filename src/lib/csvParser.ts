@@ -103,10 +103,54 @@ export function isWeaponSelectable(stats: weaponStats | null): boolean {
 }
 
 // Tags like threat/omega/dweller are selectable but hidden by default via UI toggle, not hard-filtered
-export const SPECIAL_WEAPON_TAGS = ["threat", "omega", "dweller", "fragment"] as const
+export const SPECIAL_WEAPON_TAGS = ["threat", "omega", "dweller"] as const
 
 export function getWeaponSpecialTags(stats: weaponStats | null): string[] {
   if (!stats) return []
   const tags = (stats.tags || "").toLowerCase()
   return SPECIAL_WEAPON_TAGS.filter((t) => tags.includes(t))
+}
+
+function num(v: unknown): number | null {
+  if (v == null || v === "") return null
+  const n = Number(v)
+  return Number.isFinite(n) ? n : null
+}
+
+/** Flux/sec for a weapon. Prefers energy/second; otherwise derives
+ * energy/shot * shots/sec, with shots/sec from damage numbers when
+ * available, else burst size / cycle time (chargeup + chargedown + burst delay). */
+export function getWeaponFluxPerSecond(
+  stats: weaponStats | null | undefined
+): number {
+  if (!stats) return 0
+  const direct = num(stats["energy/second"])
+  if (direct != null) return direct
+  const perShot = num(stats["energy/shot"])
+  if (perShot == null || perShot === 0) return 0
+  let shotsPerSec: number | null = null
+  const dps = num(stats["damage/second"])
+  const dmgPerShot = num(stats["damage/shot"])
+  if (dps != null && dps > 0 && dmgPerShot != null && dmgPerShot > 0) {
+    shotsPerSec = dps / dmgPerShot
+  } else {
+    const burstSize = num(stats["burst size"])
+    const burstDelay = num(stats["burst delay"]) ?? 0
+    const chargeup = num(stats.chargeup) ?? 0
+    const chargedown = num(stats.chargedown) ?? 0
+    if (burstSize != null && burstSize > 0) {
+      const cycle = chargeup + chargedown + burstDelay
+      if (cycle > 0) shotsPerSec = burstSize / cycle
+    } else {
+      // Single-shot weapons with no burst data: one shot per cycle.
+      const cycle = chargeup + chargedown + burstDelay
+      if (cycle > 0) shotsPerSec = 1 / cycle
+    }
+  }
+  if (shotsPerSec == null || shotsPerSec <= 0) return 0
+  const ammoPerSec = num(stats["ammo/sec"])
+  if (ammoPerSec != null && ammoPerSec > 0) {
+    shotsPerSec = Math.min(shotsPerSec, ammoPerSec)
+  }
+  return perShot * shotsPerSec
 }
