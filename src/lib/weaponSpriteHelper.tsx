@@ -1,5 +1,6 @@
 import { type ReactNode, useEffect, useRef, useState } from "react"
-import type { weapon, weaponMount } from "#/types"
+import type { projectile, weapon, weaponMount } from "#/types"
+import { getProjectile, resolveProjectileSpriteUrl } from "./projectileParser"
 
 //WARN: mostly unreviewed.
 type BuildSpriteProps = {
@@ -23,11 +24,13 @@ type BuildSpriteProps = {
 // base with RENDER_BARREL_BELOW) -> loaded missiles. Glow sprites are
 // intentionally not rendered.
 //
-// Missile tubes: in fit mode the base is drawn with object-contain, so its
-// displayed scale depends on the base PNG size (turret canvases range from
-// 20x20 to 72x72). Tube positions and missile sizes are therefore computed
-// from the measured base/container sizes instead of a fixed px-per-unit
-// constant. In naturalSize mode everything is 1:1, so offsets apply directly.
+// Missile tubes: per missileRackAlignment.md, each tube draws the .proj
+// missile sprite once, above the rack art, nose along the weapon facing plus
+// that tube's angle offset, with the .proj `center` pinned exactly on the
+// tube fire offset. Size is the .proj `size` box (non-uniform stretch if
+// needed). In fit mode the base is drawn with object-contain, so tube
+// positions and missile sizes scale with the measured base/container ratio.
+// In naturalSize mode everything is 1:1, so offsets apply directly.
 export function BuildSprite({
   weapon: w,
   mount,
@@ -91,21 +94,71 @@ export function BuildSprite({
     return out
   }
   const missileSlots = isMissileRack && !isBeam ? toSlots(offsets) : []
-  const missileSprite =
-    missileSlots.length > 0 ? getMissileSprite(w) : null
+
+  // Hardpoint racks seat their missiles further back along the mount facing
+  // than the raw fire offsets place them — shift the tube point rearward
+  // (image +Y) so tails bite into the rails instead of floating ahead of
+  // the rack. Turret mounts need no shift. Game units (scaled by pxPerUnit
+  // at render time); tune here.
+  const HARDPOINT_TUBE_SHIFT = 12
+  const tubeShift = useHardpoint ? HARDPOINT_TUBE_SHIFT : 0
+
+  // Loaded-missile art comes from the .proj target of projectileSpecId —
+  // no hardcoded sprite map. undefined = loading, null = no rack / no art.
+  const [proj, setProj] = useState<projectile | null | undefined>(undefined)
+  const projId = w.projectileSpecId?.toString() ?? ""
+  const wantMissiles =
+    isMissileRack && !isBeam && missileSlots.length > 0 && projId !== ""
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: keyed on weapon + proj id
+  useEffect(() => {
+    if (!wantMissiles) {
+      setProj(null)
+      return
+    }    let cancelled = false
+    setProj(undefined)
+    void (async () => {
+      try {
+        const p = await getProjectile({ id: projId })
+        if (!cancelled) setProj(p)
+      } catch (e) {
+        console.warn(`BuildSprite: unknown projectile id ${projId}`, e)
+        if (!cancelled) setProj(null)
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [w.id, projId, wantMissiles, missileSlots.length])
+
+  const missileUrl = proj ? resolveProjectileSpriteUrl(proj.sprite) : null
+  const mslSize = proj?.size
+  const mslCenter = proj?.center
+  const validMissile =
+    wantMissiles &&
+    proj !== undefined &&
+    proj !== null &&
+    !!missileUrl &&
+    Array.isArray(mslSize) &&
+    mslSize.length >= 2 &&
+    Number.isFinite(mslSize[0]) &&
+    Number.isFinite(mslSize[1]) &&
+    mslSize[0] > 0 &&
+    mslSize[1] > 0 &&
+    Array.isArray(mslCenter) &&
+    mslCenter.length >= 2 &&
+    Number.isFinite(mslCenter[0]) &&
+    Number.isFinite(mslCenter[1])
 
   // Measured geometry: px per game unit of the displayed base image.
   const containerRef = useRef<HTMLDivElement>(null)
   const [baseNat, setBaseNat] = useState<{ w: number; h: number } | null>(null)
   const [box, setBox] = useState<{ w: number; h: number } | null>(null)
-  const [mslNat, setMslNat] = useState<{ w: number; h: number } | null>(null)
 
-
-  // biome-ignore lint: all 3 required deps to properly reset sizes.
-    useEffect(() => {
+  // biome-ignore lint: reset measured base art when the weapon/sprite changes.
+  useEffect(() => {
     setBaseNat(null)
-    setMslNat(null)
-  }, [w.id, baseSprite, missileSprite])
+  }, [w.id, baseSprite])
 
   useEffect(() => {
     const el = containerRef.current
@@ -117,14 +170,6 @@ export function BuildSprite({
     ro.observe(el)
     return () => ro.disconnect()
   }, [])
-
-  useEffect(() => {
-    if (!missileSprite) return
-    const img = new Image()
-    img.src = `/missiles/${missileSprite}`
-    img.onload = () =>
-      setMslNat({ w: img.naturalWidth, h: img.naturalHeight })
-  }, [missileSprite])
 
   // object-contain scale of the base image inside the container (fit mode).
   // In naturalSize mode the base is 1:1, so one game unit is one css px.
@@ -194,114 +239,53 @@ export function BuildSprite({
         <div className="absolute inset-0 z-10 border border-cyan-800 bg-cyan-900/30" />
       )}
       {!renderGunBelow && gunImg}
-      {missileSprite && (
+      {validMissile && missileUrl && mslSize && mslCenter && (
         <div className="absolute inset-0 z-40 pointer-events-none">
-          {missileSlots.map((p, i) => (
-            <img
-              key={i}
-              src={`/missiles/${missileSprite}`}
-              alt="missile"
-              draggable={false}
-              className="absolute object-contain"
-              style={{
-                // Screen mapping for an up-facing mount: forward+ = image
-                // -Y (up), and +lateral renders LEFT of center (measured
-                // against tube openings in the base art). Per-barrel angles
-                // are counterclockwise-positive, so they negate into CSS
-                // (clockwise-positive) rotation.
-                left: `calc(50% - ${p.lat * pxPerUnit}px)`,
-                top: `calc(50% + ${-p.fwd * pxPerUnit}px)`,
-                transform: `translate(-50%, -50%) rotate(${-p.angle}deg)`,
-                // Natural size: intrinsic PNG size is already 1:1, no
-                // sizing needed. Fit mode: match the base's contain scale.
-                ...(!naturalSize && mslNat
-                  ? {
-                      width: mslNat.w * pxPerUnit,
-                      height: mslNat.h * pxPerUnit
-                    }
-                  : undefined),
-                ...(!naturalSize && !mslNat
-                  ? { maxWidth: "55%", maxHeight: "55%" }
-                  : undefined)
-              }}
-              title={`missile ${i + 1}`}
-            />
-          ))}
+          {missileSlots.map((p, i) => {
+            const sw = mslSize[0]
+            const sh = mslSize[1]
+            const cx = mslCenter[0]
+            const cy = mslCenter[1]
+            return (
+              <div
+                key={i}
+                className="absolute w-0 h-0"
+                style={{
+                  // Screen mapping for an up-facing mount: forward+ = image
+                  // -Y (up), and +lateral renders LEFT of center (measured
+                  // against tube openings in the base art). Per-barrel angles
+                  // are counterclockwise-positive, so they negate into CSS
+                  // (clockwise-positive) rotation.
+                  left: `calc(50% - ${p.lat * pxPerUnit}px)`,
+                  top: `calc(50% + ${(-p.fwd + tubeShift) * pxPerUnit}px)`,
+                  transform: `rotate(${-p.angle}deg)`,
+                  transformOrigin: "0 0"
+                }}
+                title={`missile ${i + 1}`}
+              >
+                <img
+                  src={missileUrl}
+                  alt="missile"
+                  draggable={false}
+                  className="absolute max-w-none"
+                  style={{
+                    // Pin the .proj `center` (Cartesian, origin bottom-left,
+                    // nose = +Y) exactly on the tube point: the image's
+                    // top-left sits (-cx, -(sh-cy)) from the tube, so the
+                    // anchor lands at the rotation origin. Nose protrusion
+                    // past the tube is (sh-cy); tail bury behind it is cy.
+                    left: -cx * pxPerUnit,
+                    top: -(sh - cy) * pxPerUnit,
+                    width: sw * pxPerUnit,
+                    height: sh * pxPerUnit,
+                    objectFit: "fill"
+                  }}
+                />
+              </div>
+            )
+          })}
         </div>
       )}
     </div>
   )
-}
-
-function getMissileSprite(w: weapon): string {
-  const id = w.id
-  const proj = (w.projectileSpecId || "").toString()
-  const map: Record<string, string> = {
-    squall: "missile_squall.webp",
-    harpoon: "missile_harpoon.webp",
-    harpoon_single: "missile_harpoon.webp",
-    harpoonpod: "missile_harpoon.webp",
-    annihilator: "missile_annihilator.webp",
-    annihilatorpod: "missile_annihilator.webp",
-    annihilator_fighter: "missile_annihilator.webp",
-    breach: "breach_srm.webp",
-    breachpod: "breach_srm.webp",
-    amsrm: "am_srm.webp",
-    resonatormrm: "resonator_mrm.webp",
-    sabot: "missile_sabot.webp",
-    sabot_single: "missile_sabot.webp",
-    sabotpod: "missile_sabot.webp",
-    sabot_fighter: "missile_sabot.webp",
-    pilum: "missile_LRM.webp",
-    pilum_large: "missile_LRM.webp",
-    hurricane: "missile_MIRV.webp",
-    cyclone: "torpedo_guided.webp",
-    reaper: "missile_torpedo_compact.webp",
-    typhoon: "torpedo_guided.webp",
-    hammer: "low_tech_torpedo.webp",
-    hammer_single: "low_tech_torpedo.webp",
-    hammerrack: "low_tech_torpedo.webp",
-    jackhammer: "low_tech_torpedo.webp",
-    atropos: "torpedo_guided2.webp",
-    atropos_single: "torpedo_guided2.webp",
-    gorgon: "missile_gorgon_dem.webp",
-    gorgonpod: "missile_gorgon_dem.webp",
-    dragon: "dragonfire.webp",
-    dragonpod: "dragonfire.webp",
-    gazer: "missile_gazer.webp",
-    gazerpod: "missile_gazer.webp",
-    hydra: "missile_hydra_mdem.webp",
-    heatseeker: "missile_salamander.webp",
-    salamanderpod: "missile_salamander.webp",
-    locust: "missile_locust.webp",
-    swarmer: "missile_SRM.webp",
-    swarmer_fighter: "missile_SRM.webp",
-    swarm_launcher: "missile_SRM.webp",
-    bomb: "bomb_HE.webp",
-    clusterbomb: "bomb_HE.webp",
-    fragbomb: "bomb_HE.webp",
-    terminator_missile: "missile_sabot.webp",
-    kinetic_fragments: "flechette_sml.webp",
-    devouring_swarm: "threat_missile1.webp",
-    neutron_torpedo: "neutron_torpedo.webp",
-    rifttorpedo: "rift_torpedo.webp",
-    resonatormrm_shot: "resonator_mrm.webp",
-    assaying_rift: "rift_torpedo.webp",
-    gazer_payload: "missile_gazer.webp",
-    gorgon_payload: "missile_gorgon_dem.webp",
-    dragon_payload: "dragonfire.webp",
-    hydra_payload: "missile_hydra_mdem_warhead.webp"
-  }
-  if (map[id]) return map[id]
-  if (map[proj]) return map[proj]
-  if (proj.includes("sabot")) return "missile_sabot.webp"
-  if (proj.includes("harpoon")) return "missile_harpoon.webp"
-  if (proj.includes("annihilator")) return "missile_annihilator.webp"
-  if (proj.includes("squall")) return "missile_squall.webp"
-  if (proj.includes("breach") || proj.includes("srm")) return "breach_srm.webp"
-  if (proj.includes("reaper") || proj.includes("hammer") || proj.includes("torp"))
-    return "torpedo_guided.webp"
-  if (proj.includes("bomb")) return "bomb_HE.webp"
-  if (proj.includes("lrm") || proj.includes("pilum")) return "missile_LRM.webp"
-  return "missile_SRM.webp"
 }
