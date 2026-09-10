@@ -65,7 +65,7 @@ export function resolveProjectileSpriteUrl(
   // last resort, but fx/empty is already excluded above.
   if (base.startsWith("missiles/")) return `/${base}.webp`
   if (base.startsWith("ships/drones/")) return `/${base}.webp`
-  return `/missiles/${base.split("/").pop()}.webp`
+  return `missiles/${base.split("/").pop()}.webp`
 }
 
 const cache = new Map<string, projectile | null>()
