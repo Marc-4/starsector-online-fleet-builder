@@ -27,6 +27,7 @@ type Props = {
   onVentsDecrement: (e?: React.MouseEvent) => void
   onCustomNameChange: (value: string) => void
   onWeaponsChange: (weapons: Record<string, string>) => void
+  onStrip: () => void
 }
 
 export default function ActiveShipPanel({
@@ -38,6 +39,7 @@ export default function ActiveShipPanel({
   onVentsDecrement,
   onCustomNameChange,
   onWeaponsChange,
+  onStrip
 }: Props) {
   const [zoom, setZoom] = useState(1)
   const [isMobile, setIsMobile] = useState(false)
@@ -282,6 +284,7 @@ export default function ActiveShipPanel({
             setZoom={setZoom}
             zoom={zoom}
           />
+          <CommonButton text="Strip" onClick={onStrip} />
         </div>
       </div>
     </>
