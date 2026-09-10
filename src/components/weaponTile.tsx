@@ -8,6 +8,7 @@ type Props = {
   onSelect?: (weapon: weapon) => void
   onRemove?: (weapon: weapon) => void
   mounted?: boolean
+  disabled?: boolean
   onClose: () => void
 }
 
@@ -17,7 +18,8 @@ export default function WeaponTile({
   onSelect,
   onRemove,
   onClose,
-  mounted
+  mounted,
+  disabled
 }: Props) {
   const stats = getWeaponStats({ weapon: w, weaponStats: allWeaponStats })
   const manufacturer = (stats?.["tech/manufacturer"] || "Common")
@@ -27,10 +29,12 @@ export default function WeaponTile({
   return (
     <button
       type="button"
+      disabled={disabled && !mounted}
       onClick={() => {
         if (mounted) {
           onRemove?.(w)
         } else {
+          if (disabled) return
           onSelect?.(w)
         }
         onClose()
@@ -38,9 +42,11 @@ export default function WeaponTile({
       title={
         mounted
           ? "Mounted — click to unmount"
-          : "Click to mount"
+          : disabled
+            ? "Not enough OP"
+            : "Click to mount"
       }
-      className={`w-full min-h-14 cursor-pointer flex items-center gap-3 px-3 py-2 border bg-gray-950/40 hover:bg-cyan-900/40 hover:border-cyan-600 text-left pointer-events-auto shrink-0 ${mounted ? "border-amber-300" : "border-cyan-800"}`}
+      className={`w-full min-h-14 flex items-center gap-3 px-3 py-2 border bg-gray-950/40 text-left pointer-events-auto shrink-0 ${mounted ? "border-amber-300 cursor-pointer hover:bg-cyan-900/40 hover:border-cyan-600" : disabled ? "border-cyan-950 opacity-40 cursor-not-allowed" : "border-cyan-800 cursor-pointer hover:bg-cyan-900/40 hover:border-cyan-600"}`}
     >
       <div className="relative w-20 h-20 shrink-0 flex items-center justify-center overflow-hidden">
         <BuildSprite weapon={w} naturalSize />
