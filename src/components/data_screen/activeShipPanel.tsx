@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
+import { getAllWeaponStats, getWeaponFluxPerSecond } from "#/lib/csvParser"
 import { getMaxCapsVents } from "#/lib/fluxLimits"
 import { canMountWeapon } from "#/lib/weaponCompat"
 import { getWeapon } from "#/lib/weaponParser"
@@ -10,6 +11,7 @@ import ShipDisplay from "./shipDisplay"
 import ShipName from "./shipName"
 import StatCluster from "./statCluster"
 import ZoomControls from "./zoomControls"
+import CommonButton from "../commonBtn"
 
 const MIN_ZOOM = 1
 const MAX_ZOOM_DESKTOP = 2
@@ -35,13 +37,79 @@ export default function ActiveShipPanel({
   onVentsIncrement,
   onVentsDecrement,
   onCustomNameChange,
-  onWeaponsChange
+  onWeaponsChange,
 }: Props) {
   const [zoom, setZoom] = useState(1)
   const [isMobile, setIsMobile] = useState(false)
   const [selectedSlot, setSelectedSlot] = useState<weaponSlot | null>(null)
   const [lastSlottedId, setLastSlottedId] = useState<string | null>(null)
   const maxZoom = isMobile ? MAX_ZOOM_MOBILE : MAX_ZOOM_DESKTOP
+
+  const allWeaponStats = useMemo(() => getAllWeaponStats(), [])
+  const opById = useMemo(
+    () => new Map(allWeaponStats.map((s) => [s.id, Number(s.OPs)])),
+    [allWeaponStats]
+  )
+  const opOf = useCallback(
+    (wid: string | undefined) => {
+      if (!wid) return 0
+      const op = opById.get(wid)
+      return Number.isFinite(op) ? (op as number) : 0
+    },
+    [opById]
+  )
+  const weaponsOp = useMemo(() => {
+    return Object.values(activeTile.weapons ?? {}).reduce(
+      (sum, wid) => sum + opOf(wid),
+      0
+    )
+  }, [activeTile.weapons, opOf])
+  const fluxById = useMemo(
+    () =>
+      new Map(
+        allWeaponStats.map((s) => [s.id, Math.round(getWeaponFluxPerSecond(s))])
+      ),
+    [allWeaponStats]
+  )
+  const fluxOf = useCallback(
+    (wid: string | undefined) => {
+      if (!wid) return 0
+      const f = fluxById.get(wid)
+      return Number.isFinite(f) ? (f as number) : 0
+    },
+    [fluxById]
+  )
+  const weaponFluxPerSecond = useMemo(() => {
+    return Object.values(activeTile.weapons ?? {}).reduce(
+      (sum, wid) => sum + fluxOf(wid),
+      0
+    )
+  }, [activeTile.weapons, fluxOf])
+  const availableOp = activeTile.ship.stats["ordnance points"] ?? 0
+  const spentOp = activeTile.capacitors + activeTile.vents + weaponsOp
+
+  const wouldExceedOp = useCallback(
+    (slotId: string, weaponId: string) => {
+      const currentOp = opOf(activeTile.weapons?.[slotId])
+      const nextOp = opOf(weaponId)
+      return (
+        activeTile.capacitors +
+          activeTile.vents +
+          weaponsOp -
+          currentOp +
+          nextOp >
+        availableOp
+      )
+    },
+    [
+      activeTile.capacitors,
+      activeTile.vents,
+      activeTile.weapons,
+      availableOp,
+      opOf,
+      weaponsOp
+    ]
+  )
 
   // Shift-click a slot: mount the last-slotted weapon if it fits, else nothing.
   const handleSlotShiftClick = useCallback(
@@ -54,9 +122,10 @@ export default function ActiveShipPanel({
         return
       }
       if (!canMountWeapon(slot, w)) return
+      if (wouldExceedOp(slot.id, w.id)) return
       onWeaponsChange({ ...activeTile.weapons, [slot.id]: w.id })
     },
-    [lastSlottedId, activeTile.weapons, onWeaponsChange]
+    [lastSlottedId, activeTile.weapons, onWeaponsChange, wouldExceedOp]
   )
 
   useEffect(() => {
@@ -96,8 +165,8 @@ export default function ActiveShipPanel({
         </div>
         <div className="pointer-events-auto lg:ml-auto max-lg:self-end origin-top-right">
           <StatCluster
-            spentOp={activeTile.capacitors + activeTile.vents}
-            availableOp={activeTile.ship.stats["ordnance points"]}
+            spentOp={spentOp}
+            availableOp={availableOp}
             topSpeed={activeTile.ship.stats["max speed"]}
             armor={activeTile.ship.stats["armor rating"]}
             hull={activeTile.ship.stats.hitpoints}
@@ -108,6 +177,7 @@ export default function ActiveShipPanel({
             fluxCapacity={activeTile.ship.stats["max flux"]}
             fluxDissipation={activeTile.ship.stats["flux dissipation"]}
             shieldEfficiency={activeTile.ship.stats["shield efficiency"]}
+            weaponFluxPerSecond={weaponFluxPerSecond}
             onCapacitorsIncrement={onCapacitorsIncrement}
             onCapacitorsDecrement={onCapacitorsDecrement}
             onVentsIncrement={onVentsIncrement}
@@ -178,9 +248,15 @@ export default function ActiveShipPanel({
           slot={selectedSlot}
           onClose={() => setSelectedSlot(null)}
           onSelect={(w) => {
+            if (wouldExceedOp(selectedSlot.id, w.id)) return
             onWeaponsChange({ ...activeTile.weapons, [selectedSlot.id]: w.id })
             setLastSlottedId(w.id)
           }}
+          remainingOpForSlot={
+            availableOp -
+            (activeTile.capacitors + activeTile.vents + weaponsOp) +
+            opOf(activeTile.weapons?.[selectedSlot.id])
+          }
           mountedWeaponIds={activeTile.weapons ?? {}}
           onRemoveWeapon={(w) => {
             // Unmount only from the currently open slot.
@@ -198,13 +274,15 @@ export default function ActiveShipPanel({
           customName={activeTile.customName}
           onCustomNameChange={onCustomNameChange}
         />
-        <ZoomControls
-          maxZoom={maxZoom}
-          MIN_ZOOM={MIN_ZOOM}
-          ZOOM_STEP={ZOOM_STEP}
-          setZoom={setZoom}
-          zoom={zoom}
-        />
+        <div className="flex gap-2">
+          <ZoomControls
+            maxZoom={maxZoom}
+            MIN_ZOOM={MIN_ZOOM}
+            ZOOM_STEP={ZOOM_STEP}
+            setZoom={setZoom}
+            zoom={zoom}
+          />
+        </div>
       </div>
     </>
   )
