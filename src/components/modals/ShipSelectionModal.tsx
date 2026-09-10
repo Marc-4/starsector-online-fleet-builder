@@ -1,15 +1,15 @@
 import { useEffect, useMemo, useState } from "react"
 import { getAllShipStats, getShipStats } from "#/lib/csvParser"
-import { getAllShips, isModule } from "#/lib/shipParser"
-import type { ship, shipStats } from "#/types"
 import {
   decodeFleetEntries,
   encodeFleetToHash,
   hydrateFleet,
 } from "#/lib/fleetCodec"
-import CommonButton from "./commonBtn"
-import ShipFilters from "./shipFilters"
-import ShipTile from "./shipTile"
+import { getAllShips, isModule } from "#/lib/shipParser"
+import type { ship, shipStats } from "#/types"
+import CommonButton from "../commonBtn"
+import ShipFilters from "../shipFilters"
+import ShipTile from "../shipTile"
 
 export default function ShipSelectionModal({
   onClose,

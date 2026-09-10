@@ -8,9 +8,9 @@ import {
 } from "#/lib/csvParser"
 import { getAllWeapons } from "#/lib/weaponParser"
 import type { weapon, weaponSlot, weaponStats } from "#/types"
-import CommonButton from "./commonBtn"
-import WeaponFilters from "./weaponFilters"
-import WeaponTile from "./weaponTile"
+import CommonButton from "../commonBtn"
+import WeaponFilters from "../weaponFilters"
+import WeaponTile from "../weaponTile"
 
 function canFit(
   slotType: weaponSlot["type"],

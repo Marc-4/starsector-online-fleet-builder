@@ -1,14 +1,13 @@
 import { useCallback, useEffect, useState } from "react"
 import { getMaxCapsVents } from "#/lib/fluxLimits"
-import type { fleetEntry } from "#/types"
+import type { fleetEntry, weaponSlot } from "#/types"
+import WeaponSelectionModal from "../modals/weaponSelectionModal"
 import CombatReadinessBar from "./combatReadinessBar"
+import FighterBay from "./fighterBay"
 import ShipDisplay from "./shipDisplay"
 import ShipName from "./shipName"
 import StatCluster from "./statCluster"
 import ZoomControls from "./zoomControls"
-import FighterBay from "./fighterBay"
-import WeaponSelectionModal from "../weaponSelectionModal"
-import type { weaponSlot } from "#/types"
 
 const MIN_ZOOM = 1
 const MAX_ZOOM_DESKTOP = 2

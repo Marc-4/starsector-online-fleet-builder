@@ -1,5 +1,5 @@
 import { useState } from "react"
-import ShipSelectionModal from "./ShipSelectionModal"
+import ShipSelectionModal from "./modals/ShipSelectionModal"
 
 export default function AddShipButton() {
   const [isShipSelectionModalOpen, setIsShipSelectionModalOpen] =
