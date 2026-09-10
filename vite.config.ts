@@ -10,21 +10,24 @@ import svgr from "vite-plugin-svgr"
 
 const REPO_NAME = "starsector-online-fleet-builder"
 
+const isGithubPages = process.env.GITHUB_PAGES === "true"
+const base = isGithubPages ? `/${REPO_NAME}/` : "/"
+
 const config = defineConfig({
-  base: `/${REPO_NAME}/`,
+  base: base,
   resolve: { tsconfigPaths: true },
   plugins: [
     devtools(),
     nitro({
-      static: true,
-      prerender: {
-        crawlLinks: true,
-        routes: ["/"]
-      },
       rollupConfig: { external: [/^@sentry\//] }
     }),
     tailwindcss(),
-    tanstackStart(),
+    tanstackStart({
+      prerender: {
+        enabled: true,
+        crawlLinks: true
+      }
+    }),
     viteReact(),
     svgr()
   ]
