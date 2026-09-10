@@ -51,7 +51,7 @@ function parseWeapon(raw: string): weapon {
       if (key.toLowerCase().includes("sprite") && typeof (parsed as Record<string, unknown>)[key] === "string") {
         const val = (parsed as Record<string, unknown>)[key] as string
         if (val.length >= 16) {
-          ;(parsed as Record<string, unknown>)[key] = val.slice(16).replace(/\.png$/i, ".webp")
+          ;(parsed as Record<string, unknown>)[key] = val.slice(16).replace(/\.png$/i, ".png")
         }
       }
     }
