@@ -106,10 +106,7 @@ export default function WeaponSelectionModal({ slot, onClose, onSelect, onRemove
     return relevantMountTypes.filter((t) => (counts.get(t) ?? 0) > 0)
   }, [slotCompatibleWeapons, relevantMountTypes])
 
-  const mountedIds = useMemo(
-    () => new Set(Object.values(mountedWeaponIds ?? {})),
-    [mountedWeaponIds]
-  )
+  const mountedIdForSlot = mountedWeaponIds?.[slot.id]
 
   // biome-ignore lint: isSizeCompatible changes every render
   const filteredWeapons = useMemo(() => {
@@ -240,7 +237,7 @@ export default function WeaponSelectionModal({ slot, onClose, onSelect, onRemove
               onSelect={onSelect}
               onRemove={onRemoveWeapon}
               onClose={onClose}
-              mounted={mountedIds.has(w.id)}
+              mounted={mountedIdForSlot === w.id}
             />
           ))}
           {filteredWeapons.length === 0 && (
