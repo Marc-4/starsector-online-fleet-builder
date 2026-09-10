@@ -6,17 +6,28 @@ import {
   isWeaponSelectable,
   SPECIAL_WEAPON_TAGS
 } from "#/lib/csvParser"
-import {
-  canFitWeaponMount,
-  isWeaponSizeCompatible
-} from "#/lib/weaponCompat"
+import { canFitWeaponMount, isWeaponSizeCompatible } from "#/lib/weaponCompat"
 import { getAllWeapons } from "#/lib/weaponParser"
 import type { weapon, weaponSlot, weaponStats } from "#/types"
 import CommonButton from "../commonBtn"
 import WeaponFilters from "../weaponFilters"
 import WeaponTile from "../weaponTile"
 
-export default function WeaponSelectionModal({ slot, onClose, onSelect, onRemoveWeapon, mountedWeaponIds, remainingOpForSlot }: {slot: weaponSlot, onClose: () => void, onSelect?: (weapon: weapon) => void, onRemoveWeapon?: (weapon: weapon) => void, mountedWeaponIds?: Record<string, string>, remainingOpForSlot?: number}) {
+export default function WeaponSelectionModal({
+  slot,
+  onClose,
+  onSelect,
+  onRemoveWeapon,
+  mountedWeaponIds,
+  remainingOpForSlot
+}: {
+  slot: weaponSlot
+  onClose: () => void
+  onSelect?: (weapon: weapon) => void
+  onRemoveWeapon?: (weapon: weapon) => void
+  mountedWeaponIds?: Record<string, string>
+  remainingOpForSlot?: number
+}) {
   const [allWeapons, setAllWeapons] = useState<weapon[]>([])
   const [allWeaponStats, setAllWeaponStats] = useState<weaponStats[]>([])
   const [searchString, setSearchString] = useState("")
@@ -39,7 +50,8 @@ export default function WeaponSelectionModal({ slot, onClose, onSelect, onRemove
 
   const slotCompatibleWeapons = useMemo(() => {
     return allWeapons.filter((w) => {
-      if (!isWeaponSizeCompatible(slot.size, w.size, slot.type, w.type)) return false
+      if (!isWeaponSizeCompatible(slot.size, w.size, slot.type, w.type))
+        return false
       if (!canFitWeaponMount(slot.type, w.type)) return false
       const stats = getWeaponStats({ weapon: w, weaponStats: allWeaponStats })
       if (!isWeaponSelectable(stats)) return false
@@ -197,7 +209,7 @@ export default function WeaponSelectionModal({ slot, onClose, onSelect, onRemove
         onClick={onClose}
         className="absolute inset-0 bg-transparent pointer-events-auto"
       />
-      <div className="relative z-10 flex flex-col gap-2 w-[40%] h-[50%] min-w-[340px] min-h-[280px] bg-black/85 p-1 border border-cyan-200 pointer-events-auto shadow-xl">
+      <div className="relative z-10 flex flex-col gap-2 w-[30%] h-[50%] min-w-[340px] min-h-[280px] bg-black/85 p-1 border border-cyan-200 pointer-events-auto shadow-xl">
         <div className="flex m-1 mb-0 p-1 pb-0 gap-1 justify-between items-start">
           <div className="gap-2 flex flex-col flex-1">
             <div className="flex gap-2 items-center flex-wrap">
