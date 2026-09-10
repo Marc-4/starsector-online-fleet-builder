@@ -8,9 +8,10 @@
   "scripts": {
     "dev": "vite dev --port 3000",
     "generate:manifest": "node scripts/generate-manifest.mjs",
+    "generate:dicts": "node scripts/generate-codec-dicts.mjs",
     "bench:hash": "node scripts/bench-fleet-hash.mjs",
     "generate-routes": "tsr generate",
-    "build": "vite build",
+    "build": "npm run generate:dicts && vite build",
     "preview": "vite preview",
     "format": "biome format",
     "lint": "biome lint",
