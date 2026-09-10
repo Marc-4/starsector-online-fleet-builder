@@ -309,7 +309,7 @@ export default function Screen({ children }: { children?: ReactNode }) {
   return (
     <div
       className="relative flex gap-0 h-screen w-screen p-10 flex-row"
-      style={ready ? { backgroundImage: `url(/bgs/${bgImage})` } : undefined}
+      style={ready ? { backgroundImage: `url(bgs/${bgImage})` } : undefined}
     >
       {!ready && (
         <div className="absolute inset-0 z-30 flex items-center justify-center bg-gray-950">
