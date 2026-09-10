@@ -63,8 +63,8 @@ export function resolveProjectileSpriteUrl(
   // Only missiles + drone missiles render on racks. Anything else (e.g.
   // unexpected fx paths) still resolves by basename under /missiles as a
   // last resort, but fx/empty is already excluded above.
-  if (base.startsWith("missiles/")) return `/${base}.webp`
-  if (base.startsWith("ships/drones/")) return `/${base}.webp`
+  if (base.startsWith("missiles/")) return `${base}.webp`
+  if (base.startsWith("ships/drones/")) return `${base}.webp`
   return `missiles/${base.split("/").pop()}.webp`
 }
 
