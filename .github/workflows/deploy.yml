@@ -35,6 +35,8 @@ jobs:
         run: npm ci
 
       - name: Build project
+        env:
+          GITHUB_PAGES: "true"
         run: npm run build
 
       - name: Setup Pages
