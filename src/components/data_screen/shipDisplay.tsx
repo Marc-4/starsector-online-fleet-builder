@@ -215,7 +215,7 @@ export default function ShipDisplay({
         src={`ships/${ship.spriteName}`}
         alt="ship sprite"
         className="absolute inset-0 w-full h-full object-contain pointer-events-none"
-        style={{ imageRendering: "smooth" }}
+        style={{ imageRendering: "pixelated" }}
         draggable={false}
       />
       {weaponSlots?.map((slot, i) => {

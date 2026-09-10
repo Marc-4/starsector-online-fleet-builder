@@ -24,6 +24,7 @@ export default function SidebarShipTile({
         src={`/ships${entry.ship.meta.spriteName}`}
         alt="ship sprite"
         className="ss-ship-img group-hover:brightness-100"
+        style={{ imageRendering: "pixelated" }}
       />
       <h1 className="absolute left-1 max-w-[50%] top-1 ss-cyan-title text-xs">
         {!entry.ship.meta.hullName

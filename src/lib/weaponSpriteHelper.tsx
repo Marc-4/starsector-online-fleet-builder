@@ -70,17 +70,23 @@ export function BuildSprite({
 
   // Muzzle slots use the offsets matching the chosen sprite set (§3b).
   const offsets: number[] | undefined = useHardpoint
-    ? (w.hardpointOffsets?.length ? w.hardpointOffsets : w.turretOffsets)
-    : (w.turretOffsets?.length ? w.turretOffsets : w.hardpointOffsets)
+    ? w.hardpointOffsets?.length
+      ? w.hardpointOffsets
+      : w.turretOffsets
+    : w.turretOffsets?.length
+      ? w.turretOffsets
+      : w.hardpointOffsets
   const angleOffsets: number[] | undefined = useHardpoint
-    ? (w.hardpointAngleOffsets?.length
-        ? w.hardpointAngleOffsets
-        : w.turretAngleOffsets)
-    : (w.turretAngleOffsets?.length
-        ? w.turretAngleOffsets
-        : w.hardpointAngleOffsets)
+    ? w.hardpointAngleOffsets?.length
+      ? w.hardpointAngleOffsets
+      : w.turretAngleOffsets
+    : w.turretAngleOffsets?.length
+      ? w.turretAngleOffsets
+      : w.hardpointAngleOffsets
 
-  function toSlots(arr?: number[]): { fwd: number; lat: number; angle: number }[] {
+  function toSlots(
+    arr?: number[]
+  ): { fwd: number; lat: number; angle: number }[] {
     if (!arr || arr.length < 2) return []
     const out: { fwd: number; lat: number; angle: number }[] = []
     for (let i = 0; i + 1 < arr.length; i += 2) {
@@ -115,7 +121,8 @@ export function BuildSprite({
     if (!wantMissiles) {
       setProj(null)
       return
-    }    let cancelled = false
+    }
+    let cancelled = false
     setProj(undefined)
     void (async () => {
       try {
@@ -163,8 +170,7 @@ export function BuildSprite({
   useEffect(() => {
     const el = containerRef.current
     if (!el) return
-    const measure = () =>
-      setBox({ w: el.clientWidth, h: el.clientHeight })
+    const measure = () => setBox({ w: el.clientWidth, h: el.clientHeight })
     measure()
     const ro = new ResizeObserver(measure)
     ro.observe(el)
@@ -174,12 +180,21 @@ export function BuildSprite({
   // object-contain scale of the base image inside the container (fit mode).
   // In naturalSize mode the base is 1:1, so one game unit is one css px.
   const pxPerUnit =
-    naturalSize || !(baseNat && box && baseNat.w > 0 && baseNat.h > 0 && box.w > 0 && box.h > 0)
+    naturalSize ||
+    !(
+      baseNat &&
+      box &&
+      baseNat.w > 0 &&
+      baseNat.h > 0 &&
+      box.w > 0 &&
+      box.h > 0
+    )
       ? scale
       : Math.min(box.w / baseNat.w, box.h / baseNat.h) * scale
 
   const gunImg = showGun ? (
     <img
+      style={{ imageRendering: "pixelated" }}
       draggable={false}
       src={`/weapons/${gunSprite}`}
       alt=""
@@ -206,6 +221,7 @@ export function BuildSprite({
     >
       {underSprite && (
         <img
+          style={{ imageRendering: "pixelated" }}
           draggable={false}
           src={`/weapons/${underSprite}`}
           alt=""
@@ -227,7 +243,10 @@ export function BuildSprite({
               ? "relative z-10 shrink-0"
               : "absolute inset-0 z-10 h-full w-full object-contain"
           }
-          style={additiveBase ? { mixBlendMode: "screen" } : undefined}
+          style={{
+            mixBlendMode: additiveBase ? "screen" : undefined,
+            imageRendering: "pixelated"
+          }}
           onLoad={(e) =>
             setBaseNat({
               w: e.currentTarget.naturalWidth,
@@ -278,7 +297,8 @@ export function BuildSprite({
                     top: -(sh - cy) * pxPerUnit,
                     width: sw * pxPerUnit,
                     height: sh * pxPerUnit,
-                    objectFit: "fill"
+                    objectFit: "fill",
+                    imageRendering: "pixelated"
                   }}
                 />
               </div>
