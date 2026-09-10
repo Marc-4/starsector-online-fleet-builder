@@ -36,7 +36,7 @@ export default function ShipTile({
         src={`/ships${ship.spriteName}`}
         alt="ship sprite"
         className="ss-ship-img group-hover:brightness-100"
-        style={{ imageRendering: "pixelated" }}
+        style={{ imageRendering: "smooth" }}
       />
       <h1 className="absolute left-1 top-1 ss-cyan-title text-bold">
         {!ship.hullName ? "N/A" : `${ship.hullName}-class`}
