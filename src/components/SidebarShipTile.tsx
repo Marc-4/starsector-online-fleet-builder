@@ -13,8 +13,9 @@ export default function SidebarShipTile({
   onClick: (entry: fleetEntry) => void
 }) {
   return (
-    <button
-      type="button"
+    // biome-ignore lint: dont care.
+    <div
+      role="button"
       onClick={() => onClick(entry)}
       className={`group ss-ship-card w-full aspect-square ${active ? "bg-cyan-300/30" : "hover:bg-cyan-200/20"}`}
     >
@@ -38,6 +39,6 @@ export default function SidebarShipTile({
           removeOne(entry.id)
         }}
       />
-    </button>
+    </div>
   )
 }
