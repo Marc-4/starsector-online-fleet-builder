@@ -6,8 +6,8 @@ import HybridIcon from "#/assets/slotIcons/hybrid.svg?react"
 import MissileIcon from "#/assets/slotIcons/missile.svg?react"
 import SynergyIcon from "#/assets/slotIcons/synergy.svg?react"
 import UniversalIcon from "#/assets/slotIcons/universal.svg?react"
-import { BuildSprite } from "#/lib/weaponSpriteHelper"
 import { getWeapon } from "#/lib/weaponParser"
+import { BuildSprite } from "#/lib/weaponSpriteHelper"
 import type { ship, weapon, weaponSlot } from "#/types"
 
 export default function ShipDisplay({
@@ -254,15 +254,14 @@ export default function ShipDisplay({
             >
               {mounted ? (
                 <div
-                  className="absolute pointer-events-none w-fit h-fit"
+                  className="absolute pointer-events-none "
                   style={{
                     left: "50%",
                     top: "50%",
                     width: 80,
                     height: 80,
-                    // Slot angles are counterclockwise-positive from
-                    // up-forward; CSS rotation is clockwise-positive.
-                    transform: `translate(-50%, -50%) rotate(${-(slot.angle ?? 0)}deg)`
+                    imageRendering: "pixelated",
+                    transform: `translate(-50%, -50%) rotate(${-(slot.angle ?? 0)}deg) translateY(${slot.mount === "HARDPOINT" ? -10 : 0}px)`
                   }}
                 >
                   <BuildSprite
