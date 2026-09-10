@@ -1,5 +1,5 @@
 import { type ReactNode, useEffect, useMemo, useRef, useState } from "react"
-import { getAllShipStats } from "#/lib/csvParser"
+import { getAllShipStats, getAllWeaponStats } from "#/lib/csvParser"
 import {
   decodeFleetEntries,
   encodeFleetToHash,
@@ -45,6 +45,17 @@ export default function Screen({ children }: { children?: ReactNode }) {
       }),
     [fleet]
   )
+
+  const allWeaponStats = useMemo(() => getAllWeaponStats(), [])
+  const opById = useMemo(
+    () => new Map(allWeaponStats.map((s) => [s.id, Number(s.OPs)])),
+    [allWeaponStats]
+  )
+  const weaponsOpOf = (weapons?: Record<string, string>) =>
+    Object.values(weapons ?? {}).reduce((sum, wid) => {
+      const op = opById.get(wid)
+      return sum + (Number.isFinite(op) ? (op as number) : 0)
+    }, 0)
 
   const syncHash = (next: fleetEntry[]) => {
     if (next.length === 0) {
@@ -126,7 +137,11 @@ export default function Screen({ children }: { children?: ReactNode }) {
       const cur = prev[idx].capacitors
       if (cur >= max) return prev
       const nxt = Math.min(max, cur + step)
-      const clamped = Math.min(nxt, availableOp - (prev[idx].vents ?? 0))
+      const weaponsOp = weaponsOpOf(prev[idx].weapons)
+      const clamped = Math.min(
+        nxt,
+        availableOp - (prev[idx].vents ?? 0) - weaponsOp
+      )
       if (clamped <= cur) return prev
       const next = [...prev]
       next[idx] = { ...next[idx], capacitors: clamped }
@@ -137,7 +152,10 @@ export default function Screen({ children }: { children?: ReactNode }) {
       if (!prev || prev.id !== id) return prev
       if (prev.capacitors >= max) return prev
       const nxt = Math.min(max, prev.capacitors + step)
-      const clamped = Math.min(nxt, availableOp - prev.vents)
+      const clamped = Math.min(
+        nxt,
+        availableOp - prev.vents - weaponsOpOf(prev.weapons)
+      )
       return clamped <= prev.capacitors ? prev : { ...prev, capacitors: clamped }
     })
   }
@@ -176,7 +194,11 @@ export default function Screen({ children }: { children?: ReactNode }) {
       const cur = prev[idx].vents
       if (cur >= max) return prev
       const nxt = Math.min(max, cur + step)
-      const clamped = Math.min(nxt, availableOp - (prev[idx].capacitors ?? 0))
+      const weaponsOp = weaponsOpOf(prev[idx].weapons)
+      const clamped = Math.min(
+        nxt,
+        availableOp - (prev[idx].capacitors ?? 0) - weaponsOp
+      )
       if (clamped <= cur) return prev
       const next = [...prev]
       next[idx] = { ...next[idx], vents: clamped }
@@ -187,7 +209,10 @@ export default function Screen({ children }: { children?: ReactNode }) {
       if (!prev || prev.id !== id) return prev
       if (prev.vents >= max) return prev
       const nxt = Math.min(max, prev.vents + step)
-      const clamped = Math.min(nxt, availableOp - prev.capacitors)
+      const clamped = Math.min(
+        nxt,
+        availableOp - prev.capacitors - weaponsOpOf(prev.weapons)
+      )
       return clamped <= prev.vents ? prev : { ...prev, vents: clamped }
     })
   }
@@ -228,6 +253,10 @@ export default function Screen({ children }: { children?: ReactNode }) {
   const onWeaponsChange = (weapons: Record<string, string>) => {
     if (!activeTile) return
     updateEntry(activeTile.id, { weapons })
+  }
+  const onStrip = () => {
+    if (!activeTile) return
+    updateEntry(activeTile.id, { weapons: {}, capacitors: 0, vents: 0 })
   }
   const updateGrid = () => {
     if (!gridRef.current) return
@@ -337,6 +366,7 @@ export default function Screen({ children }: { children?: ReactNode }) {
               onVentsDecrement={onVentsDecrement}
               onCustomNameChange={onCustomNameChange}
               onWeaponsChange={onWeaponsChange}
+              onStrip={onStrip}
             />
           )}
           {children}
