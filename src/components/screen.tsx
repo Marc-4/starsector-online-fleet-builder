@@ -59,12 +59,20 @@ export default function Screen({ children }: { children?: ReactNode }) {
 
   const syncHash = (next: fleetEntry[]) => {
     if (next.length === 0) {
-      history.replaceState(null, "", window.location.pathname + window.location.search)
+      history.replaceState(
+        null,
+        "",
+        window.location.pathname + window.location.search
+      )
     } else {
       const hash = encodeFleetToHash(next)
       // use replaceState to avoid triggering hashchange which would re-hydrate
       // with new random ids and break activeTile identity (subsequent +/- would miss)
-      history.replaceState(null, "", `${window.location.pathname}${window.location.search}#fleet=${hash}`)
+      history.replaceState(
+        null,
+        "",
+        `${window.location.pathname}${window.location.search}#fleet=${hash}`
+      )
     }
   }
 
@@ -116,7 +124,12 @@ export default function Screen({ children }: { children?: ReactNode }) {
     if (window.matchMedia("(max-width: 640px)").matches) setDrawerOpen(false)
   }
 
-  const updateEntry = (id: string, patch: Partial<Pick<fleetEntry, "capacitors" | "vents" | "cr" | "customName" | "weapons">>) => {
+  const updateEntry = (
+    id: string,
+    patch: Partial<
+      Pick<fleetEntry, "capacitors" | "vents" | "cr" | "customName" | "weapons">
+    >
+  ) => {
     setFleet((prev) => {
       const next = prev.map((e) => (e.id === id ? { ...e, ...patch } : e))
       syncHash(next)
@@ -156,7 +169,9 @@ export default function Screen({ children }: { children?: ReactNode }) {
         nxt,
         availableOp - prev.vents - weaponsOpOf(prev.weapons)
       )
-      return clamped <= prev.capacitors ? prev : { ...prev, capacitors: clamped }
+      return clamped <= prev.capacitors
+        ? prev
+        : { ...prev, capacitors: clamped }
     })
   }
   const onCapacitorsDecrement = (e?: React.MouseEvent) => {
@@ -292,7 +307,10 @@ export default function Screen({ children }: { children?: ReactNode }) {
   }
 
   return (
-    <div className="relative flex gap-0 flex-row">
+    <div
+      className="relative flex gap-0 h-screen w-screen p-10 flex-row"
+      style={ready ? { backgroundImage: `url(/bgs/${bgImage})` } : undefined}
+    >
       {!ready && (
         <div className="absolute inset-0 z-30 flex items-center justify-center bg-gray-950">
           <Spinner />
@@ -316,12 +334,12 @@ export default function Screen({ children }: { children?: ReactNode }) {
         <span className="text-lg leading-none">{drawerOpen ? "✕" : "☰"}</span>
       </button>
       <div
-        className={`flex flex-col bg-gray-950 h-screen overflow-y-scroll
+        className={`flex flex-col bg-gray-950/70 h-full overflow-y-scroll
           w-[15%] max-2xl:w-[17%] max-xl:w-[19%] max-lg:w-[21%] max-md:w-[23%]
           max-sm:fixed max-sm:inset-y-0 max-sm:left-0 max-sm:z-40 max-sm:w-[78%] max-sm:max-w-[320px] max-sm:shadow-2xl max-sm:transition-transform max-sm:duration-200 max-sm:ease-out
           ${drawerOpen ? "max-sm:translate-x-0" : "max-sm:-translate-x-full"}`}
       >
-        <div className="sticky top-0 z-100 bg-gray-950 text-amber-300 flex items-center justify-center gap-4 max-md:gap-2 max-sm:pl-10">
+        <div className="absolute top-4 z-10 text-amber-300 flex items-center justify-center gap-4 max-md:gap-2 max-sm:pl-10">
           {(() => {
             const totalShips = fleet.length
             return (
@@ -347,8 +365,7 @@ export default function Screen({ children }: { children?: ReactNode }) {
       <div
         ref={gridRef}
         id="grid"
-        className="relative text-blue-200 bg-black font-semibold text-lg flex-1 h-screen bg-cover"
-        style={ready ? { backgroundImage: `url(/bgs/${bgImage})` } : undefined}
+        className="relative text-blue-200 bg-gray-950/50 font-semibold text-lg flex-1 h-full bg-cover"
       >
         <div
           id="screen"
