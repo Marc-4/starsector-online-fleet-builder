@@ -43,6 +43,9 @@ export default function WeaponTile({
     <button
       onMouseEnter={() => onHoverStart(w)}
       onMouseLeave={() => onHoverEnd()}
+      onTouchStart={() => onHoverStart(w)}
+      onFocus={() => onHoverStart(w)}
+      onBlur={() => onHoverEnd()}
       type="button"
       disabled={disabled && !mounted}
       onClick={() => {
