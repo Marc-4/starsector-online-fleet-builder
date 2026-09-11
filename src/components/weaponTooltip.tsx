@@ -23,8 +23,6 @@ const DAMAGE_TYPE_MODS: Record<string, { armor: number; shields: number }> = {
   FRAGMENTATION: { armor: 25, shields: 25 }
 }
 
-const HOVER_DELAY_MS = 250
-
 function cap(s: string): string {
   return s.charAt(0).toUpperCase() + s.slice(1).toLowerCase()
 }
