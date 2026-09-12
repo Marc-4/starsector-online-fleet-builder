@@ -17,7 +17,8 @@ export default function ShipDisplay({
   onSlotRightClick,
   onSlotShiftClick,
   onSlotHover,
-  mountedWeaponIds
+  mountedWeaponIds,
+  showArcs = true
 }: {
   ship: ship
   zoom: number
@@ -30,6 +31,8 @@ export default function ShipDisplay({
   onSlotHover?: (slot: weaponSlot, weapon: weapon | undefined) => void
   /** Mounted loadout decoded from the URL hash: weaponSlot id -> weapon id. */
   mountedWeaponIds?: Record<string, string>
+  /** Render firing-arc overlays on hover/Alt. Defaults to true. */
+  showArcs?: boolean
 }) {
   const slotStyle: Record<weaponSlot["type"], string> = {
     MISSILE: "text-lime-400",
@@ -288,7 +291,7 @@ export default function ShipDisplay({
               ) : (
                 <SlotIcon type={slot.type} />
               )}
-              <SlotAngle slot={slot} forceShow={altHeld} />
+              {showArcs && <SlotAngle slot={slot} forceShow={altHeld} />}
             </button>
           )
         )
