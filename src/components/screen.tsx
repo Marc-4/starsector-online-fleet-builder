@@ -26,7 +26,8 @@ export default function Screen({ children }: { children?: ReactNode }) {
   const gridRef = useRef<HTMLDivElement>(null)
   const [grid, setGrid] = useState<{ rows: number; cols: number } | null>(null)
   const [bgImage, setBgImage] = useState("")
-  const ready = bgImage && grid
+  const [bgLoaded, setBgLoaded] = useState(false)
+  const ready = bgLoaded && grid
   const [fleet, setFleet] = useState<fleetEntry[]>([])
   const [activeTile, setActiveTile] = useState<fleetEntry>()
   const [drawerOpen, setDrawerOpen] = useState(false)
@@ -126,7 +127,13 @@ export default function Screen({ children }: { children?: ReactNode }) {
     }
   }, [])
   useEffect(() => {
-    setBgImage(`background${Math.floor(Math.random() * 9)}.webp`)
+    const img = `background${Math.floor(Math.random() * 9)}.webp`
+    setBgLoaded(false)
+    setBgImage(img)
+    const pre = new Image()
+    pre.onload = () => setBgLoaded(true)
+    pre.onerror = () => setBgLoaded(true)
+    pre.src = `bgs/${img}`
   }, [])
 
   //biome-ignore lint: we are NOT putting updateGrid in the dependency array.
@@ -326,8 +333,8 @@ export default function Screen({ children }: { children?: ReactNode }) {
 
   return (
     <div
-      className="relative flex gap-0 h-screen w-screen p-10 flex-row"
-      style={ready ? { backgroundImage: `url(bgs/${bgImage})` } : undefined}
+      className="relative flex gap-0 h-screen w-screen p-10 flex-row bg-gray-950"
+      style={bgImage ? { backgroundImage: `url(bgs/${bgImage})` } : undefined}
     >
       {!ready && (
         <div className="absolute inset-0 z-30 flex items-center justify-center bg-gray-950">
