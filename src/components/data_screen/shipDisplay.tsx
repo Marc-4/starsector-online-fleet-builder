@@ -16,6 +16,7 @@ export default function ShipDisplay({
   onSlotClick,
   onSlotRightClick,
   onSlotShiftClick,
+  onSlotHover,
   mountedWeaponIds
 }: {
   ship: ship
@@ -25,6 +26,8 @@ export default function ShipDisplay({
   onSlotRightClick?: (slot: weaponSlot) => void
   /** Shift-click on a slot (quick-mount last weapon). */
   onSlotShiftClick?: (slot: weaponSlot) => void
+  /** Hover/focus on a slot with a mounted weapon (tooltip). */
+  onSlotHover?: (slot: weaponSlot, weapon: weapon | undefined) => void
   /** Mounted loadout decoded from the URL hash: weaponSlot id -> weapon id. */
   mountedWeaponIds?: Record<string, string>
 }) {
@@ -243,6 +246,18 @@ export default function ShipDisplay({
                   e.preventDefault()
                   onSlotClick(slot)
                 }
+              }}
+              onMouseEnter={() => {
+                if (mounted) onSlotHover?.(slot, mounted)
+              }}
+              onMouseLeave={() => {
+                if (mounted) onSlotHover?.(slot, undefined)
+              }}
+              onFocus={() => {
+                if (mounted) onSlotHover?.(slot, mounted)
+              }}
+              onBlur={() => {
+                if (mounted) onSlotHover?.(slot, undefined)
               }}
               style={{
                 left: ship.center[0] - (slot.locations?.[1] ?? 0),

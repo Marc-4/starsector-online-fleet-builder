@@ -1,11 +1,24 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
-import { getAllWeaponStats, getWeaponFluxPerSecond } from "#/lib/csvParser"
+import {
+  getAllShipStats,
+  getAllWeaponStats,
+  getAllWingStats,
+  getWeaponFluxPerSecond
+} from "#/lib/csvParser"
 import { getMaxCapsVents } from "#/lib/fluxLimits"
 import { canMountWeapon } from "#/lib/weaponCompat"
 import { getWeapon } from "#/lib/weaponParser"
-import type { fleetEntry, weapon, weaponSlot } from "#/types"
+import type {
+  fleetEntry,
+  shipStats,
+  weapon,
+  weaponSlot,
+  wingStats
+} from "#/types"
 import CommonButton from "../commonBtn"
+import FighterTooltip from "../fighterTooltip"
 import WeaponSelectionModal from "../modals/weaponSelectionModal"
+import WeaponTooltip from "../weaponTooltip"
 import CombatReadinessBar from "./combatReadinessBar"
 import FighterBay from "./fighterBay"
 import ShipDisplay from "./shipDisplay"
@@ -27,6 +40,7 @@ type Props = {
   onVentsDecrement: (e?: React.MouseEvent) => void
   onCustomNameChange: (value: string) => void
   onWeaponsChange: (weapons: Record<string, string>) => void
+  onFightersChange: (fighters: string[]) => void
   onStrip: () => void
 }
 
@@ -39,12 +53,18 @@ export default function ActiveShipPanel({
   onVentsDecrement,
   onCustomNameChange,
   onWeaponsChange,
+  onFightersChange,
   onStrip
 }: Props) {
   const [zoom, setZoom] = useState(1)
   const [isMobile, setIsMobile] = useState(false)
   const [selectedSlot, setSelectedSlot] = useState<weaponSlot | null>(null)
   const [lastSlottedId, setLastSlottedId] = useState<string | null>(null)
+  const [hoveredWeapon, setHoveredWeapon] = useState<weapon | undefined>(
+    undefined
+  )
+  const [hoveredWing, setHoveredWing] = useState<wingStats | null>(null)
+  const [allShipStats, setAllShipStats] = useState<shipStats[]>([])
   const maxZoom = isMobile ? MAX_ZOOM_MOBILE : MAX_ZOOM_DESKTOP
 
   const allWeaponStats = useMemo(() => getAllWeaponStats(), [])
@@ -66,6 +86,25 @@ export default function ActiveShipPanel({
       0
     )
   }, [activeTile.weapons, opOf])
+  const allWingStats = useMemo(() => getAllWingStats(), [])
+  const wingOpById = useMemo(
+    () => new Map(allWingStats.map((s) => [s.id, Number(s["op cost"])])),
+    [allWingStats]
+  )
+  const wingOpOf = useCallback(
+    (wingId: string | undefined) => {
+      if (!wingId) return 0
+      const op = wingOpById.get(wingId)
+      return Number.isFinite(op) ? (op as number) : 0
+    },
+    [wingOpById]
+  )
+  const fightersOp = useMemo(() => {
+    return (activeTile.fighters ?? []).reduce(
+      (sum, wingId) => sum + wingOpOf(wingId),
+      0
+    )
+  }, [activeTile.fighters, wingOpOf])
   const fluxById = useMemo(
     () =>
       new Map(
@@ -88,7 +127,8 @@ export default function ActiveShipPanel({
     )
   }, [activeTile.weapons, fluxOf])
   const availableOp = activeTile.ship.stats["ordnance points"] ?? 0
-  const spentOp = activeTile.capacitors + activeTile.vents + weaponsOp
+  const spentOp =
+    activeTile.capacitors + activeTile.vents + weaponsOp + fightersOp
 
   const wouldExceedOp = useCallback(
     (slotId: string, weaponId: string) => {
@@ -97,7 +137,8 @@ export default function ActiveShipPanel({
       return (
         activeTile.capacitors +
           activeTile.vents +
-          weaponsOp -
+          weaponsOp +
+          fightersOp -
           currentOp +
           nextOp >
         availableOp
@@ -109,7 +150,33 @@ export default function ActiveShipPanel({
       activeTile.weapons,
       availableOp,
       opOf,
-      weaponsOp
+      weaponsOp,
+      fightersOp
+    ]
+  )
+
+  const wouldExceedFighterOp = useCallback(
+    (bayIndex: number, wingId: string) => {
+      const currentOp = wingOpOf(activeTile.fighters?.[bayIndex])
+      const nextOp = wingOpOf(wingId)
+      return (
+        activeTile.capacitors +
+          activeTile.vents +
+          weaponsOp +
+          fightersOp -
+          currentOp +
+          nextOp >
+        availableOp
+      )
+    },
+    [
+      activeTile.capacitors,
+      activeTile.vents,
+      activeTile.fighters,
+      availableOp,
+      weaponsOp,
+      fightersOp,
+      wingOpOf
     ]
   )
 
@@ -145,7 +212,21 @@ export default function ActiveShipPanel({
   // biome-ignore lint: activeTile is required to reset selectedSlot.
   useEffect(() => {
     setSelectedSlot(null)
+    setHoveredWeapon(undefined)
+    setHoveredWing(null)
   }, [activeTile])
+
+  // Ship stats (async: merges skins) for the fighter tooltip. Loaded once.
+  useEffect(() => {
+    let cancelled = false
+    void (async () => {
+      const stats = await getAllShipStats()
+      if (!cancelled) setAllShipStats(stats)
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   const handleWheel = useCallback(
     (e: React.WheelEvent) => {
@@ -188,11 +269,53 @@ export default function ActiveShipPanel({
         </div>
       </div>
       <div className="flex flex-col gap-1 absolute left-2 top-[25%] w-fit h-fit">
+        {(activeTile.ship.meta.builtInWings ?? []).map((wingId) => (
+          <FighterBay
+            key={`${activeTile.id}-builtin-${wingId}`}
+            wingId={wingId}
+            locked
+            onHover={setHoveredWing}
+          />
+        ))}
         {Array.from(
-          { length: activeTile.ship.stats["fighter bays"] },
-          (_, i) => i + 1
-        ).map((fb) => (
-          <FighterBay key={fb} />
+          {
+            length: Math.max(
+              0,
+              (activeTile.ship.stats["fighter bays"] ?? 0) -
+                (activeTile.ship.meta.builtInWings ?? []).length
+            )
+          },
+          (_, i) => i
+        ).map((bayIndex) => (
+          <FighterBay
+            key={`${activeTile.id}-bay-${bayIndex}`}
+            wingId={activeTile.fighters?.[bayIndex] ?? ""}
+            remainingOpForBay={
+              availableOp -
+              (activeTile.capacitors +
+                activeTile.vents +
+                weaponsOp +
+                fightersOp) +
+              wingOpOf(activeTile.fighters?.[bayIndex])
+            }
+            onSelect={(wing) => {
+              const next = [...(activeTile.fighters ?? [])]
+              if (next[bayIndex] === wing.id) {
+                next[bayIndex] = ""
+                onFightersChange(next.filter(Boolean).length ? next : [])
+                return
+              }
+              if (wouldExceedFighterOp(bayIndex, wing.id)) return
+              next[bayIndex] = wing.id
+              onFightersChange(next)
+            }}
+            onRemove={() => {
+              const next = [...(activeTile.fighters ?? [])]
+              next[bayIndex] = ""
+              onFightersChange(next.filter(Boolean).length ? next : [])
+            }}
+            onHover={setHoveredWing}
+          />
         ))}
       </div>
       <div
@@ -234,8 +357,12 @@ export default function ActiveShipPanel({
         <ShipDisplay
           ship={activeTile.ship.meta}
           zoom={zoom}
-          onSlotClick={setSelectedSlot}
+          onSlotClick={(slot) => {
+            setHoveredWeapon(undefined)
+            setSelectedSlot(slot)
+          }}
           onSlotShiftClick={handleSlotShiftClick}
+          onSlotHover={(_slot, weapon) => setHoveredWeapon(weapon)}
           onSlotRightClick={(slot) => {
             if (!activeTile.weapons?.[slot.id]) return
             const next = { ...activeTile.weapons }
@@ -245,6 +372,23 @@ export default function ActiveShipPanel({
           mountedWeaponIds={activeTile.weapons ?? {}}
         />
       </div>
+      {(hoveredWeapon || hoveredWing) && !selectedSlot && (
+        <div className="absolute left-1 top-14 z-30 w-96 max-w-[80vw] h-fit overflow-auto pointer-events-none">
+          {hoveredWeapon ? (
+            <WeaponTooltip
+              weapon={hoveredWeapon}
+              allWeaponStats={allWeaponStats}
+            />
+          ) : (
+            hoveredWing && (
+              <FighterTooltip
+                wing={hoveredWing}
+                allShipStats={allShipStats}
+              />
+            )
+          )}
+        </div>
+      )}
       {selectedSlot && (
         <WeaponSelectionModal
           slot={selectedSlot}
@@ -256,7 +400,10 @@ export default function ActiveShipPanel({
           }}
           remainingOpForSlot={
             availableOp -
-            (activeTile.capacitors + activeTile.vents + weaponsOp) +
+            (activeTile.capacitors +
+              activeTile.vents +
+              weaponsOp +
+              fightersOp) +
             opOf(activeTile.weapons?.[selectedSlot.id])
           }
           mountedWeaponIds={activeTile.weapons ?? {}}
