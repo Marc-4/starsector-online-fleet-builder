@@ -60,6 +60,9 @@ export default function ActiveShipPanel({
   const [isMobile, setIsMobile] = useState(false)
   const [selectedSlot, setSelectedSlot] = useState<weaponSlot | null>(null)
   const [lastSlottedId, setLastSlottedId] = useState<string | null>(null)
+  const [lastSlottedWingId, setLastSlottedWingId] = useState<string | null>(
+    null
+  )
   const [hoveredWeapon, setHoveredWeapon] = useState<weapon | undefined>(
     undefined
   )
@@ -177,6 +180,27 @@ export default function ActiveShipPanel({
       weaponsOp,
       fightersOp,
       wingOpOf
+    ]
+  )
+
+  // Shift-click an empty bay: mount the last-slotted wing if it fits.
+  const handleBayShiftClick = useCallback(
+    (bayIndex: number) => {
+      if (activeTile.fighters?.[bayIndex]) return
+      if (!lastSlottedWingId) return
+      const wing = allWingStats.find((w) => w.id === lastSlottedWingId)
+      if (!wing) return
+      if (wouldExceedFighterOp(bayIndex, wing.id)) return
+      const next = [...(activeTile.fighters ?? [])]
+      next[bayIndex] = wing.id
+      onFightersChange(next)
+    },
+    [
+      activeTile.fighters,
+      allWingStats,
+      lastSlottedWingId,
+      onFightersChange,
+      wouldExceedFighterOp
     ]
   )
 
@@ -307,8 +331,10 @@ export default function ActiveShipPanel({
               }
               if (wouldExceedFighterOp(bayIndex, wing.id)) return
               next[bayIndex] = wing.id
+              setLastSlottedWingId(wing.id)
               onFightersChange(next)
             }}
+            onShiftClick={() => handleBayShiftClick(bayIndex)}
             onRemove={() => {
               const next = [...(activeTile.fighters ?? [])]
               next[bayIndex] = ""

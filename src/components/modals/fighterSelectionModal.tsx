@@ -3,7 +3,7 @@ import { getAllShipStats, getAllWingStats, isWingSelectable } from "#/lib/csvPar
 import { getAllShips } from "#/lib/shipParser"
 import type { ship, shipStats, wingStats } from "#/types"
 import CommonButton from "../commonBtn"
-import { getWingHullId } from "#/lib/csvParser"
+import { getWingHullIds } from "#/lib/csvParser"
 import FighterFilters from "../fighterFilters"
 import FighterTile from "../fighterTile"
 import FighterTooltip from "../fighterTooltip"
@@ -57,8 +57,10 @@ export default function FighterSelectionModal({
     const s = new Set<string>()
     for (const w of allWings) {
       if (!isWingSelectable(w)) continue
-      const hullId = getWingHullId(w)
-      const st = (hullId && styleByHullId.get(hullId)) || ""
+      const st =
+        getWingHullIds(w)
+          .map((id) => styleByHullId.get(id))
+          .find(Boolean) || ""
       if (st) s.add(st)
     }
     return Array.from(s).sort()
@@ -83,8 +85,10 @@ export default function FighterSelectionModal({
           if (!activeRoleFilters.includes(r)) return false
         }
         if (activeDesignTypeFilters.length > 0) {
-          const hullId = getWingHullId(w)
-          const st = (hullId && styleByHullId.get(hullId)) || ""
+          const st =
+            getWingHullIds(w)
+              .map((id) => styleByHullId.get(id))
+              .find(Boolean) || ""
           if (!activeDesignTypeFilters.includes(st)) return false
         }
         if (searchString.length > 0) {
