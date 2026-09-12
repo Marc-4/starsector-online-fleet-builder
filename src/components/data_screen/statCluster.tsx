@@ -15,6 +15,8 @@ export default function StatCluster({
   fluxDissipation,
   shieldEfficiency,
   weaponFluxPerSecond,
+  showInfo,
+  onInfoToggle,
   onCapacitorsIncrement,
   onCapacitorsDecrement,
   onVentsIncrement,
@@ -33,6 +35,8 @@ export default function StatCluster({
   fluxDissipation?: number
   shieldEfficiency?: number
   weaponFluxPerSecond?: number
+  showInfo?: boolean
+  onInfoToggle?: () => void
   onCapacitorsIncrement?: (e?: React.MouseEvent) => void
   onCapacitorsDecrement?: (e?: React.MouseEvent) => void
   onVentsIncrement?: (e?: React.MouseEvent) => void
@@ -97,34 +101,37 @@ export default function StatCluster({
   useEffect(() => () => clearHold(), [clearHold])
 
   return (
-    <div className="flex flex-col w-fit m-1 ml-2 max-sm:m-0.5">
-      <fieldset
-        className="relative flex self-end items-center justify-center w-[300px] sm:w-96 h-7 sm:h-8 bg-gray-950 border border-gray-950 rounded-xs overflow-hidden"
-        aria-label={`Ordnance Points ${spentOp} of ${availableOp ?? "N/A"}`}
-      >
-        <div
-          className="absolute inset-y-0 left-0 ss-stat-blue-bar border-0 rounded-none transition-[width] duration-200 ease-out"
-          style={{ width: pct }}
-          aria-hidden="true"
-        />
-        <input
-          type="range"
-          min={0}
-          max={availableOp ?? 100}
-          value={availableOp ? spentOp : 0}
-          disabled
-          readOnly
+    <div className="relative flex flex-col w-fit m-1 ml-2 max-sm:m-0.5">
+      <div className="flex gap-2 items-center">
+        <CommonButton text="?" className="h-fit w-fit px-3 py-0" clipPath={false} onClick={onInfoToggle} title="Ship info" aria-expanded={showInfo} />
+        <fieldset
+          className="relative flex self-end items-center justify-center w-[300px] sm:w-96 h-7 sm:h-8 bg-gray-950 border border-gray-950 rounded-xs overflow-hidden"
           aria-label={`Ordnance Points ${spentOp} of ${availableOp ?? "N/A"}`}
-          aria-valuenow={availableOp ? spentOp : 0}
-          aria-valuemin={0}
-          aria-valuemax={availableOp ?? 100}
-          className="absolute inset-0 w-full h-full opacity-0 cursor-default"
-          tabIndex={-1}
-        />
-        <p className="relative z-10 mx-auto ss-amber-lg pointer-events-none">
-          {availableOp ? `${spentOp} / ${availableOp}` : "N/A"}
-        </p>
-      </fieldset>
+        >
+          <div
+            className="absolute inset-y-0 left-0 ss-stat-blue-bar border-0 rounded-none transition-[width] duration-200 ease-out"
+            style={{ width: pct }}
+            aria-hidden="true"
+          />
+          <input
+            type="range"
+            min={0}
+            max={availableOp ?? 100}
+            value={availableOp ? spentOp : 0}
+            disabled
+            readOnly
+            aria-label={`Ordnance Points ${spentOp} of ${availableOp ?? "N/A"}`}
+            aria-valuenow={availableOp ? spentOp : 0}
+            aria-valuemin={0}
+            aria-valuemax={availableOp ?? 100}
+            className="absolute inset-0 w-full h-full opacity-0 cursor-default"
+            tabIndex={-1}
+          />
+          <p className="relative z-10 mx-auto ss-amber-lg pointer-events-none">
+            {availableOp ? `${spentOp} / ${availableOp}` : "N/A"}
+          </p>
+        </fieldset>
+      </div>
       <div className="flex gap-4 sm:gap-12 self-end max-sm:gap-3">
         <div className="ss-label-col">
           <p className="ss-label-text max-sm:text-xs">TOP SPEED</p>

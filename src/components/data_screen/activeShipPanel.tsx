@@ -22,6 +22,7 @@ import WeaponTooltip from "../weaponTooltip"
 import CombatReadinessBar from "./combatReadinessBar"
 import FighterBay from "./fighterBay"
 import ShipDisplay from "./shipDisplay"
+import ShipInfoCard from "./shipInfoCard"
 import ShipName from "./shipName"
 import StatCluster from "./statCluster"
 import ZoomControls from "./zoomControls"
@@ -67,6 +68,7 @@ export default function ActiveShipPanel({
     undefined
   )
   const [hoveredWing, setHoveredWing] = useState<wingStats | null>(null)
+  const [showInfo, setShowInfo] = useState(false)
   const [allShipStats, setAllShipStats] = useState<shipStats[]>([])
   const maxZoom = isMobile ? MAX_ZOOM_MOBILE : MAX_ZOOM_DESKTOP
 
@@ -252,6 +254,19 @@ export default function ActiveShipPanel({
     }
   }, [])
 
+  useEffect(() => {
+    setShowInfo(false)
+  }, [activeTile])
+
+  useEffect(() => {
+    if (!showInfo) return
+    const handler = (ev: KeyboardEvent) => {
+      if (ev.key === "Escape") setShowInfo(false)
+    }
+    window.addEventListener("keydown", handler)
+    return () => window.removeEventListener("keydown", handler)
+  }, [showInfo])
+
   const handleWheel = useCallback(
     (e: React.WheelEvent) => {
       e.preventDefault()
@@ -273,6 +288,8 @@ export default function ActiveShipPanel({
         <div className="pointer-events-auto lg:ml-auto max-lg:self-end origin-top-right">
           <StatCluster
             spentOp={spentOp}
+            showInfo={showInfo}
+            onInfoToggle={() => setShowInfo((v) => !v)}
             availableOp={availableOp}
             topSpeed={activeTile.ship.stats["max speed"]}
             armor={activeTile.ship.stats["armor rating"]}
@@ -292,6 +309,22 @@ export default function ActiveShipPanel({
           />
         </div>
       </div>
+      {showInfo && (
+        <>
+          <div
+            aria-hidden="true"
+            onClick={() => setShowInfo(false)}
+            className="absolute inset-0 z-30 bg-transparent cursor-default"
+          />
+          <div className="absolute left-1 top-16 z-40 max-w-[calc(100%-0.5rem)] overflow-x-auto">
+            <ShipInfoCard
+              ship={activeTile.ship}
+              capacitors={activeTile.capacitors}
+              vents={activeTile.vents}
+            />
+          </div>
+        </>
+      )}
       <div className="flex flex-col gap-1 absolute left-2 top-[25%] w-fit h-fit">
         {(activeTile.ship.meta.builtInWings ?? []).map((wingId) => (
           <FighterBay
@@ -399,7 +432,7 @@ export default function ActiveShipPanel({
         />
       </div>
       {(hoveredWeapon || hoveredWing) && !selectedSlot && (
-        <div className="absolute left-1 top-14 z-30 w-96 max-w-[80vw] h-fit overflow-auto pointer-events-none">
+        <div className="absolute left-1 top-16 z-30 w-96 max-w-[80vw] h-fit overflow-auto pointer-events-none">
           {hoveredWeapon ? (
             <WeaponTooltip
               weapon={hoveredWeapon}
@@ -407,10 +440,7 @@ export default function ActiveShipPanel({
             />
           ) : (
             hoveredWing && (
-              <FighterTooltip
-                wing={hoveredWing}
-                allShipStats={allShipStats}
-              />
+              <FighterTooltip wing={hoveredWing} allShipStats={allShipStats} />
             )
           )}
         </div>
