@@ -6,6 +6,7 @@
 - add ships to fleet
 - allocate vents & capacitors
 - share whole fleet via url (partial)
+- view ship details
 - render weapon slots
 - add weapons
 - view weapon details
@@ -14,7 +15,6 @@
 
 ## In Progress (in order of importance)
 
-- view ship details
 - add hullmods to ships
 - view hullmod details
 - assign officers to ships
