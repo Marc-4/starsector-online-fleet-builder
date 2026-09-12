@@ -27,8 +27,7 @@ export default function SidebarShipTile({
     ro.observe(el)
     return () => ro.disconnect()
   }, [])
-  // Fixed fill fraction per hull size: capitals fill the tile, smaller
-  // hulls stay proportionally smaller. Tune per class here.
+
   const FILL_BY_HULL_SIZE: Record<string, number> = {
     CAPITAL_SHIP: 1,
     CRUISER: 1,
@@ -55,6 +54,7 @@ export default function SidebarShipTile({
           zoom={zoom}
           mountedWeaponIds={entry.weapons ?? {}}
           showArcs={false}
+          showEmptySlots={false}
         />
       </div>
       <h1 className="absolute left-1 max-w-[50%] top-1 ss-cyan-title text-xs">

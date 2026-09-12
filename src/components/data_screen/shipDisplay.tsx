@@ -18,7 +18,8 @@ export default function ShipDisplay({
   onSlotShiftClick,
   onSlotHover,
   mountedWeaponIds,
-  showArcs = true
+  showArcs = true,
+  showEmptySlots = true
 }: {
   ship: ship
   zoom: number
@@ -33,6 +34,8 @@ export default function ShipDisplay({
   mountedWeaponIds?: Record<string, string>
   /** Render firing-arc overlays on hover/Alt. Defaults to true. */
   showArcs?: boolean
+  /** Render icons for empty weapon slots. Defaults to true. */
+  showEmptySlots?: boolean
 }) {
   const slotStyle: Record<weaponSlot["type"], string> = {
     MISSILE: "text-lime-400",
@@ -227,6 +230,7 @@ export default function ShipDisplay({
       {weaponSlots?.map((slot, i) => {
         const mountedId = mountedWeaponIds?.[slot.id]
         const mounted = mountedId ? resolvedWeapons[mountedId] : undefined
+        if (!mounted && !showEmptySlots) return null
         return (
           slot.mount !== "HIDDEN" && (
             <button
