@@ -1,5 +1,6 @@
-import { getWingHullId } from "#/lib/csvParser"
+import { getWingHullIds } from "#/lib/csvParser"
 import type { ship, shipStats, wingStats } from "#/types"
+import FighterSprite from "./fighterSprite"
 
 type Props = {
   wing: wingStats
@@ -22,8 +23,10 @@ export default function FighterTile({
   mounted,
   disabled
 }: Props) {
-  const hullId = getWingHullId(w)
-  const ship = allShips.find((s) => s.hullId === hullId) ?? null
+  const hullIds = getWingHullIds(w)
+  const ship =
+    allShips.find((s) => hullIds.includes(s.hullId)) ?? null
+  const hullId = ship?.hullId ?? null
   const stats = allShipStats.find((s) => s.id === hullId) ?? null
   const name = stats?.name ?? ship?.hullName ?? w.variant ?? w.id
   const role = w["role desc"] ?? w.role ?? ""
@@ -60,12 +63,10 @@ export default function FighterTile({
     >
       <div className="relative border border-cyan-700 w-16 h-16 shrink-0 flex items-center justify-center overflow-hidden">
         {ship ? (
-          <img
-            draggable={false}
-            src={`ships${ship.spriteName}`}
-            alt=""
-            className="max-h-full max-w-full object-contain"
-            style={{ imageRendering: "smooth" }}
+          <FighterSprite
+            ship={ship}
+            variant={w.variant}
+            className="max-h-full max-w-full"
           />
         ) : (
           <div className="absolute inset-0 border border-cyan-800 bg-cyan-900/30" />

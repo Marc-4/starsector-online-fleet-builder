@@ -199,3 +199,29 @@ export function getWingHullId(wing: wingStats | null | undefined): string | null
   const prefix = String(wing.variant).split("_")[0]?.trim()
   return prefix ? prefix.toLowerCase() : null
 }
+
+/** Candidate hull ids for a wing, most specific first.
+ *  Most variants are "<hull>_<role>" (prefix wins), but some drone wings
+ *  use the bare hull id as variant (e.g. "drone_terminator"), so the full
+ *  variant is tried first. */
+export function getWingHullIds(wing: wingStats | null | undefined): string[] {
+  if (!wing?.variant) return []
+  const full = String(wing.variant).trim().toLowerCase()
+  const prefix = full.split("_")[0]?.trim()
+  const out: string[] = []
+  if (full && !out.includes(full)) out.push(full)
+  if (prefix && !out.includes(prefix)) out.push(prefix)
+  return out
+}
+
+/** First candidate hull id present in `ids` (ships, stats, or style map). */
+export function resolveWingHullId(
+  wing: wingStats | null | undefined,
+  ids: Iterable<string>
+): string | null {
+  const set = ids instanceof Set ? ids : new Set(ids)
+  for (const id of getWingHullIds(wing)) {
+    if (set.has(id)) return id
+  }
+  return null
+}

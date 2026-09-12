@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react"
-import { getAllWingStats, getWingHullId } from "#/lib/csvParser"
+import { getAllWingStats, getWingHullIds } from "#/lib/csvParser"
 import { getCachedShips } from "#/lib/shipParser"
 import type { ship, wingStats } from "#/types"
+import FighterSprite from "../fighterSprite"
 import FighterSelectionModal from "../modals/fighterSelectionModal"
 
 export default function FighterBay({
@@ -10,7 +11,8 @@ export default function FighterBay({
   locked,
   onSelect,
   onRemove,
-  onHover
+  onHover,
+  onShiftClick
 }: {
   wingId?: string
   remainingOpForBay?: number
@@ -19,6 +21,8 @@ export default function FighterBay({
   onSelect?: (wing: wingStats) => void
   onRemove?: () => void
   onHover?: (wing: wingStats | null) => void
+  /** Shift-click on the bay (quick-mount last wing). */
+  onShiftClick?: () => void
 }) {
   const [isFighterSelectionModalOpen, setIsFighterSelectionModalOpen] =
     useState(false)
@@ -38,9 +42,9 @@ export default function FighterBay({
     }
   }, [])
 
-  const hullId = wing ? getWingHullId(wing) : null
-  const sprite = hullId
-    ? (allShips.find((s) => s.hullId === hullId)?.spriteName ?? null)
+  const hullIds = wing ? getWingHullIds(wing) : []
+  const fighterShip = hullIds.length
+    ? (allShips.find((s) => hullIds.includes(s.hullId)) ?? null)
     : null
 
   const hoverIn = () => {
@@ -63,13 +67,11 @@ export default function FighterBay({
         onMouseLeave={hoverOut}
         className="w-20 h-20 border border-amber-300/60 bg-gray-950 flex items-center justify-center overflow-hidden cursor-not-allowed"
       >
-        {sprite ? (
-          <img
-            draggable={false}
-            src={`ships${sprite}`}
-            alt={wingId ?? ""}
-            className="max-h-full max-w-full object-contain"
-            style={{ imageRendering: "smooth" }}
+        {fighterShip ? (
+          <FighterSprite
+            ship={fighterShip}
+            variant={wing?.variant}
+            className="pointer-events-none"
           />
         ) : (
           <span className="text-amber-200/80 text-[10px] px-1 text-center">
@@ -86,7 +88,13 @@ export default function FighterBay({
         type="button"
         aria-label={wingId ? `Fighter bay: ${wingId}` : "Select fighter wing"}
         title={wingId || "Empty fighter bay — click to select"}
-        onClick={() => setIsFighterSelectionModalOpen(true)}
+        onClick={(e) => {
+          if (e.shiftKey) {
+            onShiftClick?.()
+            return
+          }
+          setIsFighterSelectionModalOpen(true)
+        }}
         onMouseEnter={hoverIn}
         onMouseLeave={hoverOut}
         onFocus={hoverIn}
@@ -97,13 +105,11 @@ export default function FighterBay({
         }}
         className="w-20 h-20 border-cyan-800 border bg-gray-950 cursor-pointer hover:border-cyan-600 flex items-center justify-center overflow-hidden"
       >
-        {sprite ? (
-          <img
-            draggable={false}
-            src={`ships${sprite}`}
-            alt={wingId ?? ""}
-            className="max-h-full max-w-full object-contain pointer-events-none"
-            style={{ imageRendering: "smooth" }}
+        {fighterShip ? (
+          <FighterSprite
+            ship={fighterShip}
+            variant={wing?.variant}
+            className="max-h-full max-w-full pointer-events-none"
           />
         ) : (
           <span className="text-cyan-200 text-[10px] px-1 text-center">

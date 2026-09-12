@@ -1,4 +1,4 @@
-import { getWingHullId } from "#/lib/csvParser"
+import { getWingHullIds } from "#/lib/csvParser"
 import type { shipStats, wingStats } from "#/types"
 
 function text(v: unknown): string | null {
@@ -53,8 +53,8 @@ export default function FighterTooltip({
   systemDesc?: string | null
   armaments?: string | null
 }) {
-  const hullId = getWingHullId(wing)
-  const stats = allShipStats.find((s) => s.id === hullId) ?? null
+  const hullIds = getWingHullIds(wing)
+  const stats = allShipStats.find((s) => hullIds.includes(s.id)) ?? null
 
   const name = text(stats?.name) ?? humanize(wing.variant ?? wing.id)
   const roleDesc = text(wing["role desc"]) ?? text(wing.role)
