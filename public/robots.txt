@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://marc-4.github.io/starsector-online-fleet-builder/sitemap.xml

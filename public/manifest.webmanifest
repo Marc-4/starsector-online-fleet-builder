@@ -1,0 +1,18 @@
+{
+  "name": "Starsector Fleet Builder & Ship Builder – Online Refit Tool",
+  "short_name": "Starsector Fleet Builder",
+  "description": "Free online Starsector fleet builder and ship builder. Plan loadouts, weapons, vents, capacitors and hullmods in your browser.",
+  "start_url": "/starsector-online-fleet-builder/",
+  "scope": "/starsector-online-fleet-builder/",
+  "display": "standalone",
+  "background_color": "#09090b",
+  "theme_color": "#09090b",
+  "icons": [
+    {
+      "src": "favicon.webp",
+      "sizes": "any",
+      "type": "image/webp",
+      "purpose": "any"
+    }
+  ]
+}
