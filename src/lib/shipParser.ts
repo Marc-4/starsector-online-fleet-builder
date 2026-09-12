@@ -105,6 +105,21 @@ function mergeSkin(base: ship, skin: shipSkin): ship {
   return merged
 }
 
+let cachedShips: ship[] | null = null
+let cachedShipsPromise: Promise<ship[]> | null = null
+
+/** Cached getAllShips: parses hull files once, reuses across bays/tiles. */
+export function getCachedShips(): Promise<ship[]> {
+  if (cachedShips) return Promise.resolve(cachedShips)
+  if (!cachedShipsPromise) {
+    cachedShipsPromise = getAllShips().then((ships) => {
+      cachedShips = ships
+      return ships
+    })
+  }
+  return cachedShipsPromise
+}
+
 export async function getAllShips(): Promise<ship[]> {
   try {
     const names = manifest as string[]
