@@ -30,6 +30,24 @@ export default function Screen({ children }: { children?: ReactNode }) {
   const [fleet, setFleet] = useState<fleetEntry[]>([])
   const [activeTile, setActiveTile] = useState<fleetEntry>()
   const [drawerOpen, setDrawerOpen] = useState(false)
+  const prevFleetLenRef = useRef(0)
+
+  useEffect(() => {
+    if (activeTile && !fleet.some((e) => e.id === activeTile.id)) {
+      setActiveTile(
+        prevFleetLenRef.current === 0 && fleet.length > 0
+          ? fleet[0]
+          : undefined
+      )
+    } else if (
+      prevFleetLenRef.current === 0 &&
+      fleet.length > 0 &&
+      !activeTile
+    ) {
+      setActiveTile(fleet[0])
+    }
+    prevFleetLenRef.current = fleet.length
+  }, [fleet, activeTile])
   const totalFleetDP = useMemo(
     () =>
       fleet.reduce((sum, fe) => sum + (fe.ship.stats["supplies/mo"] ?? 0), 0),
