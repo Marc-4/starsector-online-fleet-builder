@@ -50,7 +50,7 @@ function Row({ label, value }: { label: string; value: string }) {
 
 function SectionBar({ children }: { children: string }) {
   return (
-    <div className="bg-[#1f7a8c] px-2 py-0.5 text-center text-sm text-white">
+    <div className="bg-cyan-800 px-2 py-0.5 text-center text-sm text-cyan-100">
       {children}
     </div>
   )
