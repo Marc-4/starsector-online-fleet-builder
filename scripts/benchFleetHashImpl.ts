@@ -17,7 +17,7 @@ function toBase64Url(bytes: Uint8Array): string {
 
 function mkEntry(
   hullId: string,
-  opts: { capacitors?: number; vents?: number; cr?: number; customName?: string; weapons?: Record<string, string> } = {}
+  opts: { capacitors?: number; vents?: number; cr?: number; customName?: string; weapons?: Record<string, string>; fighters?: string[] } = {}
 ): fleetEntry {
   return {
     id: `bench-${hullId}`,
@@ -26,8 +26,21 @@ function mkEntry(
     capacitors: opts.capacitors ?? 0,
     vents: opts.vents ?? 0,
     customName: opts.customName ?? "",
-    weapons: opts.weapons ?? {}
+    weapons: opts.weapons ?? {},
+    fighters: opts.fighters ?? []
   }
+}
+
+const WINGS = ["broadsword_wing", "longbow_wing", "dagger_wing", "piranha_wing", "thunder_wing", "gladius_wing", "wasp_wing", "talon_wing", "xyphos_wing", "spark_wing"]
+
+function mkFighters(i: number, bays: number): string[] {
+  const out: string[] = []
+  for (let b = 0; b < bays; b++) {
+    // leave some bays empty to exercise sparse/empty-bay encoding
+    if ((i + b) % 4 === 3) out.push("")
+    else out.push(WINGS[(i + b) % WINGS.length])
+  }
+  return out
 }
 
 const LONG_WEAPONS: Record<string, string> = {
@@ -54,7 +67,9 @@ const LONG_WEAPONS: Record<string, string> = {
 }
 
 function norm(e: DecodedEntry) {
-  return { ...e, weapons: Object.fromEntries(Object.entries(e.weapons).sort(([a], [b]) => (a < b ? -1 : 1))) }
+  const fighters = [...(e.fighters ?? [])]
+  while (fighters.length > 0 && !fighters[fighters.length - 1]) fighters.pop()
+  return { ...e, weapons: Object.fromEntries(Object.entries(e.weapons).sort(([a], [b]) => (a < b ? -1 : 1))), fighters }
 }
 
 function checkRoundTrip(label: string, fleet: fleetEntry[]): { v2: number; v3: number } {
@@ -62,7 +77,7 @@ function checkRoundTrip(label: string, fleet: fleetEntry[]): { v2: number; v3: n
   const v3 = encodeFleetToHash(fleet)
   const back = decodeFleetEntries(`#fleet=${v3}`)
   const expected = fleet.map((e) =>
-    norm({ hullId: e.ship.meta.hullId, capacitors: e.capacitors, vents: e.vents, cr: e.cr, customName: e.customName, weapons: e.weapons ?? {} })
+    norm({ hullId: e.ship.meta.hullId, capacitors: e.capacitors, vents: e.vents, cr: e.cr, customName: e.customName, weapons: e.weapons ?? {}, fighters: [...(e.fighters ?? [])] })
   )
   const actual = (back ?? []).map(norm)
   const ok = JSON.stringify(actual) === JSON.stringify(expected)
@@ -89,7 +104,8 @@ export async function run(): Promise<void> {
       vents: 5 + ((i * 11) % 40),
       cr: 60 + ((i * 13) % 41),
       customName: `ISS ${hullId} ${i + 1} “knife-fight”`,
-      weapons
+      weapons,
+      fighters: mkFighters(i, i % 7)
     })
   })
   // typical: mixed fleet, partial fits
@@ -99,22 +115,30 @@ export async function run(): Promise<void> {
     mkEntry("hammerhead", { vents: 10, weapons: { "WS 002": "railgun" } }),
     mkEntry("lasher", {}),
     mkEntry("kite", { customName: "scout" }),
-    mkEntry("condor", { cr: 60, weapons: { "WS 001": "longbow" } }),
-    mkEntry("apogee", { capacitors: 12, vents: 12, cr: 100, customName: "ISS Surveyor", weapons: LONG_WEAPONS }),
+    mkEntry("condor", { cr: 60, weapons: { "WS 001": "longbow" }, fighters: ["broadsword_wing", ""] }),
+    mkEntry("astral", { capacitors: 12, vents: 12, cr: 100, customName: "ISS Carrier", weapons: LONG_WEAPONS, fighters: ["longbow_wing", "dagger_wing", "piranha_wing", "thunder_wing", "", "gladius_wing"] }),
     mkEntry("onslaught", { capacitors: 40, vents: 30, weapons: { "WS 001": "hellbore", "WS 010": "flak" } })
   ]
   // minimal: 30 bare frigates (defaults omitted)
   const minimal: fleetEntry[] = Array.from({ length: 30 }, () => mkEntry("lasher"))
   // edge: unknown modded ids + non-WS slot + empty name
   const edge: fleetEntry[] = [
-    mkEntry("my_modded_hull", { capacitors: 5, customName: "Müller’s Pride ☄", weapons: { "WS 001": "my_modded_gun", "CUSTOM_SLOT_A": "lightmg" } }),
+    mkEntry("my_modded_hull", { capacitors: 5, customName: "Müller’s Pride ☄", weapons: { "WS 001": "my_modded_gun", "CUSTOM_SLOT_A": "lightmg" }, fighters: ["my_modded_wing", "", "broadsword_wing"] }),
     mkEntry("eagle", { cr: 0, weapons: {} })
+  ]
+  // carriers: fighter-heavy stress case (full bays, trailing empties, modded wing)
+  const carriers: fleetEntry[] = [
+    mkEntry("astral", { fighters: ["longbow_wing", "dagger_wing", "piranha_wing", "thunder_wing", "gladius_wing", "wasp_wing"] }),
+    mkEntry("heron", { fighters: ["broadsword_wing", "broadsword_wing", ""] }),
+    mkEntry("mora", { fighters: ["xyphos_wing", "spark_wing"] }),
+    mkEntry("legion", { fighters: ["my_modded_wing", "", "", "talon_wing"] })
   ]
 
   const w = checkRoundTrip("worst-case 30 diverse fitted ships", worst)
   const t = checkRoundTrip("typical 8-ship fleet", typical)
   const m = checkRoundTrip("minimal 30x bare lasher", minimal)
   const e = checkRoundTrip("modded/edge", edge)
+  const c = checkRoundTrip("carrier 4-ship fighter-heavy", carriers)
 
   const empty = encodeFleetToHash([])
   const emptyBack = decodeFleetEntries(empty)
@@ -133,7 +157,7 @@ export async function run(): Promise<void> {
   console.log(`${decodeFleetEntries("###") === null ? "PASS" : "FAIL"} decode garbage -> null`)
 
   console.log("\n--- lengths (URL chars) ---")
-  for (const [label, r] of [["worst", w], ["typical", t], ["minimal", m], ["edge", e]] as const) {
+  for (const [label, r] of [["worst", w], ["typical", t], ["minimal", m], ["edge", e], ["carriers", c]] as const) {
     const pct = Math.round((1 - r.v3 / r.v2) * 100)
     console.log(`${label}: v2=${r.v2} v3=${r.v3} (-${pct}%)`)
   }
