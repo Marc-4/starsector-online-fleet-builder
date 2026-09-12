@@ -3,19 +3,6 @@ import Screen from "#/components/screen"
 
 export const Route = createFileRoute("/")({
   component: Home,
-  head: () => ({
-    meta: [
-      {
-        title: "Starsector Fleet Builder & Ship Builder – Free Online Refit Tool"
-      },
-      {
-        name: "description",
-        content:
-          "Free online Starsector fleet builder and ship builder. Plan loadouts, weapons, vents, capacitors and hullmods in your browser and share your fleet via URL."
-      },
-      { property: "og:url", content: "https://marc-4.github.io/starsector-online-fleet-builder/" }
-    ]
-  })
 })
 
 function Home() {
@@ -37,7 +24,7 @@ function Home() {
             ship loadouts, weapons, vents, capacitors and hullmods, then share your fleet via URL.
           </p>
           <p>
-            Learn more on the <a href="/about">about page</a>.
+            Learn more on the <a href="/about/page">about page</a>.
           </p>
         </div>
       </noscript>

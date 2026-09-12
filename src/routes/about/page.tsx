@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router"
 
-export const Route = createFileRoute("/about")({
+export const Route = createFileRoute("/about/page")({
   component: About,
   head: () => ({
     meta: [
@@ -33,7 +33,7 @@ const FAQS = [
   }
 ]
 
-export default function About() {
+function About() {
   return (
     <div className="min-h-screen bg-gray-950 text-gray-100">
     <main className="mx-auto max-w-3xl px-6 py-16 prose prose-invert">
