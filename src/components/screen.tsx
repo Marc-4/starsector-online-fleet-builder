@@ -1,5 +1,9 @@
 import { type ReactNode, useEffect, useMemo, useRef, useState } from "react"
-import { getAllShipStats, getAllWeaponStats } from "#/lib/csvParser"
+import {
+  getAllShipStats,
+  getAllWeaponStats,
+  getAllWingStats
+} from "#/lib/csvParser"
 import {
   decodeFleetEntries,
   encodeFleetToHash,
@@ -70,9 +74,20 @@ export default function Screen({ children }: { children?: ReactNode }) {
     () => new Map(allWeaponStats.map((s) => [s.id, Number(s.OPs)])),
     [allWeaponStats]
   )
+  const allWingStats = useMemo(() => getAllWingStats(), [])
+  const wingOpById = useMemo(
+    () => new Map(allWingStats.map((s) => [s.id, Number(s["op cost"])])),
+    [allWingStats]
+  )
   const weaponsOpOf = (weapons?: Record<string, string>) =>
     Object.values(weapons ?? {}).reduce((sum, wid) => {
       const op = opById.get(wid)
+      return sum + (Number.isFinite(op) ? (op as number) : 0)
+    }, 0)
+  const fightersOpOf = (fighters?: string[]) =>
+    (fighters ?? []).reduce((sum, wingId) => {
+      if (!wingId) return sum
+      const op = wingOpById.get(wingId)
       return sum + (Number.isFinite(op) ? (op as number) : 0)
     }, 0)
 
@@ -152,7 +167,7 @@ export default function Screen({ children }: { children?: ReactNode }) {
   const updateEntry = (
     id: string,
     patch: Partial<
-      Pick<fleetEntry, "capacitors" | "vents" | "cr" | "customName" | "weapons">
+      Pick<fleetEntry, "capacitors" | "vents" | "cr" | "customName" | "weapons" | "fighters">
     >
   ) => {
     setFleet((prev) => {
@@ -175,10 +190,11 @@ export default function Screen({ children }: { children?: ReactNode }) {
       const cur = prev[idx].capacitors
       if (cur >= max) return prev
       const nxt = Math.min(max, cur + step)
-      const weaponsOp = weaponsOpOf(prev[idx].weapons)
+      const loadoutOp =
+        weaponsOpOf(prev[idx].weapons) + fightersOpOf(prev[idx].fighters)
       const clamped = Math.min(
         nxt,
-        availableOp - (prev[idx].vents ?? 0) - weaponsOp
+        availableOp - (prev[idx].vents ?? 0) - loadoutOp
       )
       if (clamped <= cur) return prev
       const next = [...prev]
@@ -192,7 +208,10 @@ export default function Screen({ children }: { children?: ReactNode }) {
       const nxt = Math.min(max, prev.capacitors + step)
       const clamped = Math.min(
         nxt,
-        availableOp - prev.vents - weaponsOpOf(prev.weapons)
+        availableOp -
+          prev.vents -
+          weaponsOpOf(prev.weapons) -
+          fightersOpOf(prev.fighters)
       )
       return clamped <= prev.capacitors
         ? prev
@@ -234,10 +253,11 @@ export default function Screen({ children }: { children?: ReactNode }) {
       const cur = prev[idx].vents
       if (cur >= max) return prev
       const nxt = Math.min(max, cur + step)
-      const weaponsOp = weaponsOpOf(prev[idx].weapons)
+      const loadoutOp =
+        weaponsOpOf(prev[idx].weapons) + fightersOpOf(prev[idx].fighters)
       const clamped = Math.min(
         nxt,
-        availableOp - (prev[idx].capacitors ?? 0) - weaponsOp
+        availableOp - (prev[idx].capacitors ?? 0) - loadoutOp
       )
       if (clamped <= cur) return prev
       const next = [...prev]
@@ -251,7 +271,10 @@ export default function Screen({ children }: { children?: ReactNode }) {
       const nxt = Math.min(max, prev.vents + step)
       const clamped = Math.min(
         nxt,
-        availableOp - prev.capacitors - weaponsOpOf(prev.weapons)
+        availableOp -
+          prev.capacitors -
+          weaponsOpOf(prev.weapons) -
+          fightersOpOf(prev.fighters)
       )
       return clamped <= prev.vents ? prev : { ...prev, vents: clamped }
     })
@@ -294,9 +317,13 @@ export default function Screen({ children }: { children?: ReactNode }) {
     if (!activeTile) return
     updateEntry(activeTile.id, { weapons })
   }
+  const onFightersChange = (fighters: string[]) => {
+    if (!activeTile) return
+    updateEntry(activeTile.id, { fighters })
+  }
   const onStrip = () => {
     if (!activeTile) return
-    updateEntry(activeTile.id, { weapons: {}, capacitors: 0, vents: 0 })
+    updateEntry(activeTile.id, { weapons: {}, fighters: [], capacitors: 0, vents: 0 })
   }
   const updateGrid = () => {
     if (!gridRef.current) return
@@ -408,6 +435,7 @@ export default function Screen({ children }: { children?: ReactNode }) {
               onVentsDecrement={onVentsDecrement}
               onCustomNameChange={onCustomNameChange}
               onWeaponsChange={onWeaponsChange}
+              onFightersChange={onFightersChange}
               onStrip={onStrip}
             />
           )}

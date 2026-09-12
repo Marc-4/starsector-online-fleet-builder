@@ -59,6 +59,26 @@ export type shipSkin = {
   builtInWings?: string[]
 }
 
+export type wingStats = {
+  id: string
+  variant: string
+  tags: string | null
+  tier: number | string | null
+  rarity: number | string | null
+  "fleet pts": number | null
+  "op cost": number | null
+  formation: string | null
+  range: number | null
+  attackRunRange: number | string | null
+  attackPositionOffset: number | string | null
+  num: number | null
+  role: string | null
+  "role desc": string | null
+  refit: number | string | null
+  "base value": number | null
+  number: number | null
+  [key: string]: any
+}
 export type shipStats = {
   name: string
   id: string
@@ -133,6 +153,8 @@ export type fleetEntry = {
   customName: string
   /** Mounted loadout: weaponSlot id -> weapon id. Synced into the URL hash. */
   weapons?: Record<string, string>
+  /** Mounted fighter wings per bay index: wing id or empty string. Synced into the URL hash. */
+  fighters?: string[]
 }
 
 export type weaponMount = "TURRET" | "HARDPOINT" | "HIDDEN"

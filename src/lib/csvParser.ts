@@ -1,6 +1,7 @@
 import Parser from "papaparse"
-import type { ship, shipStats, weapon, weaponStats } from "#/types"
+import type { ship, shipStats, weapon, weaponStats, wingStats } from "#/types"
 import shipDataCSV from "../shipData/ship_data.csv?raw"
+import wingDataCSV from "../shipData/wing_data.csv?raw"
 import weaponDataCSV from "../weaponData/weapon_data.csv?raw"
 import { getAllShipSkins } from "./shipParser"
 
@@ -68,8 +69,7 @@ export function getAllWeaponStats(): weaponStats[] {
   return data.filter((w) => w.id && String(w.id).trim() !== "")
 }
 
-export function getWeaponStats({
-  weapon,
+export function getWeaponStats({  weapon,
   weaponStats
 }: {
   weapon: weapon
@@ -153,4 +153,49 @@ export function getWeaponFluxPerSecond(
     shotsPerSec = Math.min(shotsPerSec, ammoPerSec)
   }
   return perShot * shotsPerSec
+}
+
+export function getAllWingStats(): wingStats[] {
+  const data = Parser.parse(wingDataCSV, {
+    header: true,
+    skipEmptyLines: true,
+    dynamicTyping: true
+  }).data as wingStats[]
+  return data.filter((w) => w.id && String(w.id).trim() !== "")
+}
+
+export function getWingStats({
+  wingId,
+  wingStats
+}: {
+  wingId: string
+  wingStats: wingStats[]
+}): wingStats | null {
+  return wingStats.find((w) => w.id === wingId) ?? null
+}
+
+export function isWingSelectable(stats: wingStats | null): boolean {
+  if (!stats) return false
+  const tags = (stats.tags || "").toLowerCase()
+  if (
+    tags.includes("no_sell") ||
+    tags.includes("no_drop") ||
+    tags.includes("no_dealer") ||
+    tags.includes("restricted") ||
+    tags.includes("hide_in_codex") ||
+    tags.includes("auto_fighter") ||
+    tags.includes("swarm_fighter")
+  )
+    return false
+  if (stats["op cost"] == null || String(stats["op cost"]).trim() === "")
+    return false
+  return true
+}
+
+/** Resolve the fighter hull id for a wing via its variant prefix
+ *  (e.g. "broadsword_Fighter" -> "broadsword"). */
+export function getWingHullId(wing: wingStats | null | undefined): string | null {
+  if (!wing?.variant) return null
+  const prefix = String(wing.variant).split("_")[0]?.trim()
+  return prefix ? prefix.toLowerCase() : null
 }
