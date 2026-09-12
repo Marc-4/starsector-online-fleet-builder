@@ -69,6 +69,7 @@ export default function WeaponTooltip({
 
   const burst = num(stats?.["burst size"])
   const dmgPerShot = text(stats?.["damage/shot"])
+  const dmgPerShotNum = num(stats?.["damage/shot"])
   const damage =
     dmgPerShot && burst != null && burst > 1
       ? `${dmgPerShot}x${burst}`
@@ -78,13 +79,92 @@ export default function WeaponTooltip({
     String(stats?.noDPSInTooltip ?? "")
       .trim()
       .toLowerCase() === "true"
-  const dps = hideDps ? null : text(stats?.["damage/second"])
+  const dpsRaw = hideDps ? null : num(stats?.["damage/second"])
 
-  const fluxPerShot = num(stats?.["energy/shot"]) ?? 0
-  const fluxPerSec = num(stats?.["energy/second"]) ?? 0
+  // Burst DPS: prefer CSV damage/second, else derive from per-shot / cycle.
+  // Refire delay is the full cycle: chargeup + chargedown + burst delay,
+  // plus beam fire duration (burst size doubles as beam length for beams).
+  // e.g. Gauss: 1 + 1 = 2; Tachyon Lance: 0.5 + 1 + 4 + 1 = 6.5.
+  const isBeam = w.specClass === "beam"
+  const burstRaw = stats?.["burst size"]
+  const hasBurst =
+    burstRaw != null && String(burstRaw).trim() !== "" && num(burstRaw) != null
+  // Prolonged (continuous) beams have no burst size and no refire cycle —
+  // only burst beams (Tachyon Lance, Phase Beam) do.
+  const isProlongedBeam = isBeam && !hasBurst
+  const burstSizeN = num(stats?.["burst size"]) ?? 1
+  const burstDelay = num(stats?.["burst delay"]) ?? 0
+  const chargeup = num(stats?.chargeup) ?? 0
+  const chargedown = num(stats?.chargedown) ?? 0
+  const beamDuration = isBeam && hasBurst ? burstSizeN : 0
+  const cycle = chargeup + chargedown + burstDelay + beamDuration
+  const refireDelay = !isProlongedBeam && cycle > 0 ? cycle : null
+  const derivedBurstDps =
+    dmgPerShotNum != null && cycle > 0
+      ? (dmgPerShotNum * burstSizeN) / cycle
+      : null
+  const burstDps = dpsRaw ?? derivedBurstDps
+
+  // Sustained DPS for ammo-regen weapons (e.g. Storm Needler):
+  // limited by ammo/sec * damage per shot volley.
+  const ammoPerSec = num(stats?.["ammo/sec"])
+  const sustainedDps =
+    ammoPerSec != null &&
+    ammoPerSec > 0 &&
+    dmgPerShotNum != null &&
+    burstDps != null &&
+    ammoPerSec * dmgPerShotNum * burstSizeN < burstDps
+      ? ammoPerSec * dmgPerShotNum * burstSizeN
+      : null
+
+  const fluxPerShotNum = num(stats?.["energy/shot"])
+  const fluxPerSecDirect = num(stats?.["energy/second"])
+  const derivedFluxPerSec =
+    fluxPerShotNum != null && cycle > 0
+      ? (fluxPerShotNum * burstSizeN) / cycle
+      : fluxPerShotNum != null && burstDps != null && dmgPerShotNum
+        ? (fluxPerShotNum * burstDps) / (dmgPerShotNum * burstSizeN)
+        : null
+  const burstFluxPerSec = fluxPerSecDirect ?? derivedFluxPerSec
+  const sustainedFluxPerSec =
+    ammoPerSec != null &&
+    ammoPerSec > 0 &&
+    fluxPerShotNum != null &&
+    burstFluxPerSec != null &&
+    ammoPerSec * fluxPerShotNum * burstSizeN < burstFluxPerSec
+      ? ammoPerSec * fluxPerShotNum * burstSizeN
+      : null
+
+  const fluxPerDamage =
+    fluxPerShotNum != null &&
+    dmgPerShotNum != null &&
+    dmgPerShotNum !== 0
+      ? fluxPerShotNum / dmgPerShotNum
+      : null
+
+  const fmt = (n: number) =>
+    Number.isInteger(n) ? String(n) : String(Math.round(n * 100) / 100)
+
+  const dpsLine =
+    burstDps != null
+      ? sustainedDps != null
+        ? `${fmt(burstDps)} (${fmt(sustainedDps)})`
+        : fmt(burstDps)
+      : null
+  const fluxSecLine =
+    burstFluxPerSec != null && burstFluxPerSec !== 0
+      ? sustainedFluxPerSec != null
+        ? `${fmt(burstFluxPerSec)} (${fmt(sustainedFluxPerSec)})`
+        : fmt(burstFluxPerSec)
+      : null
+
   const ammo = text(stats?.ammo)
   const fluxParts: string[] = []
-  if (fluxPerShot === 0 && fluxPerSec === 0) fluxParts.push("No flux cost to fire")
+  if (
+    (burstFluxPerSec == null || burstFluxPerSec === 0) &&
+    (fluxPerShotNum == null || fluxPerShotNum === 0)
+  )
+    fluxParts.push("No flux cost to fire")
   if (ammo) fluxParts.push(`limited ammo (${ammo})`)
   const fluxLine = fluxParts.length > 0 ? fluxParts.join(", ") : null
 
@@ -101,12 +181,63 @@ export default function WeaponTooltip({
   const mods = damageType ? DAMAGE_TYPE_MODS[damageType] : null
   const speed = text(stats?.speedStr)
   const tracking = text(stats?.trackingStr)
-  const burstSize = text(stats?.["burst size"])
-  const refire = text(stats?.chargedown)
+  const showBurstSize = burstSizeN > 1
+
+  // Accuracy / turn rate labels are derived the way the game does: accuracy
+  // from max spread (plus autofire bonus bumping one step), turn rate from
+  // the turn-rate value. Thresholds are approximations tuned so the Storm
+  // Needler (spread 0-5, turn 15) yields Good / Slow as in-game.
+  const maxSpread = num(stats?.["max spread"])
+  const autofireBonus = num(stats?.autofireAccBonus) ?? 0
+  const ACCURACY_STEPS = [
+    "Very Poor",
+    "Poor",
+    "Average",
+    "Good",
+    "Excellent"
+  ] as const
+  const accuracy: string | null = (() => {
+    if (maxSpread == null) return stats?.accuracyStr?.trim() || null
+    let idx =
+      maxSpread <= 3
+        ? 4
+        : maxSpread <= 6
+          ? 3
+          : maxSpread <= 12
+            ? 2
+            : maxSpread <= 20
+              ? 1
+              : 0
+    if (autofireBonus > 0 && idx < ACCURACY_STEPS.length - 1) idx += 1
+    return ACCURACY_STEPS[idx] ?? null
+  })()
+  const turnRateVal = num(stats?.["turn rate"])
+  const turnRate: string | null =
+    stats?.turnRateStr?.trim() ||
+    (turnRateVal == null
+      ? null
+      : turnRateVal <= 8
+        ? "Very Slow"
+        : turnRateVal <= 18
+          ? "Slow"
+          : turnRateVal <= 28
+            ? "Average"
+            : turnRateVal <= 35
+              ? "Fast"
+              : "Very Fast")
 
   const range = text(stats?.range)
   const ordnancePoints = text(stats?.OPs)
   const primaryRole = text(stats?.primaryRoleStr)
+
+  // Reloading-ammo stats (Storm Needler: ammo 60, reload size 30,
+  // ammo/sec 10 → seconds/reload = 30/10 = 3).
+  const maxAmmo = num(stats?.ammo)
+  const reloadSize = num(stats?.["reload size"])
+  const secondsPerReload =
+    reloadSize != null && ammoPerSec != null && ammoPerSec > 0
+      ? reloadSize / ammoPerSec
+      : null
 
   return (
     <div className="flex z-50 h-full w-full flex-col gap-1 overflow-auto border border-cyan-200/70 bg-black/90 p-3 shadow-xl">
@@ -131,9 +262,38 @@ export default function WeaponTooltip({
       {primaryRole && <Row label="Primary role" value={primaryRole} />}
       <Row label="Mount type" value={mountType} />
       {ordnancePoints && <Row label="Ordnance points" value={ordnancePoints} />}
+
+      <div className="h-3" />
       {range && <Row label="Range" value={range} />}
       {damage && <Row label="Damage" value={damage} />}
-      {dps && <Row label="Damage / second" value={dps} />}
+      {dpsLine && (
+        <Row
+          label={
+            sustainedDps != null
+              ? "Damage / second (sustained)"
+              : "Damage / second"
+          }
+          value={dpsLine}
+        />
+      )}
+
+      <div className="h-3" />
+      {fluxSecLine && (
+        <Row
+          label={
+            sustainedFluxPerSec != null
+              ? "Flux / second (sustained)"
+              : "Flux / second"
+          }
+          value={fluxSecLine}
+        />
+      )}
+      {fluxPerShotNum != null && fluxPerShotNum !== 0 && (
+        <Row label="Flux / shot" value={fmt(fluxPerShotNum)} />
+      )}
+      {fluxPerDamage != null && fluxPerShotNum !== 0 && (
+        <Row label="Flux / damage" value={fmt(fluxPerDamage)} />
+      )}
       {fluxLine && (
         <p className="text-center text-sm text-white">{fluxLine}</p>
       )}
@@ -161,8 +321,29 @@ export default function WeaponTooltip({
       )}
       {speed && <Row label="Speed" value={speed} />}
       {tracking && <Row label="Tracking" value={tracking} />}
-      {burstSize && <Row label="Burst size" value={burstSize} />}
-      {refire && <Row label="Refire delay (seconds)" value={refire} />}
+
+      {(accuracy || turnRate) && <div className="h-3" />}
+      {accuracy && <Row label="Accuracy" value={accuracy} />}
+      {turnRate && <Row label="Turn rate" value={turnRate} />}
+      {showBurstSize && <Row label="Burst size" value={fmt(burstSizeN)} />}
+
+      {(maxAmmo != null || secondsPerReload != null || reloadSize != null) && (
+        <div className="h-3" />
+      )}
+      {maxAmmo != null && <Row label="Max ammo" value={fmt(maxAmmo)} />}
+      {secondsPerReload != null && (
+        <Row label="Seconds / reload" value={fmt(secondsPerReload)} />
+      )}
+      {reloadSize != null && (
+        <Row label="Reload size" value={fmt(reloadSize)} />
+      )}
+
+      {refireDelay != null && (
+        <>
+          <div className="h-3" />
+          <Row label="Refire delay (seconds)" value={fmt(refireDelay)} />
+        </>
+      )}
       {showCustomAncillary && (
         <p className="whitespace-pre-line text-xs text-gray-100">
           {showCustomAncillary}
