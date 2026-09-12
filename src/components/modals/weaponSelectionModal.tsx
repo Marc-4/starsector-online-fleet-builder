@@ -45,6 +45,7 @@ export default function WeaponSelectionModal({
     LARGE: 2
   }
   const [showWeaponTooltip, setShowWeaponTooltip] = useState<weapon>()
+  const [isLoading, setIsLoading] = useState(true)
 
   const toggle = (list: string[], set: (v: string[]) => void, val: string) => {
     set(list.includes(val) ? list.filter((x) => x !== val) : [...list, val])
@@ -181,12 +182,17 @@ export default function WeaponSelectionModal({
 
   useEffect(() => {
     void (async () => {
-      const [weapons, stats] = await Promise.all([
-        getAllWeapons(),
-        getAllWeaponStats()
-      ])
-      setAllWeapons(weapons.sort((a, b) => a.id.localeCompare(b.id)))
-      setAllWeaponStats(stats)
+      setIsLoading(true)
+      try {
+        const [weapons, stats] = await Promise.all([
+          getAllWeapons(),
+          getAllWeaponStats()
+        ])
+        setAllWeapons(weapons.sort((a, b) => a.id.localeCompare(b.id)))
+        setAllWeaponStats(stats)
+      } finally {
+        setIsLoading(false)
+      }
     })()
   }, [])
 
@@ -269,7 +275,12 @@ export default function WeaponSelectionModal({
           </div>
 
           <div className="w-full flex-1 flex flex-col gap-1 p-2 max-h-72 min-h-72 overflow-auto">
-            {filteredWeapons.map((w) => {
+            {isLoading ? (
+              <p className="text-cyan-200/60 text-sm text-center py-8 animate-pulse">
+                Loading weapons…
+              </p>
+            ) : (
+              filteredWeapons.map((w) => {
               const op = Number(
                 getWeaponStats({ weapon: w, weaponStats: allWeaponStats })?.OPs
               )
@@ -292,8 +303,9 @@ export default function WeaponSelectionModal({
                   onHoverEnd={() => setShowWeaponTooltip(undefined)}
                 />
               )
-            })}
-            {filteredWeapons.length === 0 && (
+            })
+            )}
+            {!isLoading && filteredWeapons.length === 0 && (
               <p className="text-cyan-200/60 text-sm text-center py-8">
                 No weapons fit {slot.type} {slot.size}
               </p>

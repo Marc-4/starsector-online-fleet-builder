@@ -1,4 +1,5 @@
 import { type ReactNode, useEffect, useRef, useState } from "react"
+import Spinner from "#/components/spinner"
 import type { projectile, weapon, weaponMount } from "#/types"
 import { getProjectile, resolveProjectileSpriteUrl } from "./projectileParser"
 
@@ -160,11 +161,13 @@ export function BuildSprite({
   // Measured geometry: px per game unit of the displayed base image.
   const containerRef = useRef<HTMLDivElement>(null)
   const [baseNat, setBaseNat] = useState<{ w: number; h: number } | null>(null)
+  const [baseLoaded, setBaseLoaded] = useState(!baseSprite)
   const [box, setBox] = useState<{ w: number; h: number } | null>(null)
 
   // biome-ignore lint: reset measured base art when the weapon/sprite changes.
   useEffect(() => {
     setBaseNat(null)
+    setBaseLoaded(!baseSprite)
   }, [w.id, baseSprite])
 
   useEffect(() => {
@@ -219,6 +222,12 @@ export function BuildSprite({
           : `relative h-full w-full ${className ?? ""}`
       }
     >
+      {!baseLoaded && (
+        <div className="absolute inset-0 z-30 flex items-center justify-center pointer-events-none">
+          <Spinner />
+        </div>
+      )}
+      <div className={baseLoaded ? "contents" : "contents invisible"}>
       {underSprite && (
         <img
           style={{ imageRendering: "pixelated" }}
@@ -247,12 +256,14 @@ export function BuildSprite({
             mixBlendMode: additiveBase ? "screen" : undefined,
             imageRendering: "pixelated"
           }}
-          onLoad={(e) =>
+          onLoad={(e) => {
             setBaseNat({
               w: e.currentTarget.naturalWidth,
               h: e.currentTarget.naturalHeight
             })
-          }
+            setBaseLoaded(true)
+          }}
+          onError={() => setBaseLoaded(true)}
         />
       ) : (
         <div className="absolute inset-0 z-10 border border-cyan-800 bg-cyan-900/30" />
@@ -306,6 +317,7 @@ export function BuildSprite({
           })}
         </div>
       )}
+      </div>
     </div>
   )
 }

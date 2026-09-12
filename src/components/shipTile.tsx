@@ -1,5 +1,7 @@
+import { useEffect, useState } from "react"
 import type { ship } from "#/types"
 import CommonButton from "./commonBtn"
+import Spinner from "./spinner"
 
 export default function ShipTile({
   ship,
@@ -16,6 +18,12 @@ export default function ShipTile({
   onShipIncrement: (hullId: string) => void
   onShipDecrement: (hullId: string) => void
 }) {
+  const [imgLoaded, setImgLoaded] = useState(false)
+  const src = `ships${ship.spriteName}`
+
+  useEffect(() => {
+    setImgLoaded(false)
+  }, [src])
   return (
     <div
       tabIndex={0}
@@ -33,11 +41,18 @@ export default function ShipTile({
     >
       <img
         draggable={false}
-        src={`ships${ship.spriteName}`}
+        src={src}
         alt="ship sprite"
-        className="ss-ship-img group-hover:brightness-100"
+        onLoad={() => setImgLoaded(true)}
+        onError={() => setImgLoaded(true)}
+        className={`ss-ship-img group-hover:brightness-100 ${imgLoaded ? "opacity-100" : "opacity-0"}`}
         style={{ imageRendering: "smooth" }}
       />
+      {!imgLoaded && (
+        <div className="ss-ship-img flex items-center justify-center pointer-events-none">
+          <Spinner />
+        </div>
+      )}
       <h1 className="absolute left-1 top-1 ss-cyan-title text-bold">
         {!ship.hullName ? "N/A" : `${ship.hullName}-class`}
       </h1>
