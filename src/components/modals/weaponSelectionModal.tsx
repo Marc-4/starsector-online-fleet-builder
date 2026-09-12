@@ -199,22 +199,27 @@ export default function WeaponSelectionModal({
   }, [onClose])
 
   return (
-    <div className="flex gap-1 w-[80%] mx-auto h-full justify-center items-center">
+    <div className="flex gap-1 w-[80%] max-lg:flex-col mx-auto h-full justify-center items-center">
       {showWeaponTooltip ? (
-        <div className="flex w-[40%] min-w-96 h-fit">
+        <div className="flex w-[40%] min-w-80 h-fit">
           <WeaponTooltip
             weapon={showWeaponTooltip}
             allWeaponStats={allWeaponStats}
           />
         </div>
       ) : (
-        <div className="flex w-[40%] min-w-96" />
+        <div className="flex w-[40%] min-w-80 opacity-0 h-64">
+          {/*<WeaponTooltip
+            weapon={}
+            allWeaponStats={allWeaponStats}
+          />*/}
+        </div>
       )}
       <div
         role="dialog"
         aria-modal="true"
         aria-label={`Weapon selection for ${slot.id}`}
-        className="z-40 flex items-center w-[40%] min-w-96 justify-center pointer-events-none bg-black/85"
+        className="z-40 flex items-center w-[40%] min-w-80 justify-center pointer-events-none bg-black/85"
       >
         <button
           type="button"
