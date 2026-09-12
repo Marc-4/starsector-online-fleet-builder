@@ -9,12 +9,12 @@
 - render weapon slots
 - add weapons
 - view weapon details
+- add fighters
+- view fighter details
 
 ## In Progress (in order of importance)
 
-- add fighters
 - view ship details
-- view fighter details
 - add hullmods to ships
 - view hullmod details
 - assign officers to ships
