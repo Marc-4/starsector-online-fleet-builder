@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react"
+import Spinner from "#/components/spinner"
 import { getFighterSlotProj, getFighterSlotWeapon } from "#/lib/fighterLoadout"
 import {
   getProjectile,
@@ -49,6 +50,7 @@ export default function FighterSprite({
   const containerRef = useRef<HTMLDivElement>(null)
   const [box, setBox] = useState<{ w: number; h: number } | null>(null)
   const [baseNat, setBaseNat] = useState<{ w: number; h: number } | null>(null)
+  const [baseLoaded, setBaseLoaded] = useState(false)
 
   const missileSlots = (s.weaponSlots ?? []).filter(
     (slot) => slot.type === "MISSILE" && slot.locations
@@ -109,6 +111,7 @@ export default function FighterSprite({
   // biome-ignore lint: reset measured base art when the hull changes.
   useEffect(() => {
     setBaseNat(null)
+    setBaseLoaded(false)
   }, [s.hullId])
 
   useEffect(() => {
@@ -165,8 +168,15 @@ export default function FighterSprite({
             w: e.currentTarget.naturalWidth,
             h: e.currentTarget.naturalHeight
           })
+          setBaseLoaded(true)
         }}
+        onError={() => setBaseLoaded(true)}
       />
+      {!baseLoaded && (
+        <div className="absolute inset-0 z-30 flex items-center justify-center pointer-events-none">
+          <Spinner />
+        </div>
+      )}
       {ready &&
         tubes?.map((t) => {
           const [sw, sh] = t.proj.size as [number, number]
