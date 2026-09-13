@@ -1,10 +1,4 @@
-export default function CombatReadinessBar({
-  cr,
-  onChange
-}: {
-  cr: number
-  onChange: (value: number) => void
-}) {
+export default function CombatReadinessBar({ cr }: { cr: number }) {
   return (
     <div className="flex p-2 w-fit flex-col justify-center">
       <div className="flex gap-2 items-center">
@@ -22,14 +16,13 @@ export default function CombatReadinessBar({
             className="absolute top-0 bottom-0 w-0.5 bg-gray-950 pointer-events-none -translate-x-1/2"
             style={{ left: `${cr - 1}%` }}
           />
-          <input
-            type="range"
-            min={0}
-            max={100}
-            value={cr}
-            onChange={(e) => onChange(Number(e.target.value))}
-            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+          <div
+            role="progressbar"
             aria-label="Combat Readiness"
+            aria-valuenow={cr}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            className="absolute inset-0 w-full h-full"
           />
         </div>
         <p className="ss-amber text-base w-12 text-right">{cr}%</p>

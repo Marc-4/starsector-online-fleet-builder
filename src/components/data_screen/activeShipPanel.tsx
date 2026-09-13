@@ -6,6 +6,7 @@ import {
   getWeaponFluxPerSecond
 } from "#/lib/csvParser"
 import { getMaxCapsVents } from "#/lib/fluxLimits"
+import { getModifiedStat } from "#/lib/statModifier"
 import { canMountWeapon } from "#/lib/weaponCompat"
 import { getWeapon } from "#/lib/weaponParser"
 import type {
@@ -34,7 +35,6 @@ const ZOOM_STEP = 0.1
 
 type Props = {
   activeTile: fleetEntry
-  onCrChange: (value: number) => void
   onCapacitorsIncrement: (e?: React.MouseEvent) => void
   onCapacitorsDecrement: (e?: React.MouseEvent) => void
   onVentsIncrement: (e?: React.MouseEvent) => void
@@ -47,7 +47,6 @@ type Props = {
 
 export default function ActiveShipPanel({
   activeTile,
-  onCrChange,
   onCapacitorsIncrement,
   onCapacitorsDecrement,
   onVentsIncrement,
@@ -185,7 +184,6 @@ export default function ActiveShipPanel({
     ]
   )
 
-  // Shift-click an empty bay: mount the last-slotted wing if it fits.
   const handleBayShiftClick = useCallback(
     (bayIndex: number) => {
       if (activeTile.fighters?.[bayIndex]) return
@@ -206,7 +204,6 @@ export default function ActiveShipPanel({
     ]
   )
 
-  // Shift-click a slot: mount the last-slotted weapon if it fits, else nothing.
   const handleSlotShiftClick = useCallback(
     async (slot: weaponSlot) => {
       if (!lastSlottedId) return
@@ -242,7 +239,6 @@ export default function ActiveShipPanel({
     setHoveredWing(null)
   }, [activeTile])
 
-  // Ship stats (async: merges skins) for the fighter tooltip. Loaded once.
   useEffect(() => {
     let cancelled = false
     void (async () => {
@@ -254,6 +250,7 @@ export default function ActiveShipPanel({
     }
   }, [])
 
+  // biome-ignore lint: intentional
   useEffect(() => {
     setShowInfo(false)
   }, [activeTile])
@@ -283,7 +280,7 @@ export default function ActiveShipPanel({
     <>
       <div className="absolute top-1 left-1 right-1 z-20 flex flex-col gap-2 lg:flex-row lg:items-start lg:justify-between pointer-events-none">
         <div className="pointer-events-auto max-lg:w-fit max-lg:self-end origin-top-left">
-          <CombatReadinessBar cr={activeTile.cr} onChange={onCrChange} />
+          <CombatReadinessBar cr={activeTile.cr} />
         </div>
         <div className="pointer-events-auto lg:ml-auto max-lg:self-end origin-top-right">
           <StatCluster
@@ -298,8 +295,16 @@ export default function ActiveShipPanel({
             maxCapacitors={getMaxCapsVents(activeTile.ship.meta.hullSize)}
             vents={activeTile.vents}
             maxVents={getMaxCapsVents(activeTile.ship.meta.hullSize)}
-            fluxCapacity={activeTile.ship.stats["max flux"]}
-            fluxDissipation={activeTile.ship.stats["flux dissipation"]}
+            fluxCapacity={
+              getModifiedStat(activeTile.ship.stats, "max flux", {
+                capacitors: activeTile.capacitors
+              }).total
+            }
+            fluxDissipation={
+              getModifiedStat(activeTile.ship.stats, "flux dissipation", {
+                vents: activeTile.vents
+              }).total
+            }
             shieldEfficiency={activeTile.ship.stats["shield efficiency"]}
             weaponFluxPerSecond={weaponFluxPerSecond}
             onCapacitorsIncrement={onCapacitorsIncrement}

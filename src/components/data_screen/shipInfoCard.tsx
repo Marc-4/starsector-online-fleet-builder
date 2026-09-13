@@ -1,4 +1,5 @@
 import type { completeShip } from "#/types"
+import { getModifiedStat } from "#/lib/statModifier"
 
 function Row({ label, value }: { label: string; value: React.ReactNode }) {
   return (
@@ -57,10 +58,12 @@ export default function ShipInfoCard({
   const s = ship.stats
   const m = ship.meta
 
-  const fluxCapBonus = capacitors * 200
-  const fluxDissBonus = vents * 25
-  const fluxCapTotal = Number(s["max flux"] ?? 0) + fluxCapBonus
-  const fluxDissTotal = Number(s["flux dissipation"] ?? 0) + fluxDissBonus
+  const fluxCap = getModifiedStat(s, "max flux", { capacitors })
+  const fluxDiss = getModifiedStat(s, "flux dissipation", { vents })
+  const fluxCapBonus = fluxCap.bonus
+  const fluxDissBonus = fluxDiss.bonus
+  const fluxCapTotal = fluxCap.total
+  const fluxDissTotal = fluxDiss.total
 
   return (
     <div
