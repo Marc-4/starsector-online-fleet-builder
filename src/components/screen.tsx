@@ -303,11 +303,6 @@ export default function Screen({ children }: { children?: ReactNode }) {
     })
   }
 
-  const onCrChange = (value: number) => {
-    if (!activeTile) return
-    updateEntry(activeTile.id, { cr: value })
-  }
-
   const onCustomNameChange = (value: string) => {
     if (!activeTile) return
     updateEntry(activeTile.id, { customName: value })
@@ -428,7 +423,6 @@ export default function Screen({ children }: { children?: ReactNode }) {
           {activeTile && (
             <ActiveShipPanel
               activeTile={activeTile}
-              onCrChange={onCrChange}
               onCapacitorsIncrement={onCapacitorsIncrement}
               onCapacitorsDecrement={onCapacitorsDecrement}
               onVentsIncrement={onVentsIncrement}
