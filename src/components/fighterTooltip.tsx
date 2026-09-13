@@ -24,15 +24,15 @@ function humanize(id: string): string {
 function Row({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-baseline justify-between gap-3">
-      <span className="text-sm text-gray-100">{label}</span>
-      <span className="ss-amber text-right text-sm">{value}</span>
+      <span className="text-base text-gray-100">{label}</span>
+      <span className="ss-amber text-right text-base">{value}</span>
     </div>
   )
 }
 
 function SectionBar({ children }: { children: string }) {
   return (
-    <div className="bg-cyan-800 px-2 py-0.5 text-center text-sm text-cyan-100">
+    <div className="bg-cyan-800 px-2 py-0.5 text-center text-base text-cyan-100">
       {children}
     </div>
   )
@@ -73,15 +73,15 @@ export default function FighterTooltip({
   const sysName = systemName ?? (sysId ? humanize(sysId) : null)
 
   return (
-    <div className="flex z-50 h-full w-full flex-col gap-1 overflow-auto border border-cyan-200/70 bg-black/90 p-3 shadow-xl">
-      <p className="text-base leading-tight text-white">
+    <div className="flex z-50 font-serif h-full w-full flex-col gap-1 overflow-auto border border-cyan-200/70 bg-black/90 p-3 shadow-xl">
+      <p className="text-lg leading-tight text-white">
         {name}
         {roleDesc ? ` ${roleDesc}` : ""}
       </p>
-      <p className="text-xs text-gray-300">
-        Design type&nbsp;&nbsp;{manufacturer}
+      <p className="text-sm text-gray-300">
+        Design type:&nbsp;{manufacturer}
       </p>
-      {description && <p className="text-xs text-gray-100">{description}</p>}
+      {description && <p className="text-sm text-gray-100">{description}</p>}
 
       <SectionBar>Technical data</SectionBar>
       {roleDesc && <Row label="Primary role" value={roleDesc} />}
@@ -107,19 +107,19 @@ export default function FighterTooltip({
       {(sysName || armaments) && <div className="h-3" />}
       {sysName && (
         <div className="flex items-baseline justify-between gap-3">
-          <span className="text-sm text-gray-100">System:</span>
+          <span className="text-base text-gray-100">System:</span>
           <span className="text-right">
-            <span className="ss-amber block text-sm">{sysName}</span>
+            <span className="ss-amber block text-base">{sysName}</span>
             {systemDesc && (
-              <span className="block text-xs text-gray-100">{systemDesc}</span>
+              <span className="block text-sm text-gray-100">{systemDesc}</span>
             )}
           </span>
         </div>
       )}
       {armaments && (
         <div className="flex items-baseline justify-between gap-3">
-          <span className="text-sm text-gray-100">Armaments:</span>
-          <span className="ss-amber text-right text-sm">{armaments}</span>
+          <span className="text-base text-gray-100">Armaments:</span>
+          <span className="ss-amber text-right text-base">{armaments}</span>
         </div>
       )}
     </div>

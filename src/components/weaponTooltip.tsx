@@ -42,15 +42,15 @@ function num(v: unknown): number | null {
 function Row({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-baseline justify-between gap-3">
-      <span className="text-sm text-gray-100">{label}</span>
-      <span className="ss-amber text-right text-sm">{value}</span>
+      <span className="text-base text-gray-100">{label}</span>
+      <span className="ss-amber text-right text-base">{value}</span>
     </div>
   )
 }
 
 function SectionBar({ children }: { children: string }) {
   return (
-    <div className="bg-cyan-800 px-2 py-0.5 text-center text-sm text-cyan-100">
+    <div className="bg-cyan-800 px-2 py-0.5 text-center text-base text-cyan-100">
       {children}
     </div>
   )
@@ -70,16 +70,11 @@ export default function WeaponTooltip({
   const burst = num(stats?.["burst size"])
   const dmgPerShot = text(stats?.["damage/shot"])
   const dmgPerShotNum = num(stats?.["damage/shot"])
-  const damage =
-    dmgPerShot && burst != null && burst > 1
-      ? `${dmgPerShot}x${burst}`
-      : dmgPerShot
   const hideDps =
     stats?.noDPSInTooltip === true ||
     String(stats?.noDPSInTooltip ?? "")
       .trim()
       .toLowerCase() === "true"
-  const dpsRaw = hideDps ? null : num(stats?.["damage/second"])
 
   // Burst DPS: prefer CSV damage/second, else derive from per-shot / cycle.
   // Refire delay is the full cycle: chargeup + chargedown + burst delay,
@@ -99,11 +94,47 @@ export default function WeaponTooltip({
   const beamDuration = isBeam && hasBurst ? burstSizeN : 0
   const cycle = chargeup + chargedown + burstDelay + beamDuration
   const refireDelay = !isProlongedBeam && cycle > 0 ? cycle : null
+
+  const firingDps = hideDps ? null : num(stats?.["damage/second"])
+  const dpsRaw = firingDps
+
+  // Burst beams (Tachyon Lance, Phase Lance): chargeup/chargedown also deal
+  // damage on a quadratic ramp, contributing (chargeup + chargedown) / 3
+  // seconds of full-power fire. e.g. Tachyon Lance: 1500 * (1 + 1.5/3) =
+  // 2250 damage per burst, 2250 / 6.5 = 346 DPS.
+  const isBurstBeam = isBeam && hasBurst
+  const beamEffectiveDur = isBurstBeam
+    ? beamDuration + (chargeup + chargedown) / 3
+    : 0
+  const firingEmp = num(stats?.emp)
+  const firingFlux = num(stats?.["energy/second"])
+
+  const beamBurstDamage =
+    isBurstBeam && firingDps != null ? firingDps * beamEffectiveDur : null
+  const beamBurstEmp =
+    isBurstBeam && firingEmp != null ? firingEmp * beamEffectiveDur : null
+  const beamBurstFlux =
+    isBurstBeam && firingFlux != null ? firingFlux * beamEffectiveDur : null
+  const beamBurstDps =
+    beamBurstDamage != null && cycle > 0 ? beamBurstDamage / cycle : null
+  const beamBurstFluxPerSec =
+    beamBurstFlux != null && cycle > 0 ? beamBurstFlux / cycle : null
+
+  const damage =
+    beamBurstDamage != null
+      ? String(Math.round(beamBurstDamage))
+      : dmgPerShot && burst != null && burst > 1
+        ? `${dmgPerShot}x${burst}`
+        : dmgPerShot
+  const empBurst =
+    beamBurstEmp != null ? Math.round(beamBurstEmp) : firingEmp
   const derivedBurstDps =
     dmgPerShotNum != null && cycle > 0
       ? (dmgPerShotNum * burstSizeN) / cycle
       : null
-  const burstDps = dpsRaw ?? derivedBurstDps
+  const burstDps = beamBurstDps ?? firingDps ?? derivedBurstDps
+  // For burst beams firingDps is the in-burst rate, not the cycle average —
+  // only the derived value above is the displayed DPS.
 
   // Sustained DPS for ammo-regen weapons (e.g. Storm Needler):
   // limited by ammo/sec * damage per shot volley.
@@ -125,7 +156,8 @@ export default function WeaponTooltip({
       : fluxPerShotNum != null && burstDps != null && dmgPerShotNum
         ? (fluxPerShotNum * burstDps) / (dmgPerShotNum * burstSizeN)
         : null
-  const burstFluxPerSec = fluxPerSecDirect ?? derivedFluxPerSec
+  const burstFluxPerSec =
+    beamBurstFluxPerSec ?? fluxPerSecDirect ?? derivedFluxPerSec
   const sustainedFluxPerSec =
     ammoPerSec != null &&
     ammoPerSec > 0 &&
@@ -135,12 +167,22 @@ export default function WeaponTooltip({
       ? ammoPerSec * fluxPerShotNum * burstSizeN
       : null
 
+  const burstDamageNum =
+    beamBurstDamage ?? (dmgPerShotNum != null ? dmgPerShotNum * burstSizeN : null)
+  const burstFluxNum =
+    beamBurstFlux ?? (fluxPerShotNum != null ? fluxPerShotNum * burstSizeN : null)
   const fluxPerDamage =
-    fluxPerShotNum != null &&
-    dmgPerShotNum != null &&
-    dmgPerShotNum !== 0
-      ? fluxPerShotNum / dmgPerShotNum
-      : null
+    burstFluxNum != null && burstDamageNum != null && burstDamageNum !== 0
+      ? burstFluxNum / burstDamageNum
+      : fluxPerShotNum != null &&
+          dmgPerShotNum != null &&
+          dmgPerShotNum !== 0
+        ? fluxPerShotNum / dmgPerShotNum
+        : burstFluxPerSec != null &&
+            burstDps != null &&
+            burstDps !== 0
+          ? burstFluxPerSec / burstDps
+          : null
 
   const fmt = (n: number) =>
     Number.isInteger(n) ? String(n) : String(Math.round(n * 100) / 100)
@@ -183,10 +225,6 @@ export default function WeaponTooltip({
   const tracking = text(stats?.trackingStr)
   const showBurstSize = burstSizeN > 1
 
-  // Accuracy / turn rate labels are derived the way the game does: accuracy
-  // from max spread (plus autofire bonus bumping one step), turn rate from
-  // the turn-rate value. Thresholds are approximations tuned so the Storm
-  // Needler (spread 0-5, turn 15) yields Good / Slow as in-game.
   const maxSpread = num(stats?.["max spread"])
   const autofireBonus = num(stats?.autofireAccBonus) ?? 0
   const ACCURACY_STEPS = [
@@ -240,7 +278,7 @@ export default function WeaponTooltip({
       : null
 
   return (
-    <div className="flex z-50 h-full w-full flex-col gap-1 overflow-auto border border-cyan-200/70 bg-black/90 p-3 shadow-xl">
+    <div className="flex z-50 h-full w-full flex-col font-serif text-2xl gap-1 overflow-auto border border-cyan-200/70 bg-black/90 p-3 shadow-xl">
       <div className="flex items-center gap-2">
         <div
           className="relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden border"
@@ -249,11 +287,11 @@ export default function WeaponTooltip({
           <BuildSprite weapon={w} naturalSize />
         </div>
         <div className="min-w-0">
-          <p className="text-base leading-tight text-white">
+          <p className="text-lg leading-tight text-white">
             {stats?.name ?? w.id}
           </p>
-          <p className="text-xs text-gray-300">
-            Design type&nbsp;&nbsp;{manufacturer}
+          <p className="text-base text-gray-300">
+            Design type:&nbsp;{manufacturer}
           </p>
         </div>
       </div>
@@ -291,14 +329,17 @@ export default function WeaponTooltip({
       {fluxPerShotNum != null && fluxPerShotNum !== 0 && (
         <Row label="Flux / shot" value={fmt(fluxPerShotNum)} />
       )}
-      {fluxPerDamage != null && fluxPerShotNum !== 0 && (
+      {fluxPerDamage != null && (
         <Row label="Flux / damage" value={fmt(fluxPerDamage)} />
       )}
+      {empBurst != null && empBurst !== 0 && (
+        <Row label="EMP damage" value={fmt(empBurst)} />
+      )}
       {fluxLine && (
-        <p className="text-center text-sm text-white">{fluxLine}</p>
+        <p className="text-center text-base text-white">{fluxLine}</p>
       )}
       {showCustomPrimary && (
-        <p className="whitespace-pre-line text-xs text-gray-100">
+        <p className="whitespace-pre-line text-sm text-gray-100">
           {showCustomPrimary}
         </p>
       )}
@@ -306,13 +347,13 @@ export default function WeaponTooltip({
       <SectionBar>Ancillary data</SectionBar>
       {damageType && (
         <div className="flex items-baseline justify-between gap-3">
-          <span className="text-sm text-gray-100">Damage type</span>
+          <span className="text-base text-gray-100">Damage type</span>
           <span className="text-right">
-            <span className="ss-amber block text-sm">
+            <span className="ss-amber block text-base">
               {DAMAGE_TYPE_LABEL[damageType] ?? cap(damageType)}
             </span>
             {mods && (
-              <span className="ss-amber block text-xs">
+              <span className="ss-amber block text-sm">
                 {mods.armor}% vs armor, {mods.shields}% vs shields
               </span>
             )}
