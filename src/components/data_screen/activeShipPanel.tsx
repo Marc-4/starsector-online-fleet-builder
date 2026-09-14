@@ -29,7 +29,7 @@ import StatCluster from "./statCluster"
 import ZoomControls from "./zoomControls"
 
 const MIN_ZOOM = 1
-const MAX_ZOOM_DESKTOP = 2
+const MAX_ZOOM_DESKTOP = 1.5
 const MAX_ZOOM_MOBILE = 1.5
 const ZOOM_STEP = 0.1
 
