@@ -1,13 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from "react"
-import {
-  getAllHullMods,
-  getAllShipStats,
-  getAllWeaponStats,
-  getAllWingStats,
-  getHullModCost,
-  getWeaponFluxPerSecond,
-  resolveHullModSpriteUrl
-} from "#/lib/csvParser"
+import { useCallback, useEffect, useState } from "react"
+import { getAllShipStats } from "#/lib/csvParser"
 import { getMaxCapsVents } from "#/lib/fluxLimits"
 import { getModifiedStat } from "#/lib/statModifier"
 import { canMountWeapon } from "#/lib/weaponCompat"
@@ -23,15 +15,17 @@ import type {
 import CommonButton from "../commonBtn"
 import FighterTooltip from "../fighterTooltip"
 import HullmodTooltip from "../hullmodTooltip"
-import WeaponSelectionModal from "../modals/weaponSelectionModal"
 import HullmodSelectionModal from "../modals/hullmodSelectionModal"
+import WeaponSelectionModal from "../modals/weaponSelectionModal"
 import WeaponTooltip from "../weaponTooltip"
 import CombatReadinessBar from "./combatReadinessBar"
 import FighterBay from "./fighterBay"
+import HullmodRoster from "./hullmodRoster"
 import ShipDisplay from "./shipDisplay"
 import ShipInfoCard from "./shipInfoCard"
 import ShipName from "./shipName"
 import StatCluster from "./statCluster"
+import { useLoadoutOp } from "./useLoadoutOp"
 import ZoomControls from "./zoomControls"
 
 const MIN_ZOOM = 1
@@ -81,184 +75,23 @@ export default function ActiveShipPanel({
   const [allShipStats, setAllShipStats] = useState<shipStats[]>([])
   const maxZoom = isMobile ? MAX_ZOOM_MOBILE : MAX_ZOOM_DESKTOP
 
-  const allWeaponStats = useMemo(() => getAllWeaponStats(), [])
-  const opById = useMemo(
-    () => new Map(allWeaponStats.map((s) => [s.id, Number(s.OPs)])),
-    [allWeaponStats]
-  )
-  const opOf = useCallback(
-    (wid: string | undefined) => {
-      if (!wid) return 0
-      const op = opById.get(wid)
-      return Number.isFinite(op) ? (op as number) : 0
-    },
-    [opById]
-  )
-  const weaponsOp = useMemo(() => {
-    return Object.values(activeTile.weapons ?? {}).reduce(
-      (sum, wid) => sum + opOf(wid),
-      0
-    )
-  }, [activeTile.weapons, opOf])
-  const allWingStats = useMemo(() => getAllWingStats(), [])
-  const wingOpById = useMemo(
-    () => new Map(allWingStats.map((s) => [s.id, Number(s["op cost"])])),
-    [allWingStats]
-  )
-  const wingOpOf = useCallback(
-    (wingId: string | undefined) => {
-      if (!wingId) return 0
-      const op = wingOpById.get(wingId)
-      return Number.isFinite(op) ? (op as number) : 0
-    },
-    [wingOpById]
-  )
-  const fightersOp = useMemo(() => {
-    return (activeTile.fighters ?? []).reduce(
-      (sum, wingId) => sum + wingOpOf(wingId),
-      0
-    )
-  }, [activeTile.fighters, wingOpOf])
-  const fluxById = useMemo(
-    () =>
-      new Map(
-        allWeaponStats.map((s) => [s.id, Math.round(getWeaponFluxPerSecond(s))])
-      ),
-    [allWeaponStats]
-  )
-  const fluxOf = useCallback(
-    (wid: string | undefined) => {
-      if (!wid) return 0
-      const f = fluxById.get(wid)
-      return Number.isFinite(f) ? (f as number) : 0
-    },
-    [fluxById]
-  )
-  const weaponFluxPerSecond = useMemo(() => {
-    return Object.values(activeTile.weapons ?? {}).reduce(
-      (sum, wid) => sum + fluxOf(wid),
-      0
-    )
-  }, [activeTile.weapons, fluxOf])
-  const availableOp = activeTile.ship.stats["ordnance points"] ?? 0
-  const hullModById = useMemo(
-    () => new Map(getAllHullMods().map((h) => [h.id, h])),
-    []
-  )
-  const assignedHullmods = useMemo(() => {
-    const out: { id: string; mod: hullMod; cost: number }[] = []
-    for (const id of activeTile.hullmods ?? []) {
-      const mod = hullModById.get(id)
-      if (!mod) continue
-      out.push({
-        id,
-        mod,
-        cost: getHullModCost(mod, activeTile.ship.meta.hullSize)
-      })
-    }
-    return out
-  }, [activeTile.hullmods, activeTile.ship.meta.hullSize, hullModById])
-  // Built-ins come straight from the hull — no props needed. They cost 0 OP
-  // and can't be removed, so they render locked above the assigned mods.
-  const builtInHullmods = useMemo(() => {
-    const out: { id: string; mod: hullMod | null }[] = []
-    for (const id of activeTile.ship.meta.builtInMods ?? []) {
-      const mod = hullModById.get(id)
-      out.push({ id, mod: mod ?? null })
-    }
-    return out.filter((r): r is { id: string; mod: hullMod } => r.mod !== null)
-  }, [activeTile.ship.meta.builtInMods, hullModById])
-  const hullmodsOp = useMemo(() => {
-    return assignedHullmods.reduce((sum, r) => sum + r.cost, 0)
-  }, [assignedHullmods])
-  const spentOp =
-    activeTile.capacitors +
-    activeTile.vents +
-    weaponsOp +
-    fightersOp +
-    hullmodsOp
-
-  const wouldExceedOp = useCallback(
-    (slotId: string, weaponId: string) => {
-      const currentOp = opOf(activeTile.weapons?.[slotId])
-      const nextOp = opOf(weaponId)
-      return (
-        activeTile.capacitors +
-          activeTile.vents +
-          weaponsOp +
-          fightersOp +
-          hullmodsOp -
-          currentOp +
-          nextOp >
-        availableOp
-      )
-    },
-    [
-      activeTile.capacitors,
-      activeTile.vents,
-      activeTile.weapons,
-      availableOp,
-      opOf,
-      weaponsOp,
-      fightersOp,
-      hullmodsOp
-    ]
-  )
-
-  const wouldExceedFighterOp = useCallback(
-    (bayIndex: number, wingId: string) => {
-      const currentOp = wingOpOf(activeTile.fighters?.[bayIndex])
-      const nextOp = wingOpOf(wingId)
-      return (
-        activeTile.capacitors +
-          activeTile.vents +
-          weaponsOp +
-          fightersOp +
-          hullmodsOp -
-          currentOp +
-          nextOp >
-        availableOp
-      )
-    },
-    [
-      activeTile.capacitors,
-      activeTile.vents,
-      activeTile.fighters,
-      availableOp,
-      weaponsOp,
-      fightersOp,
-      hullmodsOp,
-      wingOpOf
-    ]
-  )
-
-  const wouldExceedHullmodOp = useCallback(
-    (hullmodId: string) => {
-      if ((activeTile.hullmods ?? []).includes(hullmodId)) return false
-      const mod = hullModById.get(hullmodId)
-      if (!mod) return true
-      return (
-        activeTile.capacitors +
-          activeTile.vents +
-          weaponsOp +
-          fightersOp +
-          hullmodsOp +
-          getHullModCost(mod, activeTile.ship.meta.hullSize) >
-        availableOp
-      )
-    },
-    [
-      activeTile.capacitors,
-      activeTile.vents,
-      activeTile.hullmods,
-      activeTile.ship.meta.hullSize,
-      availableOp,
-      weaponsOp,
-      fightersOp,
-      hullmodsOp,
-      hullModById
-    ]
-  )
+  const {
+    allWeaponStats,
+    allWingStats,
+    opOf,
+    wingOpOf,
+    weaponsOp,
+    fightersOp,
+    weaponFluxPerSecond,
+    availableOp,
+    spentOp,
+    assignedHullmods,
+    builtInHullmods,
+    moddedShip,
+    wouldExceedOp,
+    wouldExceedFighterOp,
+    wouldExceedHullmodOp
+  } = useLoadoutOp(activeTile)
 
   const handleBayShiftClick = useCallback(
     (bayIndex: number) => {
@@ -365,18 +198,18 @@ export default function ActiveShipPanel({
             showInfo={showInfo}
             onInfoToggle={() => setShowInfo((v) => !v)}
             availableOp={availableOp}
-            topSpeed={activeTile.ship.stats["max speed"]}
+            topSpeed={moddedShip.stats["max speed"]}
             topSpeedBase={activeTile.ship.stats["max speed"]}
-            armor={activeTile.ship.stats["armor rating"]}
+            armor={moddedShip.stats["armor rating"]}
             armorBase={activeTile.ship.stats["armor rating"]}
-            hull={activeTile.ship.stats.hitpoints}
+            hull={moddedShip.stats.hitpoints}
             hullBase={activeTile.ship.stats.hitpoints}
             capacitors={activeTile.capacitors}
             maxCapacitors={getMaxCapsVents(activeTile.ship.meta.hullSize)}
             vents={activeTile.vents}
             maxVents={getMaxCapsVents(activeTile.ship.meta.hullSize)}
             fluxCapacity={
-              getModifiedStat(activeTile.ship.stats, "max flux", {
+              getModifiedStat(moddedShip.stats, "max flux", {
                 capacitors: activeTile.capacitors
               }).total
             }
@@ -384,14 +217,14 @@ export default function ActiveShipPanel({
               getModifiedStat(activeTile.ship.stats, "max flux").base
             }
             fluxDissipation={
-              getModifiedStat(activeTile.ship.stats, "flux dissipation", {
+              getModifiedStat(moddedShip.stats, "flux dissipation", {
                 vents: activeTile.vents
               }).total
             }
             fluxDissipationBase={
               getModifiedStat(activeTile.ship.stats, "flux dissipation").base
             }
-            shieldEfficiency={activeTile.ship.stats["shield efficiency"]}
+            shieldEfficiency={moddedShip.stats["shield efficiency"]}
             shieldEfficiencyBase={activeTile.ship.stats["shield efficiency"]}
             weaponFluxPerSecond={weaponFluxPerSecond}
             onCapacitorsIncrement={onCapacitorsIncrement}
@@ -399,87 +232,17 @@ export default function ActiveShipPanel({
             onVentsIncrement={onVentsIncrement}
             onVentsDecrement={onVentsDecrement}
           />
-          <div className="flex gap-1 flex-col items-end">
-            <div className="flex flex-col gap-1 items-end">
-              {builtInHullmods.map(({ id, mod }) => {
-                const spriteUrl = resolveHullModSpriteUrl(mod.sprite)
-                return (
-                  <button
-                    type="button"
-                    key={`built-in-${id}`}
-                    title="Built into this hull"
-                    className="flex items-center gap-1 text-sm"
-                    onMouseEnter={() => setHoveredHullmod(mod)}
-                    onMouseLeave={() => setHoveredHullmod(null)}
-                  >
-                    <span className="text-white font-bold [-webkit-text-stroke:0.5px_var(--color-gray-950)]">
-                      {mod.name}
-                    </span>
-                    {spriteUrl ? (
-                      <img
-                        src={spriteUrl}
-                        alt=""
-                        draggable={false}
-                        className="h-8 w-8 object-contain"
-                        loading="lazy"
-                      />
-                    ) : (
-                      <span className="h-8 w-8 border border-cyan-800 bg-cyan-900/30" />
-                    )}
-                  </button>
-                )
-              })}
-              {assignedHullmods.map(({ id, mod, cost }) => {
-                const spriteUrl = resolveHullModSpriteUrl(mod.sprite)
-                return (
-                  <button
-                    type="button"
-                    key={id}
-                    className="flex items-center gap-1 text-sm"
-                    onMouseEnter={() => setHoveredHullmod(mod)}
-                    onMouseLeave={() => setHoveredHullmod(null)}
-                  >
-                    <span className="text-cyan-100">{mod.name}</span>
-                    <span className="text-amber-300 text-lg font-bold ">
-                      {cost}
-                    </span>
-
-                    <CommonButton
-                      cutAllCorners
-                      text="-"
-                      aria-label={`Remove ${mod.name}`}
-                      className=" w-fit px-3"
-                      onClick={() => {
-                        onHullmodsChange(
-                          (activeTile.hullmods ?? []).filter((x) => x !== id)
-                        )
-                      }}
-                    />
-                    {spriteUrl ? (
-                      <img
-                        src={spriteUrl}
-                        alt=""
-                        draggable={false}
-                        className="h-8 w-8 object-contain"
-                        loading="lazy"
-                      />
-                    ) : (
-                      <span className="h-8 w-8 border border-cyan-800 bg-cyan-900/30" />
-                    )}
-                  </button>
-                )
-              })}
-            </div>
-            <CommonButton
-              text="Add"
-              className="w-32 py-0.5 self-end"
-              onClick={() => setShowHullmods(true)}
-            />
-            <CommonButton
-              text="Build in"
-              className="w-32 bg-lime-700 py-0.5 self-end"
-            />
-          </div>
+          <HullmodRoster
+            assignedHullmods={assignedHullmods}
+            builtInHullmods={builtInHullmods}
+            onHoverHullmod={setHoveredHullmod}
+            onRemoveHullmod={(id) =>
+              onHullmodsChange(
+                (activeTile.hullmods ?? []).filter((x) => x !== id)
+              )
+            }
+            onAdd={() => setShowHullmods(true)}
+          />
         </div>
       </div>
       {showInfo && (

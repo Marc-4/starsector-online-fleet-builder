@@ -16,7 +16,6 @@ export default function HullmodTile({
   disabledReason,
   disabled,
   onSelect,
-  onClose,
   onHover
 }: {
   hullmod: hullMod
@@ -27,7 +26,6 @@ export default function HullmodTile({
   disabledReason?: string | null
   disabled?: boolean
   onSelect?: (hullmod: hullMod) => void
-  onClose: () => void
   onHover: (h: hullMod | null) => void
 }) {
   const designType = getHullModDesignType(hullmod)

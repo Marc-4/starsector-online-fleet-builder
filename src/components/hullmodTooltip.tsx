@@ -1,3 +1,4 @@
+import { describeHullmod } from "#/hullModData"
 import type { hullMod } from "#/types"
 
 export default function HullmodTooltip({ hullmod }: { hullmod: hullMod }) {
@@ -6,7 +7,7 @@ export default function HullmodTooltip({ hullmod }: { hullmod: hullMod }) {
       <p className="text-cyan-200">{hullmod.name}</p>
       {hullmod.desc && (
         <p className="whitespace-pre-line leading-tight text-md text-cyan-50/90">
-          {hullmod.desc}
+          {describeHullmod(hullmod)}
         </p>
       )}
       {hullmod.sModDesc && (
