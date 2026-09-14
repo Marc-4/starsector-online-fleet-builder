@@ -17,7 +17,7 @@ function toBase64Url(bytes: Uint8Array): string {
 
 function mkEntry(
   hullId: string,
-  opts: { capacitors?: number; vents?: number; cr?: number; customName?: string; weapons?: Record<string, string>; fighters?: string[] } = {}
+  opts: { capacitors?: number; vents?: number; cr?: number; customName?: string; weapons?: Record<string, string>; fighters?: string[]; hullmods?: string[] } = {}
 ): fleetEntry {
   return {
     id: `bench-${hullId}`,
@@ -27,8 +27,17 @@ function mkEntry(
     vents: opts.vents ?? 0,
     customName: opts.customName ?? "",
     weapons: opts.weapons ?? {},
-    fighters: opts.fighters ?? []
+    fighters: opts.fighters ?? [],
+    hullmods: opts.hullmods ?? []
   }
+}
+
+const HULLMODS = ["heavyarmor", "blast_doors", "auxiliarythrusters", "targetingunit", "expanded_missile_racks", "hardenedshieldemitter", "stabilizedshieldemitter", "fluxcoil", "armoredweapons", "safetyoverrides", "comp_armor", "degraded_engines", "ill_advised"]
+
+function mkHullmods(i: number, n: number): string[] {
+  const out: string[] = []
+  for (let k = 0; k < n; k++) out.push(HULLMODS[(i + k) % HULLMODS.length])
+  return out
 }
 
 const WINGS = ["broadsword_wing", "longbow_wing", "dagger_wing", "piranha_wing", "thunder_wing", "gladius_wing", "wasp_wing", "talon_wing", "xyphos_wing", "spark_wing"]
@@ -69,7 +78,8 @@ const LONG_WEAPONS: Record<string, string> = {
 function norm(e: DecodedEntry) {
   const fighters = [...(e.fighters ?? [])]
   while (fighters.length > 0 && !fighters[fighters.length - 1]) fighters.pop()
-  const hullmods = [...(e.hullmods ?? [])].sort()
+  // Mirror sanitizeHullmods: dedupe, preserve order, then sort for comparison.
+  const hullmods = [...new Set(e.hullmods ?? [])].sort()
   return { ...e, weapons: Object.fromEntries(Object.entries(e.weapons).sort(([a], [b]) => (a < b ? -1 : 1))), fighters, hullmods }
 }
 
@@ -106,13 +116,14 @@ export async function run(): Promise<void> {
       cr: 60 + ((i * 13) % 41),
       customName: `ISS ${hullId} ${i + 1} “knife-fight”`,
       weapons,
-      fighters: mkFighters(i, i % 7)
+      fighters: mkFighters(i, i % 7),
+      hullmods: mkHullmods(i, i % 5)
     })
   })
   // typical: mixed fleet, partial fits
   const typical: fleetEntry[] = [
-    mkEntry("paragon", { capacitors: 20, vents: 15, weapons: { "WS 001": "tachyonlance", "WS 003": "squallmlrs" } }),
-    mkEntry("eagle", { capacitors: 10, cr: 85, customName: "ISS Eagle", weapons: { "WS 001": "heavymauler", "WS 005": "arbalest" } }),
+    mkEntry("paragon", { capacitors: 20, vents: 15, weapons: { "WS 001": "tachyonlance", "WS 003": "squallmlrs" }, hullmods: ["targetingunit", "heavyarmor"] }),
+    mkEntry("eagle", { capacitors: 10, cr: 85, customName: "ISS Eagle", weapons: { "WS 001": "heavymauler", "WS 005": "arbalest" }, hullmods: ["blast_doors"] }),
     mkEntry("hammerhead", { vents: 10, weapons: { "WS 002": "railgun" } }),
     mkEntry("lasher", {}),
     mkEntry("kite", { customName: "scout" }),
@@ -124,8 +135,15 @@ export async function run(): Promise<void> {
   const minimal: fleetEntry[] = Array.from({ length: 30 }, () => mkEntry("lasher"))
   // edge: unknown modded ids + non-WS slot + empty name
   const edge: fleetEntry[] = [
-    mkEntry("my_modded_hull", { capacitors: 5, customName: "Müller’s Pride ☄", weapons: { "WS 001": "my_modded_gun", "CUSTOM_SLOT_A": "lightmg" }, fighters: ["my_modded_wing", "", "broadsword_wing"] }),
+    mkEntry("my_modded_hull", { capacitors: 5, customName: "Müller’s Pride ☄", weapons: { "WS 001": "my_modded_gun", "CUSTOM_SLOT_A": "lightmg" }, fighters: ["my_modded_wing", "", "broadsword_wing"], hullmods: ["my_modded_hullmod", "heavyarmor", "heavyarmor"] }),
     mkEntry("eagle", { cr: 0, weapons: {} })
+  ]
+  // hullmods: mod-heavy stress case (d-mods, dupes, unknown ids)
+  const modded: fleetEntry[] = [
+    mkEntry("onslaught", { hullmods: [...HULLMODS] }),
+    mkEntry("lasher", { hullmods: ["comp_armor", "comp_armor", "degraded_engines"] }),
+    mkEntry("my_modded_hull", { hullmods: ["my_modded_hullmod", "targetingunit"] }),
+    mkEntry("eagle", {})
   ]
   // carriers: fighter-heavy stress case (full bays, trailing empties, modded wing)
   const carriers: fleetEntry[] = [
@@ -140,6 +158,7 @@ export async function run(): Promise<void> {
   const m = checkRoundTrip("minimal 30x bare lasher", minimal)
   const e = checkRoundTrip("modded/edge", edge)
   const c = checkRoundTrip("carrier 4-ship fighter-heavy", carriers)
+  const h = checkRoundTrip("hullmod-heavy 4-ship", modded)
 
   const empty = encodeFleetToHash([])
   const emptyBack = decodeFleetEntries(empty)
@@ -158,7 +177,7 @@ export async function run(): Promise<void> {
   console.log(`${decodeFleetEntries("###") === null ? "PASS" : "FAIL"} decode garbage -> null`)
 
   console.log("\n--- lengths (URL chars) ---")
-  for (const [label, r] of [["worst", w], ["typical", t], ["minimal", m], ["edge", e], ["carriers", c]] as const) {
+  for (const [label, r] of [["worst", w], ["typical", t], ["minimal", m], ["edge", e], ["carriers", c], ["hullmods", h]] as const) {
     const pct = Math.round((1 - r.v3 / r.v2) * 100)
     console.log(`${label}: v2=${r.v2} v3=${r.v3} (-${pct}%)`)
   }
