@@ -155,6 +155,32 @@ export type fleetEntry = {
   weapons?: Record<string, string>
   /** Mounted fighter wings per bay index: wing id or empty string. Synced into the URL hash. */
   fighters?: string[]
+  /** Mounted hullmod ids. */
+  hullmods?: string[]
+}
+
+export type hullMod = {
+  name: string
+  id: string
+  tier: number | string | null
+  rarity: string | null
+  "tech/manufacturer": string | null
+  tags: string | null
+  uiTags: string | null
+  "base value": number | null
+  unlocked: string | null
+  hidden: string | null
+  hiddenEverywhere: string | null
+  cost_frigate: number | null
+  cost_dest: number | null
+  cost_cruiser: number | null
+  cost_capital: number | null
+  script: string | null
+  desc: string | null
+  short: string | null
+  sModDesc: string | null
+  sprite: string | null
+  [key: string]: any
 }
 
 export type weaponMount = "TURRET" | "HARDPOINT" | "HIDDEN"
