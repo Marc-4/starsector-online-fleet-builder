@@ -1,5 +1,6 @@
 import Parser from "papaparse"
-import type { ship, shipStats, weapon, weaponStats, wingStats } from "#/types"
+import type { hullMod, ship, shipStats, weapon, weaponStats, wingStats } from "#/types"
+import hullModDataCSV from "../hullData/hull_mods.csv?raw"
 import shipDataCSV from "../shipData/ship_data.csv?raw"
 import wingDataCSV from "../shipData/wing_data.csv?raw"
 import weaponDataCSV from "../weaponData/weapon_data.csv?raw"
@@ -172,6 +173,228 @@ export function getWeaponFluxPerSecond(
     shotsPerSec = Math.min(shotsPerSec, ammoPerSec)
   }
   return perShot * shotsPerSec
+}
+
+export function getAllHullMods(): hullMod[] {
+  const data = Parser.parse(hullModDataCSV, {
+    header: true,
+    skipEmptyLines: true,
+    dynamicTyping: true
+  }).data as hullMod[]
+  return data.filter((h) => h.id && String(h.id).trim() !== "")
+}
+
+export function isHullModDMod(h: hullMod | null): boolean {
+  if (!h) return false
+  return `,${(h.tags || "").toLowerCase().replace(/\s+/g, "")},`.includes(",dmod,")
+}
+
+export function isHullModSelectable(h: hullMod | null): boolean {
+  if (!h) return false
+  const id = String(h.id ?? "").trim()
+  if (!id || id.startsWith("#")) return false
+  if (String(h.name ?? "").trim().startsWith("#")) return false
+  // D-mods are installable defects: visible despite the hidden flag.
+  if (!isHullModDMod(h) && String(h.hidden ?? "").toUpperCase() === "TRUE")
+    return false
+  if (String(h.hiddenEverywhere ?? "").toUpperCase() === "TRUE") return false
+  // Redacted / built-in-only packages never appear in the refit list.
+  const tags = (h.tags || "").toLowerCase()
+  if (tags.includes("hide_in_codex")) return false
+  return true
+}
+
+export function getHullModCost(
+  h: hullMod,
+  hullSize: string | undefined
+): number {
+  const size = (hullSize ?? "").toUpperCase()
+  const pick =
+    size === "FRIGATE"
+      ? h.cost_frigate
+      : size === "DESTROYER"
+        ? h.cost_dest
+        : size === "CRUISER"
+          ? h.cost_cruiser
+          : size === "CAPITAL_SHIP"
+            ? h.cost_capital
+            : null
+  const n = Number(pick)
+  return Number.isFinite(n) ? n : 0
+}
+
+export function getHullModDesignType(h: hullMod): string {
+  return (h["tech/manufacturer"] || "").toString().trim() || "Common"
+}
+
+/** Public URL for a hullmod icon. CSV stores e.g.
+ *  `graphics/hullmods/accelerated_shields.png`, served as webp. */
+export function resolveHullModSpriteUrl(sprite: string | null | undefined): string | null {
+  const s = (sprite ?? "").trim()
+  if (!s) return null
+  const base = s.split("/").pop() ?? s
+  const webp = base.replace(/\.png$/i, ".webp")
+  return `hullmods/${webp}`
+}
+
+export function getHullModCategories(h: hullMod): string[] {
+  const cats = (h.uiTags || "")
+    .split(",")
+    .map((t) => t.trim())
+    .filter(Boolean)
+  if (cats.length === 0 && isHullModDMod(h)) return ["D-Mod"]
+  return cats
+}
+
+export type hullModShipContext = {
+  hullSize: string
+  isPhase: boolean
+  hasShields: boolean
+  isCivilian: boolean
+  isAutomated: boolean
+  fighterBays: number
+  hasBuiltInWings: boolean
+  hasMissileSlot: boolean
+  isThreat: boolean
+  isDweller: boolean
+  hasDesignCompromises: boolean
+}
+
+/** Derive the installability context for a hull from its meta + stats.
+ *  `installedIds` covers mods from shared links (e.g. Design Compromises). */
+export function getHullModShipContext(
+  ship: {
+    meta: ship
+    stats: shipStats
+  },
+  installedIds?: string[]
+): hullModShipContext {
+  const hints = Array.from(
+    new Set(
+      `${ship.stats.hints ?? ""},${ship.meta.hints ?? ""}`
+        .split(",")
+        .map((t) => t.trim().toUpperCase())
+        .filter(Boolean)
+    )
+  )
+  const shipTags = `${(ship.stats.tags as unknown as string) ?? ""}`
+    .toLowerCase()
+  // NOTE: "PHASE" in the shield type column does NOT mean phase cloak —
+  // vanilla also uses it for alternative defenses (damper, canister flak).
+  // Only defense id "phasecloak" marks a true phase ship.
+  const defenseId = (ship.stats["defense id"] || "").toString().toLowerCase()
+  const shieldType = (ship.stats["shield type"] || "").toString().toUpperCase()
+  const isPhase = defenseId === "phasecloak"
+  const builtInMods = (ship.meta.builtInMods ?? []).map((m) =>
+    m.toLowerCase()
+  )
+  const installed = (installedIds ?? []).map((m) => m.toLowerCase())
+  const slots = ship.meta.weaponSlots ?? []
+  return {
+    hullSize: (ship.meta.hullSize || "").toUpperCase(),
+    isPhase,
+    hasShields: shieldType === "OMNI" || shieldType === "FRONT",
+    isCivilian:
+      hints.includes("CIVILIAN") || builtInMods.includes("civgrade"),
+    isAutomated: builtInMods.includes("automated"),
+    fighterBays: ship.stats["fighter bays"] ?? 0,
+    hasBuiltInWings: (ship.meta.builtInWings ?? []).length > 0,
+    hasMissileSlot: slots.some((s) =>
+      ["MISSILE", "COMPOSITE", "SYNERGY", "UNIVERSAL"].includes(
+        (s.type || "").toUpperCase()
+      )
+    ),
+    isThreat:
+      shipTags.includes("threat") ||
+      ship.meta.hullId.toLowerCase().includes("threat"),
+    isDweller:
+      shipTags.includes("dweller") ||
+      ship.meta.hullId.toLowerCase().includes("dweller") ||
+      ship.meta.hullId.toLowerCase().includes("shrouded"),
+    hasDesignCompromises:
+      builtInMods.includes("design_compromises") ||
+      installed.includes("design_compromises")
+  }
+}
+
+/** Vanilla-style isApplicableToShip approximation. Returns a reason when not installable. */
+export function getHullModInapplicability(
+  h: hullMod,
+  ctx: hullModShipContext
+): string | null {
+  const tags = `,${(h.tags || "").toLowerCase().replace(/\s+/g, "")},`
+  const has = (...ts: string[]) => ts.some((t) => tags.includes(`,${t},`))
+
+  // Hull-exclusive faction tech
+  if (has("fragment") && !ctx.isThreat)
+    return "Requires a Threat hull"
+  if (has("shrouded") && !ctx.isDweller)
+    return "Requires a Dweller hull"
+  // Phase-only mods (coils, anchor)
+  if (has("phase") && !has("non_phase") && !ctx.isPhase)
+    return "Can only be installed on phase ships"
+  if (has("non_phase") && ctx.isPhase)
+    return "Can not be installed on phase ships"
+  // Shielded-ship mods vs shieldless ships
+  if (h.id === "frontshield") {
+    if (ctx.isPhase) return "Can not be installed on phase ships"
+    if (ctx.hasShields) return "Can only be installed on ships without shields"
+    return null
+  }
+  if (has("shields") && !ctx.hasShields)
+    return "Requires shields"
+  // Carrier mods
+  if (
+    h.id === "converted_hangar" &&
+    (ctx.fighterBays > 0 || ctx.hasBuiltInWings) &&
+    !ctx.hasDesignCompromises
+  )
+    return "Can only be installed on ships with no fighter bays"
+  if (
+    ["expanded_deck_crew", "recovery_shuttles", "defensive_targeting_array"].includes(
+      h.id
+    ) &&
+    ctx.fighterBays <= 0 &&
+    !ctx.hasBuiltInWings
+  )
+    return "Requires fighter bays"
+  if (h.id === "converted_fighterbay" && !ctx.hasBuiltInWings)
+    return "Requires built-in fighter wings"
+  // Crew / automation exclusives
+  if (h.id === "neural_integrator" && !ctx.isAutomated)
+    return "Can only be installed on automated ships"
+  if (h.id === "neural_interface" && ctx.isAutomated)
+    return "Can not be installed on automated ships"
+  if (h.id === "militarized_subsystems" && !ctx.isCivilian)
+    return "Can only be installed on civilian-grade hulls"
+  if (h.id === "safetyoverrides" && (ctx.isCivilian || ctx.hullSize === "CAPITAL_SHIP"))
+    return "Can not be installed on civilian or capital ships"
+  if (
+    h.id === "escort_package" &&
+    ctx.hullSize !== "FRIGATE" &&
+    ctx.hullSize !== "DESTROYER"
+  )
+    return "Can only be installed on frigates and destroyers"
+  if (h.id === "missile_autoloader" && !ctx.hasMissileSlot)
+    return "Requires missile slots"
+  // D-mod gating from dmod sub-tags
+  if (has("reqshields") && !ctx.hasShields)
+    return "Requires shields"
+  if (has("notphase") && ctx.isPhase)
+    return "Can not be installed on phase ships"
+  if (has("phasedamage") && !ctx.isPhase)
+    return "Can only be installed on phase ships"
+  if ((has("civonly") || has("civ")) && !ctx.isCivilian)
+    return "Can only be installed on civilian-grade hulls"
+  if (has("notauto") && ctx.isAutomated)
+    return "Can not be installed on automated ships"
+  if (
+    has("fighterbaydamage") &&
+    ctx.fighterBays <= 0 &&
+    !ctx.hasBuiltInWings
+  )
+    return "Requires fighter bays"
+  return null
 }
 
 export function getAllWingStats(): wingStats[] {

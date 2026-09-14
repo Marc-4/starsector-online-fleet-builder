@@ -1,15 +1,15 @@
 import * as pako from "pako"
 import type { fleetEntry, ship, shipStats } from "#/types"
 import { getShipStats } from "./csvParser"
-import { HULL_IDS, WEAPON_IDS, WING_IDS } from "./fleetDicts"
+import { HULL_IDS, HULLMOD_IDS, WEAPON_IDS, WING_IDS } from "./fleetDicts"
 import { newFleetId } from "./id"
 
-type EntryPayload = { h: string; c?: number; v?: number; cr?: number; n?: string; w?: Record<string, string>; fg?: string[] }
+type EntryPayload = { h: string; c?: number; v?: number; cr?: number; n?: string; w?: Record<string, string>; fg?: string[]; hm?: string[] }
 type PayloadV1 = { v: 1; f: string[] }
 type PayloadV2 = { v: 2; f: EntryPayload[] }
 type Payload = PayloadV1 | PayloadV2
 
-export type DecodedEntry = { hullId: string; capacitors: number; vents: number; cr: number; customName: string; weapons: Record<string, string>; fighters: string[] }
+export type DecodedEntry = { hullId: string; capacitors: number; vents: number; cr: number; customName: string; weapons: Record<string, string>; fighters: string[]; hullmods: string[] }
 
 const DEFAULT_CR = 70
 
@@ -49,6 +49,7 @@ export function encodeFleetToHashV2(fleet: fleetEntry[]): string {
       w:
         e.weapons && Object.keys(e.weapons).length > 0 ? e.weapons : undefined,
       fg: e.fighters && e.fighters.some(Boolean) ? e.fighters : undefined,
+      hm: e.hullmods && e.hullmods.length > 0 ? e.hullmods : undefined,
     })),
   }
   return deflateHash(new TextEncoder().encode(JSON.stringify(payload)))
@@ -74,7 +75,9 @@ const FLAG_FLUX = 0x04
 const FLAG_WEAPONS = 0x08
 const FLAG_DENSE_WEAPONS = 0x10
 const FLAG_FIGHTERS = 0x20
+const FLAG_HULLMODS = 0x40
 const MAX_FIGHTER_BAYS = 32
+const MAX_HULLMODS_PER_SHIP = 32
 
 // Upper bounds against corrupt input
 const MAX_SHIPS = 512
@@ -84,6 +87,7 @@ const MAX_STR_BYTES = 1 << 20
 const hullIndex = new Map(HULL_IDS.map((id, i) => [id, i]))
 const weaponIndex = new Map(WEAPON_IDS.map((id, i) => [id, i]))
 const wingIndex = new Map(WING_IDS.map((id, i) => [id, i]))
+const hullmodIndex = new Map(HULLMOD_IDS.map((id, i) => [id, i]))
 const textEncoder = new TextEncoder()
 
 function writeVarint(out: number[], v: number): void {
@@ -202,6 +206,9 @@ function encodeV3(fleet: fleetEntry[]): Uint8Array {
     const rawFighters = (e.fighters ?? []).map((f) => (typeof f === "string" ? f : ""))
     while (rawFighters.length > 0 && !rawFighters[rawFighters.length - 1]) rawFighters.pop()
     const fighters = rawFighters
+    const hullmods = (e.hullmods ?? []).filter(
+      (h): h is string => typeof h === "string" && !!h
+    )
     let flags = 0
     if (name) flags |= FLAG_NAME
     if (cr !== DEFAULT_CR) flags |= FLAG_CR
@@ -209,6 +216,7 @@ function encodeV3(fleet: fleetEntry[]): Uint8Array {
     if (pairs.length > 0) flags |= FLAG_WEAPONS
     if (dense) flags |= FLAG_DENSE_WEAPONS
     if (fighters.length > 0) flags |= FLAG_FIGHTERS
+    if (hullmods.length > 0) flags |= FLAG_HULLMODS
     out.push(flags)
 
     writeRef(out, hullIndex, HULL_IDS.length, e.ship.meta.hullId)
@@ -250,6 +258,12 @@ function encodeV3(fleet: fleetEntry[]): Uint8Array {
         }
       }
     }
+    if (flags & FLAG_HULLMODS) {
+      writeVarint(out, hullmods.length)
+      for (const h of hullmods) {
+        writeRef(out, hullmodIndex, HULLMOD_IDS.length, h)
+      }
+    }
   }
   return Uint8Array.from(out)
 }
@@ -262,7 +276,7 @@ function decodeV3(bytes: Uint8Array): DecodedEntry[] {
   const out: DecodedEntry[] = []
   for (let i = 0; i < count; i++) {
     const flags = r.u8()
-    if (flags & ~0x3f) throw new Error("v3: bad flags")
+    if (flags & ~0x7f) throw new Error("v3: bad flags")
     if (flags & FLAG_DENSE_WEAPONS && !(flags & FLAG_WEAPONS)) throw new Error("v3: bad flags")
     const hullId = r.ref(HULL_IDS)
     let capacitors = 0
@@ -308,7 +322,13 @@ function decodeV3(bytes: Uint8Array): DecodedEntry[] {
         else throw new Error("v3: bad wing ref")
       }
     }
-    out.push({ hullId, capacitors, vents, cr, customName, weapons, fighters })
+    let hullmods: string[] = []
+    if (flags & FLAG_HULLMODS) {
+      const n = r.varint()
+      if (n === 0 || n > MAX_HULLMODS_PER_SHIP) throw new Error("v3: bad hullmod count")
+      for (let k = 0; k < n; k++) hullmods.push(r.ref(HULLMOD_IDS))
+    }
+    out.push({ hullId, capacitors, vents, cr, customName, weapons, fighters, hullmods })
   }
   if (!r.done) throw new Error("v3: trailing bytes")
   return out
@@ -347,6 +367,7 @@ export function decodeFleetEntries(hash: string): DecodedEntry[] | null {
           customName: typeof e.n === "string" ? e.n : "",
           weapons: sanitizeWeapons(e.w),
           fighters: sanitizeFighters(e.fg),
+          hullmods: sanitizeHullmods(e.hm),
         })
       }
       return out
@@ -355,7 +376,7 @@ export function decodeFleetEntries(hash: string): DecodedEntry[] | null {
       // v1 backward compat: only hullIds
       return (parsed as PayloadV1).f
         .filter((x) => typeof x === "string")
-        .map((hullId) => ({ hullId, capacitors: 0, vents: 0, cr: 70, customName: "", weapons: {}, fighters: [] }))
+        .map((hullId) => ({ hullId, capacitors: 0, vents: 0, cr: 70, customName: "", weapons: {}, fighters: [], hullmods: [] }))
     }
     return null
   } catch {
@@ -372,12 +393,12 @@ export function hydrateFleet(
     ids.length === 0
       ? []
       : typeof ids[0] === "string"
-        ? (ids as string[]).map((hullId) => ({ hullId, capacitors: 0, vents: 0, cr: 70, customName: "", weapons: {}, fighters: [] }))
+        ? (ids as string[]).map((hullId) => ({ hullId, capacitors: 0, vents: 0, cr: 70, customName: "", weapons: {}, fighters: [], hullmods: [] }))
         : (ids as DecodedEntry[])
   const shipById = new Map(allShips.map((s) => [s.hullId, s]))
   const out: fleetEntry[] = []
   for (const entry of entries) {
-    const { hullId, capacitors, vents, cr, customName, weapons, fighters } = entry
+    const { hullId, capacitors, vents, cr, customName, weapons, fighters, hullmods } = entry
     const meta = shipById.get(hullId)
     if (!meta) {
       console.warn(`hydrateFleet: unknown hullId ${hullId}`)
@@ -388,7 +409,7 @@ export function hydrateFleet(
       console.warn(`hydrateFleet: missing stats for ${hullId}`)
       continue
     }
-    out.push({ id: newFleetId(), ship: { meta, stats }, cr, capacitors, vents, customName, weapons, fighters })
+    out.push({ id: newFleetId(), ship: { meta, stats }, cr, capacitors, vents, customName, weapons, fighters, hullmods: sanitizeHullmods(hullmods) })
   }
   return out
 }
@@ -397,6 +418,18 @@ function sanitizeFighters(fg: unknown): string[] {
   if (!Array.isArray(fg)) return []
   const out = fg.slice(0, MAX_FIGHTER_BAYS).map((x) => (typeof x === "string" ? x : ""))
   while (out.length > 0 && !out[out.length - 1]) out.pop()
+  return out
+}
+
+function sanitizeHullmods(hm: unknown): string[] {
+  if (!Array.isArray(hm)) return []
+  const seen = new Set<string>()
+  const out: string[] = []
+  for (const x of hm.slice(0, MAX_HULLMODS_PER_SHIP)) {
+    if (typeof x !== "string" || !x || seen.has(x)) continue
+    seen.add(x)
+    out.push(x)
+  }
   return out
 }
 
