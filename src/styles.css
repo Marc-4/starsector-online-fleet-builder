@@ -3,7 +3,7 @@
 @font-face {
   font-family: "Orbitron";
   src: url("/Orbitron.ttf") format("truetype");
-  font-weight: 100;
+  font-weight: 400 900;
   font-style: normal;
   font-display: swap;
 }
