@@ -39,8 +39,18 @@ function hullSizeLabel(hullSize: string) {
 }
 
 function shieldLabel(stats: completeShip["stats"]) {
+  // Defense slot wins: phasecloak / damper / canister_flak live here, while
+  // the shield type column reuses "PHASE" for all of them.
+  const defense = String(stats["defense id"] ?? "").toLowerCase()
+  if (defense === "phasecloak") return "Phase Cloak"
+  if (defense === "damper") return "Damper Field"
+  if (defense) {
+    return defense
+      .split("_")
+      .map((w) => w.replace(/\b\w/g, (c) => c.toUpperCase()))
+      .join(" ")
+  }
   const type = String(stats["shield type"] ?? "").toUpperCase()
-  if (type.includes("PHASE")) return "Phase Cloak"
   if (type.includes("NONE") || !stats["shield arc"]) return "—"
   if (type.includes("OMNI")) return "Omni Shield"
   if (type.includes("FRONT")) return "Front Shield"
@@ -70,7 +80,7 @@ export default function ShipInfoCard({
     <div
       role="dialog"
       aria-label={`${m.hullName} info`}
-      className="w-[980px] max-w-[94vw] font-serif text-lg bg-black/95 border border-gray-700 px-5 py-2 shadow-2xl"
+      className="w-[980px] max-w-[94vw] font-serif text-lg bg-gray-950 border border-gray-700 px-5 py-2 shadow-2xl"
     >
       <div className="grid grid-cols-2 text-center text-cyan-100 bg-cyan-800 border-b border-gray-700 pb-0.5 mb-1">
         <p>Logistical data</p>
@@ -146,15 +156,11 @@ export default function ShipInfoCard({
             />
             <Row
               label="Maximum crew"
-              value={
-                <span className="text-cyan-50">{fmt(s["max crew"])}</span>
-              }
+              value={<span className="text-cyan-50">{fmt(s["max crew"])}</span>}
             />
             <Row
               label="Skeleton crew required"
-              value={
-                <span className="text-cyan-50">{fmt(s["min crew"])}</span>
-              }
+              value={<span className="text-cyan-50">{fmt(s["min crew"])}</span>}
             />
             <Row
               label="Fuel capacity"
@@ -162,9 +168,7 @@ export default function ShipInfoCard({
             />
             <Row
               label="Maximum burn"
-              value={
-                <span className="text-cyan-50">{fmt(s["max burn"])}</span>
-              }
+              value={<span className="text-cyan-50">{fmt(s["max burn"])}</span>}
             />
             <Row
               label="Fuel / light year, jump cost"
