@@ -62,7 +62,7 @@ export default function FighterFilters({
                 }
                 className={`text-xs px-2 py-0.5 border text-cyan-200 border-cyan-800 ${active ? "bg-cyan-900" : "bg-transparent border-cyan-800  hover:brightness-110"}`}
               >
-                {t}
+                {t.toLowerCase().replace("_", " ")}
               </button>
             )
           })}

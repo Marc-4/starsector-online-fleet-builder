@@ -240,7 +240,7 @@ export default function HullmodSelectionModal({
                   >
                     <span>{label}</span>
                     <span aria-hidden="true">
-                      {sortKey === key ? (sortDir === 1 ? "▾" : "▴") : "▾"}
+                      {sortKey === key ? (sortDir === 1 ? "▼" : "▲") : "▼"}
                     </span>
                   </th>
                 ))}

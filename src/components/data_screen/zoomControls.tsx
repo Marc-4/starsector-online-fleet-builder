@@ -30,7 +30,7 @@ export default function ZoomControls({
   )
   const resetZoom = useCallback(() => setZoom(1), [setZoom])
   return (
-    <div className=" w-fit z-10 flex items-center gap-1 bg-black/40 border border-cyan-900 rounded-xs px-1 py-1 backdrop-blur-sm">
+    <div className=" w-fit z-10 flex items-center gap-1 bg-cyan-950/40 border border-cyan-900 rounded-xs px-1 py-1 backdrop-blur-sm">
       <CommonButton
         text="−"
         cutAllCorners

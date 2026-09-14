@@ -278,7 +278,7 @@ export default function WeaponTooltip({
       : null
 
   return (
-    <div className="flex z-50 h-full w-full flex-col font-serif text-2xl gap-1 overflow-auto border border-cyan-200/70 bg-black/90 p-3 shadow-xl">
+    <div className="flex z-50 h-full w-full flex-col font-serif text-2xl gap-1 overflow-auto border border-cyan-200/70 bg-gray-950 p-3 shadow-xl">
       <div className="flex items-center gap-2">
         <div
           className="relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden border"

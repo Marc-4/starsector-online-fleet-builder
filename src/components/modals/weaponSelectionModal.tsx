@@ -206,101 +206,102 @@ export default function WeaponSelectionModal({
         className="fixed inset-0 z-30 bg-transparent cursor-default"
       />
       <div className="relative z-40 flex gap-1 w-[80%] max-lg:flex-col mx-auto h-full justify-center items-center pointer-events-none">
-      {showWeaponTooltip ? (
-        <div className="flex w-[40%] min-w-80 h-fit">
-          <WeaponTooltip
-            weapon={showWeaponTooltip}
-            allWeaponStats={allWeaponStats}
-          />
-        </div>
-      ) : (
-        <div className="flex w-[40%] min-w-80 opacity-0 h-64">
-          {/*<WeaponTooltip
+        {showWeaponTooltip ? (
+          <div className="flex w-[40%] min-w-80 h-fit">
+            <WeaponTooltip
+              weapon={showWeaponTooltip}
+              allWeaponStats={allWeaponStats}
+            />
+          </div>
+        ) : (
+          <div className="flex w-[40%] min-w-80 opacity-0 h-64">
+            {/*<WeaponTooltip
             weapon={}
             allWeaponStats={allWeaponStats}
           />*/}
-        </div>
-      )}
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-label={`Weapon selection for ${slot.id}`}
-        className="relative z-40 flex items-center w-[40%] min-w-80 justify-center pointer-events-none bg-black"
-      >
-        <div className="flex w-full z-40 flex-col gap-2 p-1 border border-cyan-200 pointer-events-auto shadow-xl">
-          <div className="flex m-1 mb-0 p-1 pb-0 gap-1 justify-between items-start">
-            <div className="gap-2 flex flex-col flex-1">
-              <div className="flex gap-2 items-center flex-wrap">
-                <h2 className="text-cyan-200 text-sm">
-                  {slot.id} • {slot.type} {slot.size}
-                </h2>
-                <span className="text-cyan-400 text-xs">({slot.mount})</span>
-              </div>
-              <div className="flex gap-2 items-center">
-                <h2 className="text-cyan-200 text-sm">Search: </h2>
-                <input
-                  className="border border-cyan-200 flex-1 max-w-[180px] text-cyan-200 text-sm px-1 bg-transparent"
-                  type="search"
-                  value={searchString}
-                  onChange={(e) =>
-                    setSearchString(e.currentTarget.value.toLowerCase())
-                  }
+          </div>
+        )}
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label={`Weapon selection for ${slot.id}`}
+          className="relative z-40 flex items-center w-[40%] min-w-80 justify-center pointer-events-none bg-gray-950"
+        >
+          <div className="flex w-full z-40 flex-col gap-2 p-1 border border-cyan-200 pointer-events-auto shadow-xl">
+            <div className="flex m-1 mb-0 p-1 pb-0 gap-1 justify-between items-start">
+              <div className="gap-2 flex flex-col flex-1">
+                <div className="flex gap-2 items-center flex-wrap">
+                  <h2 className="text-cyan-200 text-sm">
+                    {slot.id} • {slot.type} {slot.size}
+                  </h2>
+                  <span className="text-cyan-400 text-xs">({slot.mount})</span>
+                </div>
+                <div className="flex gap-2 items-center">
+                  <h2 className="text-cyan-200 text-sm">Search: </h2>
+                  <input
+                    className="border border-cyan-200 flex-1 max-w-[180px] text-cyan-200 text-sm px-1 bg-transparent"
+                    type="search"
+                    value={searchString}
+                    onChange={(e) =>
+                      setSearchString(e.currentTarget.value.toLowerCase())
+                    }
+                  />
+                </div>
+                <WeaponFilters
+                  availableMountTypes={availableMountTypes}
+                  damageTypeOptions={damageTypeOptions}
+                  availableSpecialTags={availableSpecialTags}
+                  activeWeaponTypeFilters={activeWeaponTypeFilters}
+                  activeDamageTypeFilters={activeDamageTypeFilters}
+                  activeSpecialTags={activeSpecialTags}
+                  onToggle={toggle}
+                  setActiveWeaponTypeFilters={setActiveWeaponTypeFilters}
+                  setActiveDamageTypeFilters={setActiveDamageTypeFilters}
+                  setActiveSpecialTags={setActiveSpecialTags}
                 />
               </div>
-              <WeaponFilters
-                availableMountTypes={availableMountTypes}
-                damageTypeOptions={damageTypeOptions}
-                availableSpecialTags={availableSpecialTags}
-                activeWeaponTypeFilters={activeWeaponTypeFilters}
-                activeDamageTypeFilters={activeDamageTypeFilters}
-                activeSpecialTags={activeSpecialTags}
-                onToggle={toggle}
-                setActiveWeaponTypeFilters={setActiveWeaponTypeFilters}
-                setActiveDamageTypeFilters={setActiveDamageTypeFilters}
-                setActiveSpecialTags={setActiveSpecialTags}
+              <CommonButton
+                text="x"
+                onClick={() => onClose()}
+                clipPath={false}
+                className="cursor-pointer rounded-xs w-7 h-7 px-2 font-bold hover:brightness-110 text-xl text-cyan-200 flex items-center justify-center shrink-0"
               />
             </div>
-            <CommonButton
-              text="x"
-              onClick={() => onClose()}
-              clipPath={false}
-              className="cursor-pointer rounded-xs w-7 h-7 px-2 font-bold hover:brightness-110 text-xl text-cyan-200 flex items-center justify-center shrink-0"
-            />
-          </div>
 
-          <div className="w-full flex-1 flex flex-col gap-1 p-2 max-h-72 min-h-72 overflow-auto">
-            {filteredWeapons.map((w) => {
-              const op = Number(
-                getWeaponStats({ weapon: w, weaponStats: allWeaponStats })?.OPs
-              )
-              const unaffordable =
-                remainingOpForSlot != null &&
-                Number.isFinite(op) &&
-                mountedIdForSlot !== w.id &&
-                op > remainingOpForSlot
-              return (
-                <WeaponTile
-                  key={w.id}
-                  weapon={w}
-                  allWeaponStats={allWeaponStats}
-                  onSelect={onSelect}
-                  onRemove={onRemoveWeapon}
-                  onClose={onClose}
-                  mounted={mountedIdForSlot === w.id}
-                  disabled={unaffordable}
-                  onHoverStart={setShowWeaponTooltip}
-                  onHoverEnd={() => setShowWeaponTooltip(undefined)}
-                />
-              )
-            })}
-            {filteredWeapons.length === 0 && (
-              <p className="text-cyan-200/60 text-sm text-center py-8">
-                No weapons fit {slot.type} {slot.size}
-              </p>
-            )}
+            <div className="w-full flex-1 flex flex-col gap-1 p-2 max-h-72 min-h-72 overflow-auto">
+              {filteredWeapons.map((w) => {
+                const op = Number(
+                  getWeaponStats({ weapon: w, weaponStats: allWeaponStats })
+                    ?.OPs
+                )
+                const unaffordable =
+                  remainingOpForSlot != null &&
+                  Number.isFinite(op) &&
+                  mountedIdForSlot !== w.id &&
+                  op > remainingOpForSlot
+                return (
+                  <WeaponTile
+                    key={w.id}
+                    weapon={w}
+                    allWeaponStats={allWeaponStats}
+                    onSelect={onSelect}
+                    onRemove={onRemoveWeapon}
+                    onClose={onClose}
+                    mounted={mountedIdForSlot === w.id}
+                    disabled={unaffordable}
+                    onHoverStart={setShowWeaponTooltip}
+                    onHoverEnd={() => setShowWeaponTooltip(undefined)}
+                  />
+                )
+              })}
+              {filteredWeapons.length === 0 && (
+                <p className="text-cyan-200/60 text-sm text-center py-8">
+                  No weapons fit {slot.type} {slot.size}
+                </p>
+              )}
+            </div>
           </div>
         </div>
-      </div>
       </div>
     </>
   )

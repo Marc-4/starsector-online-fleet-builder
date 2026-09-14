@@ -1,5 +1,9 @@
 import { useEffect, useMemo, useState } from "react"
-import { getAllShipStats, getAllWingStats, isWingSelectable } from "#/lib/csvParser"
+import {
+  getAllShipStats,
+  getAllWingStats,
+  isWingSelectable
+} from "#/lib/csvParser"
 import { getAllShips } from "#/lib/shipParser"
 import type { ship, shipStats, wingStats } from "#/types"
 import CommonButton from "../commonBtn"
@@ -164,7 +168,7 @@ export default function FighterSelectionModal({
           role="dialog"
           aria-modal="true"
           aria-label="Fighter selection"
-          className="relative flex items-center w-[50%] min-w-80 justify-center pointer-events-none bg-black"
+          className="relative flex items-center w-[50%] min-w-80 justify-center pointer-events-none bg-gray-950"
         >
           <div className="flex w-full z-40 flex-col gap-2 p-1 border border-cyan-200 pointer-events-auto shadow-xl">
             <div className="flex m-1 mb-0 p-1 pb-0 gap-1 justify-between items-start">
