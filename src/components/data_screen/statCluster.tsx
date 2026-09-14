@@ -118,7 +118,14 @@ export default function StatCluster({
   return (
     <div className="relative flex flex-col w-fit m-1 ml-2 max-sm:m-0.5">
       <div className="flex gap-2 items-center">
-        <CommonButton text="?" className="h-fit w-fit px-3 py-0" clipPath={false} onClick={onInfoToggle} title="Ship info" aria-expanded={showInfo} />
+        <CommonButton
+          text="?"
+          className="h-fit w-fit px-3 py-0"
+          clipPath={false}
+          onClick={onInfoToggle}
+          title="Ship info"
+          aria-expanded={showInfo}
+        />
         <fieldset
           className="relative flex self-end items-center justify-center w-[300px] sm:w-96 h-7 sm:h-8 bg-gray-950 border border-gray-950 rounded-xs overflow-hidden"
           aria-label={`Ordnance Points ${spentOp} of ${availableOp ?? "N/A"}`}
@@ -150,15 +157,21 @@ export default function StatCluster({
       <div className="flex gap-4 sm:gap-12 self-end max-sm:gap-3">
         <div className="ss-label-col">
           <p className="ss-label-text max-sm:text-xs">TOP SPEED</p>
-          <p className="text-base sm:text-lg"><StatValue current={topSpeed} base={topSpeedBase} /></p>
+          <p className="text-base sm:text-lg">
+            <StatValue current={topSpeed} base={topSpeedBase} />
+          </p>
         </div>
         <div className="ss-label-col">
           <p className="ss-label-text max-sm:text-xs">ARMOR</p>
-          <p className="text-base sm:text-lg"><StatValue current={armor} base={armorBase} /></p>
+          <p className="text-base sm:text-lg">
+            <StatValue current={armor} base={armorBase} />
+          </p>
         </div>
         <div className="ss-label-col">
           <p className="ss-label-text max-sm:text-xs">HULL</p>
-          <p className="text-base sm:text-lg"><StatValue current={hull} base={hullBase} /></p>
+          <p className="text-base sm:text-lg">
+            <StatValue current={hull} base={hullBase} />
+          </p>
         </div>
       </div>
       <div className="flex mt-2 gap-1 max-sm:gap-0.5">
@@ -244,13 +257,21 @@ export default function StatCluster({
           <div className="flex flex-col">
             <p className="ss-label-text max-sm:text-[11px]">SHIELD FLUX/DAM</p>
             <p className="self-end text-sm sm:text-base">
-              <StatValue current={shieldEfficiency} base={shieldEfficiencyBase} invert />
+              <StatValue
+                current={shieldEfficiency}
+                base={shieldEfficiencyBase}
+                invert
+              />
             </p>
           </div>
           <div className="flex flex-col">
             <p className="ss-label-text max-sm:text-[11px]">WEAPON FLUX/SEC</p>
             <p className="self-end text-sm sm:text-base">
-              <StatValue current={weaponFluxPerSecond} base={weaponFluxPerSecondBase} invert />
+              <StatValue
+                current={weaponFluxPerSecond}
+                base={weaponFluxPerSecondBase}
+                invert
+              />
             </p>
           </div>
         </div>
