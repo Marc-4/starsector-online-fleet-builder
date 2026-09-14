@@ -6,7 +6,11 @@ import {
   isWeaponSelectable,
   SPECIAL_WEAPON_TAGS
 } from "#/lib/csvParser"
-import { canFitWeaponMount, isWeaponSizeCompatible } from "#/lib/weaponCompat"
+import {
+  canFitWeaponMount,
+  getWeaponMountType,
+  isWeaponSizeCompatible
+} from "#/lib/weaponCompat"
 import { getAllWeapons } from "#/lib/weaponParser"
 import type { weapon, weaponSlot, weaponStats } from "#/types"
 import CommonButton from "../commonBtn"
@@ -52,9 +56,10 @@ export default function WeaponSelectionModal({
 
   const slotCompatibleWeapons = useMemo(() => {
     return allWeapons.filter((w) => {
-      if (!isWeaponSizeCompatible(slot.size, w.size, slot.type, w.type))
+      const mountType = getWeaponMountType(w)
+      if (!isWeaponSizeCompatible(slot.size, w.size, slot.type, mountType))
         return false
-      if (!canFitWeaponMount(slot.type, w.type)) return false
+      if (!canFitWeaponMount(slot.type, mountType)) return false
       const stats = getWeaponStats({ weapon: w, weaponStats: allWeaponStats })
       if (!isWeaponSelectable(stats)) return false
       return true
@@ -86,11 +91,11 @@ export default function WeaponSelectionModal({
   const relevantMountTypes = useMemo<weapon["type"][]>(() => {
     switch (slot.type) {
       case "BALLISTIC":
-        return ["BALLISTIC"]
+        return ["BALLISTIC", "HYBRID", "COMPOSITE"]
       case "ENERGY":
-        return ["ENERGY"]
+        return ["ENERGY", "HYBRID", "SYNERGY"]
       case "MISSILE":
-        return ["MISSILE"]
+        return ["MISSILE", "COMPOSITE", "SYNERGY"]
       case "HYBRID":
         return ["BALLISTIC", "ENERGY", "HYBRID"]
       case "COMPOSITE":
@@ -115,7 +120,8 @@ export default function WeaponSelectionModal({
   const availableMountTypes = useMemo(() => {
     const counts = new Map<string, number>()
     for (const w of slotCompatibleWeapons) {
-      counts.set(w.type, (counts.get(w.type) ?? 0) + 1)
+      const t = getWeaponMountType(w)
+      counts.set(t, (counts.get(t) ?? 0) + 1)
     }
     return relevantMountTypes.filter((t) => (counts.get(t) ?? 0) > 0)
   }, [slotCompatibleWeapons, relevantMountTypes])
@@ -126,9 +132,10 @@ export default function WeaponSelectionModal({
   const filteredWeapons = useMemo(() => {
     return allWeapons
       .filter((w) => {
-        if (!isWeaponSizeCompatible(slot.size, w.size, slot.type, w.type))
+        const mountType = getWeaponMountType(w)
+        if (!isWeaponSizeCompatible(slot.size, w.size, slot.type, mountType))
           return false
-        if (!canFitWeaponMount(slot.type, w.type)) return false
+        if (!canFitWeaponMount(slot.type, mountType)) return false
         const stats = getWeaponStats({ weapon: w, weaponStats: allWeaponStats })
         if (!isWeaponSelectable(stats)) return false
         const specialTags = getWeaponSpecialTags(stats)
@@ -139,7 +146,7 @@ export default function WeaponSelectionModal({
           return false
         if (
           activeWeaponTypeFilters.length > 0 &&
-          !activeWeaponTypeFilters.includes(w.type)
+          !activeWeaponTypeFilters.includes(mountType)
         )
           return false
         if (activeDamageTypeFilters.length > 0) {
@@ -148,7 +155,7 @@ export default function WeaponSelectionModal({
         }
         if (searchString.length > 0) {
           const haystack =
-            `${w.id} ${stats?.name ?? ""} ${w.type} ${stats?.type ?? ""}`.toLowerCase()
+            `${w.id} ${stats?.name ?? ""} ${mountType} ${stats?.type ?? ""}`.toLowerCase()
           if (!haystack.includes(searchString)) return false
         }
         return true

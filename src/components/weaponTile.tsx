@@ -1,4 +1,5 @@
 import { getWeaponStats } from "#/lib/csvParser"
+import { getWeaponMountType } from "#/lib/weaponCompat"
 import { BuildSprite } from "#/lib/weaponSpriteHelper"
 import type { weapon, weaponStats, weaponType } from "#/types"
 
@@ -68,7 +69,7 @@ export default function WeaponTile({
     >
       <div
         className="relative border w-16 h-16 shrink-0 flex items-center justify-center overflow-hidden"
-        style={{ borderColor: TYPE_COLOR_MAP[w.type] ?? "gray" }}
+        style={{ borderColor: TYPE_COLOR_MAP[getWeaponMountType(w)] ?? "gray" }}
       >
         <BuildSprite weapon={w} naturalSize />
       </div>
