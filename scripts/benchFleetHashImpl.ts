@@ -69,7 +69,8 @@ const LONG_WEAPONS: Record<string, string> = {
 function norm(e: DecodedEntry) {
   const fighters = [...(e.fighters ?? [])]
   while (fighters.length > 0 && !fighters[fighters.length - 1]) fighters.pop()
-  return { ...e, weapons: Object.fromEntries(Object.entries(e.weapons).sort(([a], [b]) => (a < b ? -1 : 1))), fighters }
+  const hullmods = [...(e.hullmods ?? [])].sort()
+  return { ...e, weapons: Object.fromEntries(Object.entries(e.weapons).sort(([a], [b]) => (a < b ? -1 : 1))), fighters, hullmods }
 }
 
 function checkRoundTrip(label: string, fleet: fleetEntry[]): { v2: number; v3: number } {
@@ -77,7 +78,7 @@ function checkRoundTrip(label: string, fleet: fleetEntry[]): { v2: number; v3: n
   const v3 = encodeFleetToHash(fleet)
   const back = decodeFleetEntries(`#fleet=${v3}`)
   const expected = fleet.map((e) =>
-    norm({ hullId: e.ship.meta.hullId, capacitors: e.capacitors, vents: e.vents, cr: e.cr, customName: e.customName, weapons: e.weapons ?? {}, fighters: [...(e.fighters ?? [])] })
+    norm({ hullId: e.ship.meta.hullId, capacitors: e.capacitors, vents: e.vents, cr: e.cr, customName: e.customName, weapons: e.weapons ?? {}, fighters: [...(e.fighters ?? [])], hullmods: [...(e.hullmods ?? [])] })
   )
   const actual = (back ?? []).map(norm)
   const ok = JSON.stringify(actual) === JSON.stringify(expected)
