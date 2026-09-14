@@ -1,8 +1,10 @@
 import { type ReactNode, useEffect, useMemo, useRef, useState } from "react"
 import {
+  getAllHullMods,
   getAllShipStats,
   getAllWeaponStats,
-  getAllWingStats
+  getAllWingStats,
+  getHullModCost
 } from "#/lib/csvParser"
 import {
   decodeFleetEntries,
@@ -90,6 +92,15 @@ export default function Screen({ children }: { children?: ReactNode }) {
       const op = wingOpById.get(wingId)
       return sum + (Number.isFinite(op) ? (op as number) : 0)
     }, 0)
+  const hullModById = useMemo(
+    () => new Map(getAllHullMods().map((h) => [h.id, h])),
+    []
+  )
+  const hullmodsOpOf = (hullmods?: string[], hullSize?: string) =>
+    (hullmods ?? []).reduce((sum, id) => {
+      const mod = hullModById.get(id)
+      return sum + (mod ? getHullModCost(mod, hullSize) : 0)
+    }, 0)
 
   const syncHash = (next: fleetEntry[]) => {
     if (next.length === 0) {
@@ -167,7 +178,7 @@ export default function Screen({ children }: { children?: ReactNode }) {
   const updateEntry = (
     id: string,
     patch: Partial<
-      Pick<fleetEntry, "capacitors" | "vents" | "cr" | "customName" | "weapons" | "fighters">
+      Pick<fleetEntry, "capacitors" | "vents" | "cr" | "customName" | "weapons" | "fighters" | "hullmods">
     >
   ) => {
     setFleet((prev) => {
@@ -191,7 +202,9 @@ export default function Screen({ children }: { children?: ReactNode }) {
       if (cur >= max) return prev
       const nxt = Math.min(max, cur + step)
       const loadoutOp =
-        weaponsOpOf(prev[idx].weapons) + fightersOpOf(prev[idx].fighters)
+        weaponsOpOf(prev[idx].weapons) +
+        fightersOpOf(prev[idx].fighters) +
+        hullmodsOpOf(prev[idx].hullmods, prev[idx].ship.meta.hullSize)
       const clamped = Math.min(
         nxt,
         availableOp - (prev[idx].vents ?? 0) - loadoutOp
@@ -211,7 +224,8 @@ export default function Screen({ children }: { children?: ReactNode }) {
         availableOp -
           prev.vents -
           weaponsOpOf(prev.weapons) -
-          fightersOpOf(prev.fighters)
+          fightersOpOf(prev.fighters) -
+          hullmodsOpOf(prev.hullmods, prev.ship.meta.hullSize)
       )
       return clamped <= prev.capacitors
         ? prev
@@ -254,7 +268,9 @@ export default function Screen({ children }: { children?: ReactNode }) {
       if (cur >= max) return prev
       const nxt = Math.min(max, cur + step)
       const loadoutOp =
-        weaponsOpOf(prev[idx].weapons) + fightersOpOf(prev[idx].fighters)
+        weaponsOpOf(prev[idx].weapons) +
+        fightersOpOf(prev[idx].fighters) +
+        hullmodsOpOf(prev[idx].hullmods, prev[idx].ship.meta.hullSize)
       const clamped = Math.min(
         nxt,
         availableOp - (prev[idx].capacitors ?? 0) - loadoutOp
@@ -274,7 +290,8 @@ export default function Screen({ children }: { children?: ReactNode }) {
         availableOp -
           prev.capacitors -
           weaponsOpOf(prev.weapons) -
-          fightersOpOf(prev.fighters)
+          fightersOpOf(prev.fighters) -
+          hullmodsOpOf(prev.hullmods, prev.ship.meta.hullSize)
       )
       return clamped <= prev.vents ? prev : { ...prev, vents: clamped }
     })
@@ -316,9 +333,13 @@ export default function Screen({ children }: { children?: ReactNode }) {
     if (!activeTile) return
     updateEntry(activeTile.id, { fighters })
   }
+  const onHullmodsChange = (hullmods: string[]) => {
+    if (!activeTile) return
+    updateEntry(activeTile.id, { hullmods })
+  }
   const onStrip = () => {
     if (!activeTile) return
-    updateEntry(activeTile.id, { weapons: {}, fighters: [], capacitors: 0, vents: 0 })
+    updateEntry(activeTile.id, { weapons: {}, fighters: [], hullmods: [], capacitors: 0, vents: 0 })
   }
   const updateGrid = () => {
     if (!gridRef.current) return
@@ -368,7 +389,7 @@ export default function Screen({ children }: { children?: ReactNode }) {
           type="button"
           aria-label="Close fleet drawer"
           onClick={() => setDrawerOpen(false)}
-          className="hidden max-sm:block fixed inset-0 z-30 bg-black/50"
+          className="hidden max-sm:block fixed inset-0 z-30 bg-gray-950/50"
         />
       )}
       <button
@@ -430,6 +451,7 @@ export default function Screen({ children }: { children?: ReactNode }) {
               onCustomNameChange={onCustomNameChange}
               onWeaponsChange={onWeaponsChange}
               onFightersChange={onFightersChange}
+              onHullmodsChange={onHullmodsChange}
               onStrip={onStrip}
             />
           )}

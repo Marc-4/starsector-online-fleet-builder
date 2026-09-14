@@ -116,7 +116,7 @@ export default function ShipSelectionModal({
       )
     )
     const existingEntries = decodeFleetEntries(window.location.hash) ?? []
-    const addedEntries = addedIds.map((hullId) => ({ hullId, capacitors: 0, vents: 0, cr: 70, customName: "", weapons: {} }))
+    const addedEntries = addedIds.map((hullId) => ({ hullId, capacitors: 0, vents: 0, cr: 70, customName: "", weapons: {}, fighters: [], hullmods: [] }))
     const mergedEntries = [...existingEntries, ...addedEntries]
     const mergedFleet = hydrateFleet(mergedEntries, allShips, allShipStats)
     const hash = encodeFleetToHash(mergedFleet)
@@ -155,9 +155,9 @@ export default function ShipSelectionModal({
         type="button"
         aria-label="Close modal"
         onClick={onClose}
-        className="absolute inset-0 bg-black/60"
+        className="absolute inset-0 bg-gray-950/60"
       />
-      <div className="relative z-10 flex flex-col gap-2 w-[80%] h-[80%] bg-black/30 p-1 border border-cyan-200">
+      <div className="relative z-10 flex flex-col gap-2 w-[80%] h-[80%] bg-gray-950/30 p-1 border border-cyan-200">
         <div className="flex m-1 mb-0 p-1 pb-0 gap-1 justify-center ">
           <div className="gap-2 flex flex-col">
             <div className="flex gap-2 items-center">

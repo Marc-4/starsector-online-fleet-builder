@@ -1,9 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
 import {
+  getAllHullMods,
   getAllShipStats,
   getAllWeaponStats,
   getAllWingStats,
-  getWeaponFluxPerSecond
+  getHullModCost,
+  getWeaponFluxPerSecond,
+  resolveHullModSpriteUrl
 } from "#/lib/csvParser"
 import { getMaxCapsVents } from "#/lib/fluxLimits"
 import { getModifiedStat } from "#/lib/statModifier"
@@ -11,6 +14,7 @@ import { canMountWeapon } from "#/lib/weaponCompat"
 import { getWeapon } from "#/lib/weaponParser"
 import type {
   fleetEntry,
+  hullMod,
   shipStats,
   weapon,
   weaponSlot,
@@ -18,7 +22,9 @@ import type {
 } from "#/types"
 import CommonButton from "../commonBtn"
 import FighterTooltip from "../fighterTooltip"
+import HullmodTooltip from "../hullmodTooltip"
 import WeaponSelectionModal from "../modals/weaponSelectionModal"
+import HullmodSelectionModal from "../modals/hullmodSelectionModal"
 import WeaponTooltip from "../weaponTooltip"
 import CombatReadinessBar from "./combatReadinessBar"
 import FighterBay from "./fighterBay"
@@ -42,6 +48,7 @@ type Props = {
   onCustomNameChange: (value: string) => void
   onWeaponsChange: (weapons: Record<string, string>) => void
   onFightersChange: (fighters: string[]) => void
+  onHullmodsChange: (hullmods: string[]) => void
   onStrip: () => void
 }
 
@@ -54,6 +61,7 @@ export default function ActiveShipPanel({
   onCustomNameChange,
   onWeaponsChange,
   onFightersChange,
+  onHullmodsChange,
   onStrip
 }: Props) {
   const [zoom, setZoom] = useState(1)
@@ -67,6 +75,8 @@ export default function ActiveShipPanel({
     undefined
   )
   const [hoveredWing, setHoveredWing] = useState<wingStats | null>(null)
+  const [hoveredHullmod, setHoveredHullmod] = useState<hullMod | null>(null)
+  const [showHullmods, setShowHullmods] = useState(false)
   const [showInfo, setShowInfo] = useState(false)
   const [allShipStats, setAllShipStats] = useState<shipStats[]>([])
   const maxZoom = isMobile ? MAX_ZOOM_MOBILE : MAX_ZOOM_DESKTOP
@@ -131,8 +141,42 @@ export default function ActiveShipPanel({
     )
   }, [activeTile.weapons, fluxOf])
   const availableOp = activeTile.ship.stats["ordnance points"] ?? 0
+  const hullModById = useMemo(
+    () => new Map(getAllHullMods().map((h) => [h.id, h])),
+    []
+  )
+  const assignedHullmods = useMemo(() => {
+    const out: { id: string; mod: hullMod; cost: number }[] = []
+    for (const id of activeTile.hullmods ?? []) {
+      const mod = hullModById.get(id)
+      if (!mod) continue
+      out.push({
+        id,
+        mod,
+        cost: getHullModCost(mod, activeTile.ship.meta.hullSize)
+      })
+    }
+    return out
+  }, [activeTile.hullmods, activeTile.ship.meta.hullSize, hullModById])
+  // Built-ins come straight from the hull — no props needed. They cost 0 OP
+  // and can't be removed, so they render locked above the assigned mods.
+  const builtInHullmods = useMemo(() => {
+    const out: { id: string; mod: hullMod | null }[] = []
+    for (const id of activeTile.ship.meta.builtInMods ?? []) {
+      const mod = hullModById.get(id)
+      out.push({ id, mod: mod ?? null })
+    }
+    return out.filter((r): r is { id: string; mod: hullMod } => r.mod !== null)
+  }, [activeTile.ship.meta.builtInMods, hullModById])
+  const hullmodsOp = useMemo(() => {
+    return assignedHullmods.reduce((sum, r) => sum + r.cost, 0)
+  }, [assignedHullmods])
   const spentOp =
-    activeTile.capacitors + activeTile.vents + weaponsOp + fightersOp
+    activeTile.capacitors +
+    activeTile.vents +
+    weaponsOp +
+    fightersOp +
+    hullmodsOp
 
   const wouldExceedOp = useCallback(
     (slotId: string, weaponId: string) => {
@@ -142,7 +186,8 @@ export default function ActiveShipPanel({
         activeTile.capacitors +
           activeTile.vents +
           weaponsOp +
-          fightersOp -
+          fightersOp +
+          hullmodsOp -
           currentOp +
           nextOp >
         availableOp
@@ -155,7 +200,8 @@ export default function ActiveShipPanel({
       availableOp,
       opOf,
       weaponsOp,
-      fightersOp
+      fightersOp,
+      hullmodsOp
     ]
   )
 
@@ -167,7 +213,8 @@ export default function ActiveShipPanel({
         activeTile.capacitors +
           activeTile.vents +
           weaponsOp +
-          fightersOp -
+          fightersOp +
+          hullmodsOp -
           currentOp +
           nextOp >
         availableOp
@@ -180,7 +227,36 @@ export default function ActiveShipPanel({
       availableOp,
       weaponsOp,
       fightersOp,
+      hullmodsOp,
       wingOpOf
+    ]
+  )
+
+  const wouldExceedHullmodOp = useCallback(
+    (hullmodId: string) => {
+      if ((activeTile.hullmods ?? []).includes(hullmodId)) return false
+      const mod = hullModById.get(hullmodId)
+      if (!mod) return true
+      return (
+        activeTile.capacitors +
+          activeTile.vents +
+          weaponsOp +
+          fightersOp +
+          hullmodsOp +
+          getHullModCost(mod, activeTile.ship.meta.hullSize) >
+        availableOp
+      )
+    },
+    [
+      activeTile.capacitors,
+      activeTile.vents,
+      activeTile.hullmods,
+      activeTile.ship.meta.hullSize,
+      availableOp,
+      weaponsOp,
+      fightersOp,
+      hullmodsOp,
+      hullModById
     ]
   )
 
@@ -237,6 +313,7 @@ export default function ActiveShipPanel({
     setSelectedSlot(null)
     setHoveredWeapon(undefined)
     setHoveredWing(null)
+    setHoveredHullmod(null)
   }, [activeTile])
 
   useEffect(() => {
@@ -282,7 +359,7 @@ export default function ActiveShipPanel({
         <div className="pointer-events-auto max-lg:w-fit max-lg:self-end origin-top-left">
           <CombatReadinessBar cr={activeTile.cr} />
         </div>
-        <div className="pointer-events-auto lg:ml-auto max-lg:self-end origin-top-right">
+        <div className="pointer-events-auto flex flex-col lg:ml-auto max-lg:self-end origin-top-right">
           <StatCluster
             spentOp={spentOp}
             showInfo={showInfo}
@@ -322,6 +399,87 @@ export default function ActiveShipPanel({
             onVentsIncrement={onVentsIncrement}
             onVentsDecrement={onVentsDecrement}
           />
+          <div className="flex gap-1 flex-col items-end">
+            <div className="flex flex-col gap-1 items-end">
+              {builtInHullmods.map(({ id, mod }) => {
+                const spriteUrl = resolveHullModSpriteUrl(mod.sprite)
+                return (
+                  <button
+                    type="button"
+                    key={`built-in-${id}`}
+                    title="Built into this hull"
+                    className="flex items-center gap-1 text-sm"
+                    onMouseEnter={() => setHoveredHullmod(mod)}
+                    onMouseLeave={() => setHoveredHullmod(null)}
+                  >
+                    <span className="text-white font-bold [-webkit-text-stroke:0.5px_var(--color-gray-950)]">
+                      {mod.name}
+                    </span>
+                    {spriteUrl ? (
+                      <img
+                        src={spriteUrl}
+                        alt=""
+                        draggable={false}
+                        className="h-8 w-8 object-contain"
+                        loading="lazy"
+                      />
+                    ) : (
+                      <span className="h-8 w-8 border border-cyan-800 bg-cyan-900/30" />
+                    )}
+                  </button>
+                )
+              })}
+              {assignedHullmods.map(({ id, mod, cost }) => {
+                const spriteUrl = resolveHullModSpriteUrl(mod.sprite)
+                return (
+                  <button
+                    type="button"
+                    key={id}
+                    className="flex items-center gap-1 text-sm"
+                    onMouseEnter={() => setHoveredHullmod(mod)}
+                    onMouseLeave={() => setHoveredHullmod(null)}
+                  >
+                    <span className="text-cyan-100">{mod.name}</span>
+                    <span className="text-amber-300 text-lg font-bold ">
+                      {cost}
+                    </span>
+
+                    <CommonButton
+                      cutAllCorners
+                      text="-"
+                      aria-label={`Remove ${mod.name}`}
+                      className=" w-fit px-3"
+                      onClick={() => {
+                        onHullmodsChange(
+                          (activeTile.hullmods ?? []).filter((x) => x !== id)
+                        )
+                      }}
+                    />
+                    {spriteUrl ? (
+                      <img
+                        src={spriteUrl}
+                        alt=""
+                        draggable={false}
+                        className="h-8 w-8 object-contain"
+                        loading="lazy"
+                      />
+                    ) : (
+                      <span className="h-8 w-8 border border-cyan-800 bg-cyan-900/30" />
+                    )}
+                  </button>
+                )
+              })}
+            </div>
+            <CommonButton
+              text="Add"
+              className="w-32 py-0.5 self-end"
+              onClick={() => setShowHullmods(true)}
+            />
+            <CommonButton
+              text="Build in"
+              className="w-32 bg-lime-700 py-0.5 self-end"
+            />
+          </div>
         </div>
       </div>
       {showInfo && (
@@ -446,17 +604,17 @@ export default function ActiveShipPanel({
           mountedWeaponIds={activeTile.weapons ?? {}}
         />
       </div>
-      {(hoveredWeapon || hoveredWing) && !selectedSlot && (
+      {(hoveredWeapon || hoveredWing || hoveredHullmod) && !selectedSlot && (
         <div className="absolute left-1 top-16 z-30 w-96 max-w-[80vw] h-fit overflow-auto pointer-events-none">
           {hoveredWeapon ? (
             <WeaponTooltip
               weapon={hoveredWeapon}
               allWeaponStats={allWeaponStats}
             />
+          ) : hoveredWing ? (
+            <FighterTooltip wing={hoveredWing} allShipStats={allShipStats} />
           ) : (
-            hoveredWing && (
-              <FighterTooltip wing={hoveredWing} allShipStats={allShipStats} />
-            )
+            hoveredHullmod && <HullmodTooltip hullmod={hoveredHullmod} />
           )}
         </div>
       )}
@@ -484,6 +642,24 @@ export default function ActiveShipPanel({
             const next = { ...activeTile.weapons }
             delete next[selectedSlot.id]
             onWeaponsChange(next)
+          }}
+        />
+      )}
+      {showHullmods && (
+        <HullmodSelectionModal
+          ship={activeTile.ship}
+          hullSize={activeTile.ship.meta.hullSize}
+          mountedHullmodIds={activeTile.hullmods ?? []}
+          remainingOp={availableOp - spentOp}
+          onClose={() => setShowHullmods(false)}
+          onSelect={(h) => {
+            const current = activeTile.hullmods ?? []
+            if (current.includes(h.id)) {
+              onHullmodsChange(current.filter((id) => id !== h.id))
+            } else {
+              if (wouldExceedHullmodOp(h.id)) return
+              onHullmodsChange([...current, h.id])
+            }
           }}
         />
       )}
