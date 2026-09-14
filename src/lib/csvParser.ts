@@ -250,6 +250,7 @@ export type hullModShipContext = {
   hullSize: string
   isPhase: boolean
   hasShields: boolean
+  shieldType: string
   isCivilian: boolean
   isAutomated: boolean
   fighterBays: number
@@ -258,6 +259,7 @@ export type hullModShipContext = {
   isThreat: boolean
   isDweller: boolean
   hasDesignCompromises: boolean
+  installedIds: string[]
 }
 
 /** Derive the installability context for a hull from its meta + stats.
@@ -294,6 +296,7 @@ export function getHullModShipContext(
     hullSize: (ship.meta.hullSize || "").toUpperCase(),
     isPhase,
     hasShields: shieldType === "OMNI" || shieldType === "FRONT",
+    shieldType,
     isCivilian:
       hints.includes("CIVILIAN") || builtInMods.includes("civgrade"),
     isAutomated: builtInMods.includes("automated"),
@@ -313,7 +316,8 @@ export function getHullModShipContext(
       ship.meta.hullId.toLowerCase().includes("shrouded"),
     hasDesignCompromises:
       builtInMods.includes("design_compromises") ||
-      installed.includes("design_compromises")
+      installed.includes("design_compromises"),
+    installedIds: installed
   }
 }
 
@@ -339,6 +343,19 @@ export function getHullModInapplicability(
   if (h.id === "frontshield") {
     if (ctx.isPhase) return "Can not be installed on phase ships"
     if (ctx.hasShields) return "Can only be installed on ships without shields"
+    return null
+  }
+  // Shield conversions: facing-specific and mutually exclusive.
+  if (h.id === "frontemitter") {
+    if (ctx.installedIds.includes("adaptiveshields"))
+      return "Incompatible with Shield Conversion - Omni"
+    if (ctx.shieldType !== "OMNI") return "Requires an omni shield"
+    return null
+  }
+  if (h.id === "adaptiveshields") {
+    if (ctx.installedIds.includes("frontemitter"))
+      return "Incompatible with Shield Conversion - Front"
+    if (ctx.shieldType !== "FRONT") return "Requires a front shield"
     return null
   }
   if (has("shields") && !ctx.hasShields)
