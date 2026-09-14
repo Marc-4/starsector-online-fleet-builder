@@ -1,6 +1,6 @@
 import Parser from "papaparse"
 import type { hullMod, ship, shipStats, weapon, weaponStats, wingStats } from "#/types"
-import hullModDataCSV from "../hullData/hull_mods.csv?raw"
+import hullModDataCSV from "../hullModData/hull_mods.csv?raw"
 import shipDataCSV from "../shipData/ship_data.csv?raw"
 import wingDataCSV from "../shipData/wing_data.csv?raw"
 import weaponDataCSV from "../weaponData/weapon_data.csv?raw"

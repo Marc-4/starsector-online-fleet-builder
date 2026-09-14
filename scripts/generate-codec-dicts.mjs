@@ -111,7 +111,7 @@ try {
 // --- hullmods: hull_mods.csv ids ---
 const hullmodIds = []
 try {
-  const rows = parseCsv(await readFile(path.join(root, "src/hullData", "hull_mods.csv"), "utf8"))
+  const rows = parseCsv(await readFile(path.join(root, "src/hullModData", "hull_mods.csv"), "utf8"))
   const header = rows[0].map((h) => h.trim().toLowerCase())
   const idCol = header.indexOf("id")
   if (idCol >= 0) for (const r of rows.slice(1)) if (r[idCol]) hullmodIds.push(r[idCol].trim())
