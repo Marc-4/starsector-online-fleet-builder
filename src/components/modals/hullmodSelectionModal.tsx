@@ -266,7 +266,6 @@ export default function HullmodSelectionModal({
                         locked
                         disabledReason="Built into this hull"
                         onSelect={onSelect}
-                        onClose={onClose}
                         onHover={setHovered}
                       />
                     )
@@ -298,7 +297,6 @@ export default function HullmodSelectionModal({
                           (unaffordable ? "Not enough OP" : undefined)
                         }
                         onSelect={onSelect}
-                        onClose={onClose}
                         onHover={setHovered}
                       />
                     )
