@@ -197,7 +197,7 @@ export default function FighterSprite({
                 width: sw * pxX,
                 height: sh * pxY,
                 objectFit: "fill",
-                imageRendering: "pixelated"
+                imageRendering: "smooth"
               }}
             />
           )

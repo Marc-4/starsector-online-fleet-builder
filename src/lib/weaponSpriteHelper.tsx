@@ -197,7 +197,7 @@ export function BuildSprite({
 
   const gunImg = showGun ? (
     <img
-      style={{ imageRendering: "pixelated" }}
+      style={{ imageRendering: "smooth" }}
       draggable={false}
       src={`weapons/${gunSprite}`}
       alt=""
@@ -230,7 +230,7 @@ export function BuildSprite({
       <div className={baseLoaded ? "contents" : "contents invisible"}>
       {underSprite && (
         <img
-          style={{ imageRendering: "pixelated" }}
+          style={{ imageRendering: "smooth" }}
           draggable={false}
           src={`weapons/${underSprite}`}
           alt=""
@@ -254,7 +254,7 @@ export function BuildSprite({
           }
           style={{
             mixBlendMode: additiveBase ? "screen" : undefined,
-            imageRendering: "pixelated"
+            imageRendering: "smooth"
           }}
           onLoad={(e) => {
             setBaseNat({
@@ -309,7 +309,7 @@ export function BuildSprite({
                     width: sw * pxPerUnit,
                     height: sh * pxPerUnit,
                     objectFit: "fill",
-                    imageRendering: "pixelated"
+                    imageRendering: "smooth"
                   }}
                 />
               </div>

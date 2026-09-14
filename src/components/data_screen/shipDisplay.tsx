@@ -224,7 +224,7 @@ export default function ShipDisplay({
         src={`ships/${ship.spriteName}`}
         alt="ship sprite"
         className="absolute inset-0 w-full h-full object-contain pointer-events-none"
-        style={{ imageRendering: "pixelated" }}
+        style={{ imageRendering: "smooth" }}
         draggable={false}
       />
       {weaponSlots?.map((slot, i) => {
@@ -282,7 +282,7 @@ export default function ShipDisplay({
                     top: "50%",
                     width: 80,
                     height: 80,
-                    imageRendering: "pixelated",
+                    imageRendering: "smooth",
                     transform: `translate(-50%, -50%) rotate(${-(slot.angle ?? 0)}deg) translateY(${slot.mount === "HARDPOINT" ? -10 : 0}px)`
                   }}
                 >
