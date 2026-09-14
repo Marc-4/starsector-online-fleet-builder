@@ -44,7 +44,6 @@ export default function HullmodTile({
         if (locked) return
         if (disabled && !installed) return
         onSelect?.(hullmod)
-        onClose()
       }}
       onMouseEnter={() => onHover(hullmod)}
       onMouseLeave={() => onHover(null)}
