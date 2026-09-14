@@ -289,8 +289,11 @@ export default function ActiveShipPanel({
             onInfoToggle={() => setShowInfo((v) => !v)}
             availableOp={availableOp}
             topSpeed={activeTile.ship.stats["max speed"]}
+            topSpeedBase={activeTile.ship.stats["max speed"]}
             armor={activeTile.ship.stats["armor rating"]}
+            armorBase={activeTile.ship.stats["armor rating"]}
             hull={activeTile.ship.stats.hitpoints}
+            hullBase={activeTile.ship.stats.hitpoints}
             capacitors={activeTile.capacitors}
             maxCapacitors={getMaxCapsVents(activeTile.ship.meta.hullSize)}
             vents={activeTile.vents}
@@ -300,12 +303,19 @@ export default function ActiveShipPanel({
                 capacitors: activeTile.capacitors
               }).total
             }
+            fluxCapacityBase={
+              getModifiedStat(activeTile.ship.stats, "max flux").base
+            }
             fluxDissipation={
               getModifiedStat(activeTile.ship.stats, "flux dissipation", {
                 vents: activeTile.vents
               }).total
             }
+            fluxDissipationBase={
+              getModifiedStat(activeTile.ship.stats, "flux dissipation").base
+            }
             shieldEfficiency={activeTile.ship.stats["shield efficiency"]}
+            shieldEfficiencyBase={activeTile.ship.stats["shield efficiency"]}
             weaponFluxPerSecond={weaponFluxPerSecond}
             onCapacitorsIncrement={onCapacitorsIncrement}
             onCapacitorsDecrement={onCapacitorsDecrement}

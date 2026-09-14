@@ -1,20 +1,28 @@
 import { useCallback, useEffect, useRef } from "react"
+import { StatValue } from "#/lib/textColoring"
 import CommonButton from "../commonBtn"
 
 export default function StatCluster({
   spentOp = 0,
   availableOp,
   topSpeed,
+  topSpeedBase,
   armor,
+  armorBase,
   hull,
+  hullBase,
   capacitors = 0,
   maxCapacitors = 0,
   vents = 0,
   maxVents = 0,
   fluxCapacity,
+  fluxCapacityBase,
   fluxDissipation,
+  fluxDissipationBase,
   shieldEfficiency,
+  shieldEfficiencyBase,
   weaponFluxPerSecond,
+  weaponFluxPerSecondBase,
   showInfo,
   onInfoToggle,
   onCapacitorsIncrement,
@@ -25,16 +33,23 @@ export default function StatCluster({
   spentOp?: number
   availableOp?: number
   topSpeed?: number
+  topSpeedBase?: number
   armor?: number
+  armorBase?: number
   hull?: number
+  hullBase?: number
   capacitors?: number
   maxCapacitors?: number
   vents?: number
   maxVents?: number
   fluxCapacity?: number
+  fluxCapacityBase?: number
   fluxDissipation?: number
+  fluxDissipationBase?: number
   shieldEfficiency?: number
+  shieldEfficiencyBase?: number
   weaponFluxPerSecond?: number
+  weaponFluxPerSecondBase?: number
   showInfo?: boolean
   onInfoToggle?: () => void
   onCapacitorsIncrement?: (e?: React.MouseEvent) => void
@@ -135,15 +150,15 @@ export default function StatCluster({
       <div className="flex gap-4 sm:gap-12 self-end max-sm:gap-3">
         <div className="ss-label-col">
           <p className="ss-label-text max-sm:text-xs">TOP SPEED</p>
-          <p className="text-base sm:text-lg">{topSpeed ?? "N/A"}</p>
+          <p className="text-base sm:text-lg"><StatValue current={topSpeed} base={topSpeedBase} /></p>
         </div>
         <div className="ss-label-col">
           <p className="ss-label-text max-sm:text-xs">ARMOR</p>
-          <p className="text-base sm:text-lg">{armor ?? "N/A"}</p>
+          <p className="text-base sm:text-lg"><StatValue current={armor} base={armorBase} /></p>
         </div>
         <div className="ss-label-col">
           <p className="ss-label-text max-sm:text-xs">HULL</p>
-          <p className="text-base sm:text-lg">{hull ?? "N/A"}</p>
+          <p className="text-base sm:text-lg"><StatValue current={hull} base={hullBase} /></p>
         </div>
       </div>
       <div className="flex mt-2 gap-1 max-sm:gap-0.5">
@@ -217,25 +232,25 @@ export default function StatCluster({
           <div className="flex flex-col">
             <p className="ss-label-text max-sm:text-[11px]">FLUX CAPACITY</p>
             <p className="self-end text-sm sm:text-base">
-              {fluxCapacity ?? "N/A"}
+              <StatValue current={fluxCapacity} base={fluxCapacityBase} />
             </p>
           </div>
           <div className="flex flex-col">
             <p className="ss-label-text max-sm:text-[11px]">FLUX DISSPATION</p>
             <p className="self-end text-sm sm:text-base">
-              {fluxDissipation ?? "N/A"}
+              <StatValue current={fluxDissipation} base={fluxDissipationBase} />
             </p>
           </div>
           <div className="flex flex-col">
             <p className="ss-label-text max-sm:text-[11px]">SHIELD FLUX/DAM</p>
             <p className="self-end text-sm sm:text-base">
-              {shieldEfficiency ?? "N/A"}
+              <StatValue current={shieldEfficiency} base={shieldEfficiencyBase} invert />
             </p>
           </div>
           <div className="flex flex-col">
             <p className="ss-label-text max-sm:text-[11px]">WEAPON FLUX/SEC</p>
             <p className="self-end text-sm sm:text-base">
-              {weaponFluxPerSecond ?? "N/A"}
+              <StatValue current={weaponFluxPerSecond} base={weaponFluxPerSecondBase} invert />
             </p>
           </div>
         </div>

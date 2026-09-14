@@ -1,5 +1,6 @@
 import type { completeShip } from "#/types"
 import { getModifiedStat } from "#/lib/statModifier"
+import { StatValue } from "#/lib/textColoring"
 
 function Row({ label, value }: { label: string; value: React.ReactNode }) {
   return (
@@ -82,31 +83,31 @@ export default function ShipInfoCard({
             <Row
               label="CR per deployment"
               value={
-                <span className="text-gray-100">{fmt(s["CR to deploy"])}%</span>
+                <span className="text-cyan-50">{fmt(s["CR to deploy"])}%</span>
               }
             />
             <Row
               label="Recovery rate (per day)"
               value={
-                <span className="text-gray-100">{fmt(s["cr %/day"])}%</span>
+                <span className="text-cyan-50">{fmt(s["cr %/day"])}%</span>
               }
             />
             <Row
               label="Recovery cost (supplies)"
               value={
-                <span className="text-gray-100">{fmt(s["supplies/rec"])}</span>
+                <span className="text-cyan-50">{fmt(s["supplies/rec"])}</span>
               }
             />
             <Row
               label="Deployment points"
               value={
-                <span className="text-gray-100">{fmt(s["fleet pts"])}</span>
+                <span className="text-cyan-50">{fmt(s["fleet pts"])}</span>
               }
             />
             <Row
               label="Peak performance (sec)"
               value={
-                <span className="text-gray-100">{fmt(s["peak CR sec"])}</span>
+                <span className="text-cyan-50">{fmt(s["peak CR sec"])}</span>
               }
             />
             <Row
@@ -136,43 +137,43 @@ export default function ShipInfoCard({
             <Row
               label="Maintenance (supplies/mo)"
               value={
-                <span className="text-gray-100">{fmt(s["supplies/mo"])}</span>
+                <span className="text-cyan-50">{fmt(s["supplies/mo"])}</span>
               }
             />
             <Row
               label="Cargo capacity"
-              value={<span className="text-gray-100">{fmt(s.cargo)}</span>}
+              value={<span className="text-cyan-50">{fmt(s.cargo)}</span>}
             />
             <Row
               label="Maximum crew"
               value={
-                <span className="text-teal-300">{fmt(s["max crew"])}</span>
+                <span className="text-cyan-50">{fmt(s["max crew"])}</span>
               }
             />
             <Row
               label="Skeleton crew required"
               value={
-                <span className="text-orange-400">{fmt(s["min crew"])}</span>
+                <span className="text-cyan-50">{fmt(s["min crew"])}</span>
               }
             />
             <Row
               label="Fuel capacity"
-              value={<span className="text-orange-400">{fmt(s.fuel)}</span>}
+              value={<span className="text-cyan-50">{fmt(s.fuel)}</span>}
             />
             <Row
               label="Maximum burn"
               value={
-                <span className="text-gray-100">{fmt(s["max burn"])}</span>
+                <span className="text-cyan-50">{fmt(s["max burn"])}</span>
               }
             />
             <Row
               label="Fuel / light year, jump cost"
-              value={<span className="text-gray-100">{fmt(s["fuel/ly"])}</span>}
+              value={<span className="text-cyan-50">{fmt(s["fuel/ly"])}</span>}
             />
             <Row
               label="Sensor profile"
               value={
-                <span className="text-gray-100">
+                <span className="text-cyan-50">
                   {sensorProfileByHullSize(m.hullSize)}
                 </span>
               }
@@ -180,7 +181,7 @@ export default function ShipInfoCard({
             <Row
               label="Sensor strength"
               value={
-                <span className="text-gray-100">
+                <span className="text-cyan-50">
                   {sensorProfileByHullSize(m.hullSize)}
                 </span>
               }
@@ -191,15 +192,22 @@ export default function ShipInfoCard({
         <div className="flex flex-col gap-0.5 text-white">
           <Row
             label="Hull integrity"
-            value={<span className="text-amber-300">{fmt(s.hitpoints)}</span>}
+            value={
+              <StatValue
+                current={Number(s.hitpoints)}
+                base={Number(s.hitpoints)}
+                format={(n) => fmt(n)}
+              />
+            }
           />
           <Row
             label="Armor rating"
             value={
-              <span className="text-amber-300">
-                {fmt(s["armor rating"])}
-                {fluxCapBonus ? "" : ""}
-              </span>
+              <StatValue
+                current={Number(s["armor rating"])}
+                base={Number(s["armor rating"])}
+                format={(n) => fmt(n)}
+              />
             }
           />
           <Row
@@ -209,30 +217,48 @@ export default function ShipInfoCard({
           <Row
             label="Shield arc"
             value={
-              <span className="text-amber-300">
-                {s["shield arc"] ? `${fmt(s["shield arc"])}` : "—"}
-              </span>
+              s["shield arc"] ? (
+                <StatValue
+                  current={Number(s["shield arc"])}
+                  base={Number(s["shield arc"])}
+                  format={(n) => fmt(n)}
+                />
+              ) : (
+                "—"
+              )
             }
           />
           <Row
             label="Shield upkeep/sec"
             value={
-              <span className="text-gray-100">{fmt(s["shield upkeep"])}</span>
+              <StatValue
+                current={Number(s["shield upkeep"])}
+                base={Number(s["shield upkeep"])}
+                invert
+                format={(n) => fmt(n)}
+              />
             }
           />
           <Row
             label="Shield flux/damage"
             value={
-              <span className="text-gray-100">
-                {fmt(s["shield efficiency"])}
-              </span>
+              <StatValue
+                current={Number(s["shield efficiency"])}
+                base={Number(s["shield efficiency"])}
+                invert
+                format={(n) => fmt(n)}
+              />
             }
           />
           <Row
             label="Flux capacity"
             value={
-              <span className="text-amber-300">
-                {fluxCapTotal}
+              <span>
+                <StatValue
+                  current={fluxCapTotal}
+                  base={fluxCap.base}
+                  format={(n) => <>{n}</>}
+                />
                 {fluxCapBonus > 0 && (
                   <span className="text-yellow-500"> (+{fluxCapBonus})</span>
                 )}
@@ -242,8 +268,12 @@ export default function ShipInfoCard({
           <Row
             label="Flux dissipation"
             value={
-              <span className="text-amber-300">
-                {fluxDissTotal}
+              <span>
+                <StatValue
+                  current={fluxDissTotal}
+                  base={fluxDiss.base}
+                  format={(n) => <>{n}</>}
+                />
                 {fluxDissBonus > 0 && (
                   <span className="text-yellow-500"> (+{fluxDissBonus})</span>
                 )}
@@ -252,7 +282,13 @@ export default function ShipInfoCard({
           />
           <Row
             label="Top speed"
-            value={<span className="text-gray-100">{fmt(s["max speed"])}</span>}
+            value={
+              <StatValue
+                current={Number(s["max speed"])}
+                base={Number(s["max speed"])}
+                format={(n) => fmt(n)}
+              />
+            }
           />
         </div>
       </div>
@@ -262,7 +298,7 @@ export default function ShipInfoCard({
           <span className="text-gray-200/90">System:</span>
           <span className="text-amber-300">{fmt(s["system id"])}</span>
         </div>
-        {/*<p className="pl-[76px] text-gray-100/90">
+        {/*<p className="pl-[76px] text-cyan-100/90">
           {m.hullName} ship system — {fmt(s["system id"])}.
         </p>*/}
       </div>
