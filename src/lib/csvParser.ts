@@ -125,7 +125,26 @@ export function getWeaponFluxPerSecond(
 ): number {
   if (!stats) return 0
   const direct = num(stats["energy/second"])
-  if (direct != null) return direct
+  const burstRaw = stats["burst size"]
+  const hasBurst =
+    burstRaw != null && String(burstRaw).trim() !== "" && num(burstRaw) != null
+  if (direct != null) {
+    // Burst beams (e.g. Tachyon Lance): energy/second is the in-burst rate,
+    // not the cycle average. Average over the full refire cycle using the
+    // effective burst duration (beam length + quadratic charge ramp).
+    if (hasBurst) {
+      const burstSizeN = num(stats["burst size"]) ?? 1
+      const burstDelay = num(stats["burst delay"]) ?? 0
+      const chargeup = num(stats.chargeup) ?? 0
+      const chargedown = num(stats.chargedown) ?? 0
+      const cycle = chargeup + chargedown + burstDelay + burstSizeN
+      if (cycle > 0) {
+        const effDur = burstSizeN + (chargeup + chargedown) / 3
+        return (direct * effDur) / cycle
+      }
+    }
+    return direct
+  }
   const perShot = num(stats["energy/shot"])
   if (perShot == null || perShot === 0) return 0
   let shotsPerSec: number | null = null
