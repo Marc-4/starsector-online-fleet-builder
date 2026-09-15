@@ -14,3 +14,8 @@ export function formatHullmodDesc(
 export function rawDesc(mod: hullMod): string {
   return mod.desc ?? ""
 }
+
+/** Raw S-mod bonus text (empty when the hullmod has no S-mod bonus). */
+export function rawSModDesc(mod: hullMod): string {
+  return mod.sModDesc ?? ""
+}
