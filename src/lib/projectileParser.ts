@@ -43,7 +43,7 @@ function parseProjectile(raw: string, fallbackId: string): projectile {
     /([:\[,]\s*)([A-Z][A-Z0-9_]*)\s*(?=[,\]\}])/g,
     '$1"$2"'
   )
-  // Strip Java float suffixes (0.5f, 0f) — common in .proj engine specs.
+  // Strip Java float suffixes (0.5f, 0f). common in .proj engine specs.
   const noFloatSuffix = quoted.replace(/(\d)f(?=[,\]\}\s])/g, "$1")
   const parsed = JSON.parse(noFloatSuffix) as projectile & Record<string, unknown>
   if (!parsed.id) parsed.id = fallbackId

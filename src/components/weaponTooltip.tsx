@@ -84,7 +84,7 @@ export default function WeaponTooltip({
   const burstRaw = stats?.["burst size"]
   const hasBurst =
     burstRaw != null && String(burstRaw).trim() !== "" && num(burstRaw) != null
-  // Prolonged (continuous) beams have no burst size and no refire cycle —
+  // Prolonged (continuous) beams have no burst size and no refire cycle
   // only burst beams (Tachyon Lance, Phase Beam) do.
   const isProlongedBeam = isBeam && !hasBurst
   const burstSizeN = num(stats?.["burst size"]) ?? 1
@@ -133,7 +133,7 @@ export default function WeaponTooltip({
       ? (dmgPerShotNum * burstSizeN) / cycle
       : null
   const burstDps = beamBurstDps ?? firingDps ?? derivedBurstDps
-  // For burst beams firingDps is the in-burst rate, not the cycle average —
+  // For burst beams firingDps is the in-burst rate, not the cycle average
   // only the derived value above is the displayed DPS.
 
   // Sustained DPS for ammo-regen weapons (e.g. Storm Needler):
@@ -211,7 +211,7 @@ export default function WeaponTooltip({
   const fluxLine = fluxParts.length > 0 ? fluxParts.join(", ") : null
 
   // customPrimary/Ancillary contain %s placeholders for some weapons whose
-  // values live in spec data we don't have — only show fillable lines.
+  // values live in spec data we don't have, only show fillable lines.
   const customPrimary = text(stats?.customPrimary)
   const showCustomPrimary =
     customPrimary && !customPrimary.includes("%s") ? customPrimary : null

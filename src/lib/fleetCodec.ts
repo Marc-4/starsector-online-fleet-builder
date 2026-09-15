@@ -64,7 +64,7 @@ export function encodeFleetToHashV2(fleet: fleetEntry[]): string {
 //   (varint utf8-length + bytes). weapons: varint count + [slot][weaponRef].
 // slot: 1 byte "WS NNN" number, or 0xFF followed by a raw slot id string.
 // weapons: varint count, then either sparse [slot][weaponRef] pairs,
-// or — when slots are contiguous (FLAG_DENSE) — [startSlot][weaponRef...].
+// or  when slots are contiguous (FLAG_DENSE) — [startSlot][weaponRef...].
 // ---------------------------------------------------------------------------
 
 const V3_TAG = 0x03

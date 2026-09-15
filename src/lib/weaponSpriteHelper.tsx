@@ -103,7 +103,7 @@ export function BuildSprite({
   const missileSlots = isMissileRack && !isBeam ? toSlots(offsets) : []
 
   // Hardpoint racks seat their missiles further back along the mount facing
-  // than the raw fire offsets place them — shift the tube point rearward
+  // than the raw fire offsets place them. shift the tube point rearward
   // (image +Y) so tails bite into the rails instead of floating ahead of
   // the rack. Turret mounts need no shift. Game units (scaled by pxPerUnit
   // at render time); tune here.

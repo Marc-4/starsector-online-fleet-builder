@@ -25,7 +25,7 @@ import ShipDisplay from "./shipDisplay"
 import ShipInfoCard from "./shipInfoCard"
 import ShipName from "./shipName"
 import StatCluster from "./statCluster"
-import { useLoadoutOp } from "./useLoadoutOp"
+import { useLoadoutOp } from "../../hooks/useLoadoutOp"
 import ZoomControls from "./zoomControls"
 
 const MIN_ZOOM = 1

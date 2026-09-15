@@ -87,7 +87,7 @@ export default function FighterBay({
       <button
         type="button"
         aria-label={wingId ? `Fighter bay: ${wingId}` : "Select fighter wing"}
-        title={wingId || "Empty fighter bay — click to select"}
+        title={wingId || "Empty fighter bay. click to select"}
         onClick={(e) => {
           if (e.shiftKey) {
             onShiftClick?.()

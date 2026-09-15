@@ -60,7 +60,7 @@ export default function WeaponTile({
       }}
       title={
         mounted
-          ? "Mounted — click to unmount"
+          ? "Mounted. click to unmount"
           : disabled
             ? "Not enough OP"
             : "Click to mount"

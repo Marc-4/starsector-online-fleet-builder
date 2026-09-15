@@ -16,8 +16,8 @@ export const Route = createFileRoute("/about/page")({
 
 const FAQS = [
   {
-    q: "What is this Starsector fleet builder?",
-    a: "A free, browser-based recreation of the Starsector refit screen. Add ships to a fleet, fit weapons to slots, allocate vents and capacitors, and (soon) add fighters, hullmods and officers — then share the whole fleet with a single URL."
+    q: "What is this?",
+    a: "A browser-based recreation of the Starsector refit screen. Add ships to a fleet, fit weapons to slots, allocate vents and capacitors, and (soon) add fighters, hullmods and officers, then share the whole fleet with a single URL."
   },
   {
     q: "Do I need to install anything or own mods?",
@@ -25,7 +25,7 @@ const FAQS = [
   },
   {
     q: "How do I share my fleet?",
-    a: "Build your fleet in the app and copy the page URL — the fleet is encoded in it. Anyone opening that link sees the same ships and loadouts."
+    a: "Build your fleet in the app and copy the page URL the fleet is encoded in it. Anyone opening that link sees the same ships and loadouts."
   },
   {
     q: "Is this affiliated with Fractal Softworks?",
@@ -39,7 +39,7 @@ function About() {
     <main className="mx-auto max-w-3xl px-6 py-16 prose prose-invert">
       <h1>About the Starsector Fleet Builder</h1>
       <p>
-        This is an <strong>online Starsector fleet builder and ship builder</strong> — a recreation of
+        This is an <strong>online Starsector fleet builder and ship builder</strong>, a recreation of
         the in-game refit screen. Plan ship loadouts, compare weapons, allocate
         vents and capacitors, and share theory-crafted fleets via the URL.
       </p>
