@@ -226,6 +226,14 @@ export default function ActiveShipPanel({
             }
             shieldEfficiency={moddedShip.stats["shield efficiency"]}
             shieldEfficiencyBase={activeTile.ship.stats["shield efficiency"]}
+            shieldArc={moddedShip.stats["shield arc"]}
+            shieldArcBase={activeTile.ship.stats["shield arc"]}
+            shieldUpkeep={moddedShip.stats["shield upkeep"]}
+            shieldUpkeepBase={activeTile.ship.stats["shield upkeep"]}
+            phaseActivationCost={moddedShip.stats["phase cost"]}
+            phaseActivationCostBase={activeTile.ship.stats["phase cost"]}
+            phaseUpkeep={moddedShip.stats["phase upkeep"]}
+            phaseUpkeepBase={activeTile.ship.stats["phase upkeep"]}
             weaponFluxPerSecond={weaponFluxPerSecond}
             onCapacitorsIncrement={onCapacitorsIncrement}
             onCapacitorsDecrement={onCapacitorsDecrement}
@@ -254,7 +262,12 @@ export default function ActiveShipPanel({
           />
           <div className="absolute left-1 top-16 z-40 max-w-[calc(100%-0.5rem)] overflow-x-auto">
             <ShipInfoCard
-              ship={activeTile.ship}
+              ship={moddedShip}
+              baseShip={activeTile.ship}
+              hullmodIds={[
+                ...(activeTile.ship.meta.builtInMods ?? []),
+                ...(activeTile.hullmods ?? [])
+              ]}
               capacitors={activeTile.capacitors}
               vents={activeTile.vents}
             />
@@ -262,7 +275,7 @@ export default function ActiveShipPanel({
         </>
       )}
       <div className="flex flex-col gap-1 absolute left-2 top-[25%] w-fit h-fit">
-        {(activeTile.ship.meta.builtInWings ?? []).map((wingId) => (
+        {(moddedShip.meta.builtInWings ?? []).map((wingId) => (
           <FighterBay
             key={`${activeTile.id}-builtin-${wingId}`}
             wingId={wingId}
@@ -274,8 +287,8 @@ export default function ActiveShipPanel({
           {
             length: Math.max(
               0,
-              (activeTile.ship.stats["fighter bays"] ?? 0) -
-                (activeTile.ship.meta.builtInWings ?? []).length
+              (moddedShip.stats["fighter bays"] ?? 0) -
+                (moddedShip.meta.builtInWings ?? []).length
             )
           },
           (_, i) => i

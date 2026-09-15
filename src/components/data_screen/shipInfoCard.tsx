@@ -1,6 +1,8 @@
 import type { completeShip } from "#/types"
+import { getSensorMults } from "#/hullModData"
 import { getModifiedStat } from "#/lib/statModifier"
-import { StatValue } from "#/lib/textColoring"
+
+type Stats = completeShip["stats"]
 
 function Row({ label, value }: { label: string; value: React.ReactNode }) {
   return (
@@ -38,7 +40,7 @@ function hullSizeLabel(hullSize: string) {
   return s.replace(/\b\w/g, (c) => c.toUpperCase())
 }
 
-function shieldLabel(stats: completeShip["stats"]) {
+function shieldLabel(stats: Stats) {
   // Defense slot wins: phasecloak / damper / canister_flak live here, while
   // the shield type column reuses "PHASE" for all of them.
   const defense = String(stats["defense id"] ?? "").toLowerCase()
@@ -57,32 +59,217 @@ function shieldLabel(stats: completeShip["stats"]) {
   return fmt(stats["shield type"])
 }
 
+function ModMark({
+  base,
+  current,
+  invert = false
+}: {
+  base: unknown
+  current: unknown
+  invert?: boolean
+}) {
+  if (typeof base !== "number" || typeof current !== "number") return null
+  if (!Number.isFinite(base) || !Number.isFinite(current)) return null
+  const diff = Math.round((current - base) * 10000) / 10000
+  if (diff === 0) return null
+  const good = invert ? diff < 0 : diff > 0
+  const positive = diff > 0
+  return (
+    <span className={good ? "text-lime-400" : "text-orange-400"}>
+      {" "}
+      ({positive ? `+` : ``}
+      {diff})
+    </span>
+  )
+}
+
+/** Merged hullmod + capacitor/vent bonus, e.g. (+30) (+100) -> (+130). */
+function MergedBonus({
+  base,
+  current,
+  bonus
+}: {
+  base: unknown
+  current: unknown
+  bonus: number
+}) {
+  if (typeof base !== "number" || typeof current !== "number") return null
+  if (!Number.isFinite(base) || !Number.isFinite(current)) return null
+  const total = Math.round((current - base + bonus) * 10000) / 10000
+  if (total === 0) return null
+  const positive = total > 0
+  return (
+    <span className={positive ? "text-lime-400" : "text-orange-400"}>
+      {" "}
+      ({positive ? `+` : ``}
+      {total})
+    </span>
+  )
+}
+
+/** Data-driven numeric row: value + hullmod delta against base stats. */
+type NumSpec = {
+  label: string
+  color: string
+  get: (s: Stats) => unknown
+  invert?: boolean
+  suffix?: string
+}
+
+function NumRow({ spec, s, b }: { spec: NumSpec; s: Stats; b?: Stats }) {
+  const current = spec.get(s)
+  return (
+    <Row
+      label={spec.label}
+      value={
+        <span className={spec.color}>
+          {fmt(current)}
+          {spec.suffix}
+          {b && (
+            <ModMark
+              base={spec.get(b)}
+              current={current}
+              invert={spec.invert}
+            />
+          )}
+        </span>
+      }
+    />
+  )
+}
+
+const LOGISTICS_A: NumSpec[] = [
+  {
+    label: "CR per deployment",
+    color: "text-cyan-50",
+    get: (s) => s["CR to deploy"],
+    invert: true,
+    suffix: "%"
+  },
+  {
+    label: "Recovery rate (per day)",
+    color: "text-cyan-50",
+    get: (s) => s["cr %/day"],
+    suffix: "%"
+  },
+  {
+    label: "Recovery cost (supplies)",
+    color: "text-cyan-50",
+    get: (s) => {
+      // D-mod recovery mults (x0.8) produce fractions; supplies are whole.
+      const v = s["supplies/rec"]
+      return typeof v === "number" ? Math.round(v) : v
+    },
+    invert: true
+  },
+  {
+    label: "Peak performance (sec)",
+    color: "text-cyan-50",
+    get: (s) => s["peak CR sec"]
+  },
+  {
+    label: "Crew complement",
+    color: "text-teal-400",
+    get: (s) => s["min crew"],
+    invert: true
+  },
+  {
+    label: "Ordnance points",
+    color: "text-amber-300",
+    get: (s) => s["ordnance points"]
+  }
+]
+
+const LOGISTICS_B: NumSpec[] = [
+  {
+    label: "Maintenance (supplies/mo)",
+    color: "text-cyan-50",
+    get: (s) => s["supplies/mo"],
+    invert: true
+  },
+  { label: "Cargo capacity", color: "text-amber-200", get: (s) => s.cargo },
+  { label: "Maximum crew", color: "text-teal-400", get: (s) => s["max crew"] },
+  {
+    label: "Skeleton crew required",
+    color: "text-teal-400",
+    get: (s) => s["min crew"],
+    invert: true
+  },
+  { label: "Fuel capacity", color: "text-orange-400", get: (s) => s.fuel },
+  { label: "Maximum burn", color: "text-amber-300", get: (s) => s["max burn"] },
+  {
+    label: "Fuel / light year, jump cost",
+    color: "text-amber-300",
+    get: (s) => s["fuel/ly"],
+    invert: true
+  }
+]
+
+const COMBAT_TOP: NumSpec[] = [
+  { label: "Hull Integrity", color: "text-amber-300", get: (s) => s.hitpoints },
+  {
+    label: "Armor rating",
+    color: "text-amber-300",
+    get: (s) => s["armor rating"]
+  }
+]
+
+const PHASE_ROWS: NumSpec[] = [
+  {
+    label: "Phase cloak upkeep/sec",
+    color: "text-amber-300",
+    get: (s) => s["phase upkeep"],
+    invert: true
+  },
+  {
+    label: "Phase cloak activation cost",
+    color: "text-amber-300",
+    get: (s) => s["phase cost"],
+    invert: true
+  }
+]
+
 export default function ShipInfoCard({
   ship,
+  baseShip,
+  hullmodIds = [],
   capacitors = 0,
   vents = 0
 }: {
   ship: completeShip
+  baseShip?: completeShip
+  hullmodIds?: string[]
   capacitors?: number
   vents?: number
 }) {
   const s = ship.stats
   const m = ship.meta
+  const b = baseShip?.stats
+
+  const sensorMults = getSensorMults(hullmodIds)
+  const sensorBase = sensorProfileByHullSize(m.hullSize)
+  const sensorProfile = sensorBase * sensorMults.profile
+  const sensorStrength = sensorBase * sensorMults.strength
 
   const fluxCap = getModifiedStat(s, "max flux", { capacitors })
   const fluxDiss = getModifiedStat(s, "flux dissipation", { vents })
   const fluxCapBonus = fluxCap.bonus
   const fluxDissBonus = fluxDiss.bonus
-  const fluxCapTotal = fluxCap.total
-  const fluxDissTotal = fluxDiss.total
+
+  const shieldUpkeepCur = b
+    ? (s["shield upkeep"] as number) * (b["flux dissipation"] as number)
+    : null
+  const shieldUpkeepBase = b
+    ? (b["shield upkeep"] as number) * (b["flux dissipation"] as number)
+    : null
 
   return (
     <div
       role="dialog"
       aria-label={`${m.hullName} info`}
-      className="w-[980px] max-w-[94vw] font-serif text-lg bg-gray-950 border border-gray-700 px-5 py-2 shadow-2xl"
+      className="w-full font-serif text-lg bg-gray-950 border border-gray-700 px-5 py-2 shadow-2xl"
     >
-      <div className="grid grid-cols-2 text-center text-cyan-100 bg-cyan-800 border-b border-gray-700 pb-0.5 mb-1">
+      <div className="grid grid-cols-[1.8fr_1fr] text-center text-cyan-100 bg-cyan-800 border-b border-gray-700 pb-0.5 mb-1">
         <p>Logistical data</p>
         <p>Combat performance</p>
       </div>
@@ -90,42 +277,20 @@ export default function ShipInfoCard({
       <div className="grid grid-cols-[1.7fr_1fr] gap-8">
         <div className="grid grid-cols-2 gap-6">
           <div className="flex flex-col gap-0.5 text-white">
-            <Row
-              label="CR per deployment"
-              value={
-                <span className="text-cyan-50">{fmt(s["CR to deploy"])}%</span>
-              }
-            />
-            <Row
-              label="Recovery rate (per day)"
-              value={
-                <span className="text-cyan-50">{fmt(s["cr %/day"])}%</span>
-              }
-            />
-            <Row
-              label="Recovery cost (supplies)"
-              value={
-                <span className="text-cyan-50">{fmt(s["supplies/rec"])}</span>
-              }
-            />
+            {LOGISTICS_A.slice(0, 3).map((spec) => (
+              <NumRow key={spec.label} spec={spec} s={s} b={b} />
+            ))}
             <Row
               label="Deployment points"
               value={
-                <span className="text-cyan-50">{fmt(s["fleet pts"])}</span>
+                <span className="text-cyan-300">
+                  {fmt((b ?? s)["supplies/mo"])}
+                </span>
               }
             />
-            <Row
-              label="Peak performance (sec)"
-              value={
-                <span className="text-cyan-50">{fmt(s["peak CR sec"])}</span>
-              }
-            />
-            <Row
-              label="Crew complement"
-              value={
-                <span className="text-amber-300">{fmt(s["min crew"])}</span>
-              }
-            />
+            {LOGISTICS_A.slice(3, 5).map((spec) => (
+              <NumRow key={spec.label} spec={spec} s={s} b={b} />
+            ))}
             <Row
               label="Hull size"
               value={
@@ -134,59 +299,29 @@ export default function ShipInfoCard({
                 </span>
               }
             />
-            <Row
-              label="Ordnance points"
-              value={
-                <span className="text-amber-300">
-                  {fmt(s["ordnance points"])}
-                </span>
-              }
-            />
+            {LOGISTICS_A.slice(5).map((spec) => (
+              <NumRow key={spec.label} spec={spec} s={s} b={b} />
+            ))}
           </div>
           <div className="flex flex-col gap-0.5 text-white">
-            <Row
-              label="Maintenance (supplies/mo)"
-              value={
-                <span className="text-cyan-50">{fmt(s["supplies/mo"])}</span>
-              }
-            />
-            <Row
-              label="Cargo capacity"
-              value={<span className="text-cyan-50">{fmt(s.cargo)}</span>}
-            />
-            <Row
-              label="Maximum crew"
-              value={<span className="text-cyan-50">{fmt(s["max crew"])}</span>}
-            />
-            <Row
-              label="Skeleton crew required"
-              value={<span className="text-cyan-50">{fmt(s["min crew"])}</span>}
-            />
-            <Row
-              label="Fuel capacity"
-              value={<span className="text-cyan-50">{fmt(s.fuel)}</span>}
-            />
-            <Row
-              label="Maximum burn"
-              value={<span className="text-cyan-50">{fmt(s["max burn"])}</span>}
-            />
-            <Row
-              label="Fuel / light year, jump cost"
-              value={<span className="text-cyan-50">{fmt(s["fuel/ly"])}</span>}
-            />
+            {LOGISTICS_B.map((spec) => (
+              <NumRow key={spec.label} spec={spec} s={s} b={b} />
+            ))}
             <Row
               label="Sensor profile"
               value={
-                <span className="text-cyan-50">
-                  {sensorProfileByHullSize(m.hullSize)}
+                <span className="text-amber-300">
+                  {sensorProfile}
+                  <ModMark base={sensorBase} current={sensorProfile} invert />
                 </span>
               }
             />
             <Row
               label="Sensor strength"
               value={
-                <span className="text-cyan-50">
-                  {sensorProfileByHullSize(m.hullSize)}
+                <span className="text-amber-300">
+                  {sensorStrength}
+                  <ModMark base={sensorBase} current={sensorStrength} />
                 </span>
               }
             />
@@ -194,26 +329,9 @@ export default function ShipInfoCard({
         </div>
 
         <div className="flex flex-col gap-0.5 text-white">
-          <Row
-            label="Hull integrity"
-            value={
-              <StatValue
-                current={Number(s.hitpoints)}
-                base={Number(s.hitpoints)}
-                format={(n) => fmt(n)}
-              />
-            }
-          />
-          <Row
-            label="Armor rating"
-            value={
-              <StatValue
-                current={Number(s["armor rating"])}
-                base={Number(s["armor rating"])}
-                format={(n) => fmt(n)}
-              />
-            }
-          />
+          {COMBAT_TOP.map((spec) => (
+            <NumRow key={spec.label} spec={spec} s={s} b={b} />
+          ))}
           <Row
             label="Defense"
             value={<span className="text-amber-300">{shieldLabel(s)}</span>}
@@ -222,76 +340,90 @@ export default function ShipInfoCard({
             label="Shield arc"
             value={
               s["shield arc"] ? (
-                <StatValue
-                  current={Number(s["shield arc"])}
-                  base={Number(s["shield arc"])}
-                  format={(n) => fmt(n)}
-                />
+                <span className="text-amber-300">
+                  {s["shield arc"]}
+                  {b && (
+                    <ModMark base={b["shield arc"]} current={s["shield arc"]} />
+                  )}
+                </span>
               ) : (
                 "—"
               )
             }
           />
-          <Row
-            label="Shield upkeep/sec"
-            value={
-              <StatValue
-                current={Number(s["shield upkeep"])}
-                base={Number(s["shield upkeep"])}
-                invert
-                format={(n) => fmt(n)}
+          {s["phase upkeep"] &&
+            PHASE_ROWS.map((spec) => (
+              <NumRow key={spec.label} spec={spec} s={s} b={b} />
+            ))}
+          {s["shield upkeep"] && (
+            <>
+              <Row
+                label="Shield upkeep/sec"
+                value={
+                  <span className="text-amber-300">
+                    {shieldUpkeepCur}
+                    {shieldUpkeepBase !== null && (
+                      <ModMark
+                        base={shieldUpkeepBase}
+                        current={shieldUpkeepCur}
+                        invert
+                      />
+                    )}
+                  </span>
+                }
               />
-            }
-          />
-          <Row
-            label="Shield flux/damage"
-            value={
-              <StatValue
-                current={Number(s["shield efficiency"])}
-                base={Number(s["shield efficiency"])}
-                invert
-                format={(n) => fmt(n)}
+              <Row
+                label="Shield flux/damage"
+                value={
+                  <span className="text-amber-300">
+                    {s["shield efficiency"]}
+                    {b && (
+                      <ModMark
+                        base={b["shield efficiency"]}
+                        current={s["shield efficiency"]}
+                        invert
+                      />
+                    )}
+                  </span>
+                }
               />
-            }
-          />
+            </>
+          )}
           <Row
             label="Flux capacity"
             value={
-              <span>
-                <StatValue
-                  current={fluxCapTotal}
-                  base={fluxCap.base}
-                  format={(n) => <>{n}</>}
+              <span className="text-amber-300">
+                {s["max flux"] + fluxCapBonus}
+                <MergedBonus
+                  base={b?.["max flux"]}
+                  current={s["max flux"]}
+                  bonus={fluxCapBonus}
                 />
-                {fluxCapBonus > 0 && (
-                  <span className="text-yellow-500"> (+{fluxCapBonus})</span>
-                )}
               </span>
             }
           />
           <Row
             label="Flux dissipation"
             value={
-              <span>
-                <StatValue
-                  current={fluxDissTotal}
-                  base={fluxDiss.base}
-                  format={(n) => <>{n}</>}
+              <span className="text-amber-300">
+                {s["flux dissipation"] + fluxDissBonus}
+                <MergedBonus
+                  base={b?.["flux dissipation"]}
+                  current={s["flux dissipation"]}
+                  bonus={fluxDissBonus}
                 />
-                {fluxDissBonus > 0 && (
-                  <span className="text-yellow-500"> (+{fluxDissBonus})</span>
-                )}
               </span>
             }
           />
           <Row
             label="Top speed"
             value={
-              <StatValue
-                current={Number(s["max speed"])}
-                base={Number(s["max speed"])}
-                format={(n) => fmt(n)}
-              />
+              <span className="text-amber-300">
+                {s["max speed"]}
+                {b && (
+                  <ModMark base={b["max speed"]} current={s["max speed"]} />
+                )}
+              </span>
             }
           />
         </div>
@@ -302,9 +434,6 @@ export default function ShipInfoCard({
           <span className="text-gray-200/90">System:</span>
           <span className="text-amber-300">{fmt(s["system id"])}</span>
         </div>
-        {/*<p className="pl-[76px] text-cyan-100/90">
-          {m.hullName} ship system — {fmt(s["system id"])}.
-        </p>*/}
       </div>
     </div>
   )
