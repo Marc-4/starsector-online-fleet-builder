@@ -9,11 +9,11 @@ const SIZE_LABEL: Record<weapon["size"], string> = {
   LARGE: "Large"
 }
 
-const DAMAGE_TYPE_LABEL: Record<string, string> = {
-  KINETIC: "Kinetic",
-  HIGH_EXPLOSIVE: "High Explosive",
-  ENERGY: "Energy",
-  FRAGMENTATION: "Fragmentation"
+const DAMAGE_TYPE_LABEL: Record<string, [string, string]> = {
+  KINETIC: ["Kinetic", "text-gray-100"],
+  HIGH_EXPLOSIVE: ["High Explosive", "text-red-500"],
+  ENERGY: ["Energy", "text-cyan-300"],
+  FRAGMENTATION: ["Fragmentation", "text-amber-200"]
 }
 
 const DAMAGE_TYPE_MODS: Record<string, { armor: number; shields: number }> = {
@@ -126,8 +126,7 @@ export default function WeaponTooltip({
       : dmgPerShot && burst != null && burst > 1
         ? `${dmgPerShot}x${burst}`
         : dmgPerShot
-  const empBurst =
-    beamBurstEmp != null ? Math.round(beamBurstEmp) : firingEmp
+  const empBurst = beamBurstEmp != null ? Math.round(beamBurstEmp) : firingEmp
   const derivedBurstDps =
     dmgPerShotNum != null && cycle > 0
       ? (dmgPerShotNum * burstSizeN) / cycle
@@ -168,19 +167,17 @@ export default function WeaponTooltip({
       : null
 
   const burstDamageNum =
-    beamBurstDamage ?? (dmgPerShotNum != null ? dmgPerShotNum * burstSizeN : null)
+    beamBurstDamage ??
+    (dmgPerShotNum != null ? dmgPerShotNum * burstSizeN : null)
   const burstFluxNum =
-    beamBurstFlux ?? (fluxPerShotNum != null ? fluxPerShotNum * burstSizeN : null)
+    beamBurstFlux ??
+    (fluxPerShotNum != null ? fluxPerShotNum * burstSizeN : null)
   const fluxPerDamage =
     burstFluxNum != null && burstDamageNum != null && burstDamageNum !== 0
       ? burstFluxNum / burstDamageNum
-      : fluxPerShotNum != null &&
-          dmgPerShotNum != null &&
-          dmgPerShotNum !== 0
+      : fluxPerShotNum != null && dmgPerShotNum != null && dmgPerShotNum !== 0
         ? fluxPerShotNum / dmgPerShotNum
-        : burstFluxPerSec != null &&
-            burstDps != null &&
-            burstDps !== 0
+        : burstFluxPerSec != null && burstDps != null && burstDps !== 0
           ? burstFluxPerSec / burstDps
           : null
 
@@ -349,8 +346,10 @@ export default function WeaponTooltip({
         <div className="flex items-baseline justify-between gap-3">
           <span className="text-base text-gray-100">Damage type</span>
           <span className="text-right">
-            <span className="ss-amber block text-base">
-              {DAMAGE_TYPE_LABEL[damageType] ?? cap(damageType)}
+            <span
+              className={`ss-amber block text-base ${DAMAGE_TYPE_LABEL[damageType][1]}`}
+            >
+              {DAMAGE_TYPE_LABEL[damageType][0] ?? cap(damageType)}
             </span>
             {mods && (
               <span className="ss-amber block text-sm">
