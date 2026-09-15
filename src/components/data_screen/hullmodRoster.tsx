@@ -20,7 +20,7 @@ export default function HullmodRoster({
 }: Props) {
   return (
     <div className="flex gap-1 flex-col items-end">
-      <div className="flex flex-col gap-1 items-end">
+      <div className="flex flex-col gap-1 items-end max-h-56 overflow-y-auto">
         {builtInHullmods.map(({ id, mod }) => {
           const spriteUrl = resolveHullModSpriteUrl(mod.sprite)
           return (
@@ -60,9 +60,7 @@ export default function HullmodRoster({
               onMouseLeave={() => onHoverHullmod(null)}
             >
               <span className="text-cyan-100">{mod.name}</span>
-              <span className="text-amber-300 text-lg font-bold ">
-                {cost}
-              </span>
+              <span className="text-amber-300 text-lg font-bold ">{cost}</span>
 
               <CommonButton
                 cutAllCorners
