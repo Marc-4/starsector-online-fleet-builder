@@ -1,5 +1,5 @@
 # Starsector Online Fleet Builder
-
+React SPA for creating starsector fleets: assign weapons, hullmods, fighters, and officers.
 ## Done
 
 - unmodified game data parsing
@@ -34,7 +34,7 @@
   - `npm run dev`
 - visit `localhost:3000` in browser
 
-# data flow
+# component architecture
 
 State lives in `Screen` (`src/components/screen.tsx`). It owns the
 `fleetEntry[]` fleet plus the `activeTile`, and every mutation flows back
@@ -58,7 +58,7 @@ routes → Screen ─┬─ sidebar: SidebarShipTile[] + AddShipButton
                  └─ URL hash (#fleet=…) ── fleetCodec (v3 binary + v1/v2 readers)
 ```
 
-## change propagatation
+## data propagatation
 
 1. **User acts** in a leaf component (e.g. mounts a weapon in
    `WeaponSelectionModal`, holds `+` in `StatCluster`, picks a hullmod).
@@ -72,9 +72,7 @@ routes → Screen ─┬─ sidebar: SidebarShipTile[] + AddShipButton
    `#fleet=…` via `encodeFleetToHash`.
 5. **Re-render down**: new `activeTile` → `useLoadoutOp` recomputes spent OP,
    modded stats, guards → `StatCluster`, roster, bays, sidebar tile all
-   reflect the new state. Caps/vents increments clamp inside the setter
-   against weapons + fighters + hullmods OP, so holding `+` stops at the
-   real ceiling.
+   reflect the new state.
 
 ## data parsers
 
