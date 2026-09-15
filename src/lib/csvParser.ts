@@ -361,6 +361,8 @@ export function getHullModInapplicability(
   if (has("shields") && !ctx.hasShields)
     return "Requires shields"
   // Carrier mods
+  if (h.id === "converted_hangar" && ctx.hullSize === "FRIGATE")
+    return "Can not be installed on frigates"
   if (
     h.id === "converted_hangar" &&
     (ctx.fighterBays > 0 || ctx.hasBuiltInWings) &&
@@ -462,14 +464,22 @@ export function getWingHullId(wing: wingStats | null | undefined): string | null
 /** Candidate hull ids for a wing, most specific first.
  *  Most variants are "<hull>_<role>" (prefix wins), but some drone wings
  *  use the bare hull id as variant (e.g. "drone_terminator"), so the full
- *  variant is tried first. */
+ *  variant is tried first. Multi-segment hulls keep a role suffix
+ *  (e.g. "mining_drone_Standard" -> hull "mining_drone"), so trailing
+ *  segments are stripped progressively before falling back to the prefix. */
 export function getWingHullIds(wing: wingStats | null | undefined): string[] {
   if (!wing?.variant) return []
   const full = String(wing.variant).trim().toLowerCase()
-  const prefix = full.split("_")[0]?.trim()
   const out: string[] = []
-  if (full && !out.includes(full)) out.push(full)
-  if (prefix && !out.includes(prefix)) out.push(prefix)
+  const push = (id: string | undefined) => {
+    if (id && !out.includes(id)) out.push(id)
+  }
+  push(full)
+  let rest = full
+  while (rest.includes("_")) {
+    rest = rest.slice(0, rest.lastIndexOf("_"))
+    push(rest)
+  }
   return out
 }
 
