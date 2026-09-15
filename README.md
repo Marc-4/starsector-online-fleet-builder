@@ -1,5 +1,6 @@
 # Starsector Online Fleet Builder
 React SPA for creating starsector fleets: assign weapons, hullmods, fighters, and officers.
+
 ## Done
 
 - unmodified game data parsing
@@ -26,7 +27,7 @@ React SPA for creating starsector fleets: assign weapons, hullmods, fighters, an
 - autofit variants
 - modded ships support
 
-# development setup
+## development setup
 - run these in order
   - `npm install`
   - `npm run generate:manifests`
@@ -34,7 +35,7 @@ React SPA for creating starsector fleets: assign weapons, hullmods, fighters, an
   - `npm run dev`
 - visit `localhost:3000` in browser
 
-# component architecture
+## component architecture
 
 State lives in `Screen` (`src/components/screen.tsx`). It owns the
 `fleetEntry[]` fleet plus the `activeTile`, and every mutation flows back
