@@ -62,15 +62,14 @@ routes → Screen ─┬─ sidebar: SidebarShipTile[] + AddShipButton
 
 ## data propagatation
 
-1. **User acts** in a leaf component (e.g. mounts a weapon in
-   `WeaponSelectionModal`, holds `+` in `StatCluster`, picks a hullmod).
-2. **Guard first**: the leaf or panel checks a `wouldExceed*` guard /
-   `disabled` flag from `useLoadoutOp`, so illegal states never dispatch.
-3. **Callback up**: the leaf calls its `onXChange` prop (`onWeaponsChange`,
+1. **User acts** in a component (e.g. mounts a weapon, adds vents/caps, picks a hullmod).
+2. **Guard first**: the component checks a `wouldExceed*` guard /
+   `disabled` flag from `useLoadoutOp`, so illegal states dont dispatch.
+3. **Callback up**: the component calls its `onXChange` prop (`onWeaponsChange`,
    `onFightersChange`, `onHullmodsChange`, caps/vents handlers), owned by
    `Screen`.
-4. **`Screen.updateEntry` / setters** patch the entry in both `fleet` and
-   `activeTile`, then `syncHash(next)` re-encodes the fleet into
+4. **Setters** patch the entry in both `fleet` and
+   `activeTile`, then `syncHash(next)` re-encodes the fleet into url param
    `#fleet=…` via `encodeFleetToHash`.
 5. **Re-render down**: new `activeTile` → `useLoadoutOp` recomputes spent OP,
    modded stats, guards → `StatCluster`, roster, bays, sidebar tile all
@@ -84,13 +83,17 @@ routes → Screen ─┬─ sidebar: SidebarShipTile[] + AddShipButton
   `hull_mods` stats, selectability, OP costs, mount compatibility context,
   hullmod installability (`isHullModSelectable`,
   `getHullModInapplicability`).
-- `lib/weaponCompat` — mount fit rules including `mountTypeOverride`
-  (Mining Blaster → HYBRID etc.).
-- `lib/statModifier` + `lib/fluxLimits` — caps/vents bonuses, max
-  caps/vents per hull size.
-- `lib/fleetCodec` + `lib/fleetDicts` — share-link hash: v3 binary payload
-  (dict-indexed hull/weapon/wing/hullmod ids with raw-string fallback) with
-  v1/v2 decoders for old links. `hydrateFleet` rebuilds entries on load.
-- `hullModData/` — per-hullmod registry: `apply` (flat stat mutation) +
-  `describe` (`%s` hullmod description filling); `applyHullmods` chains them for the stat
-  panel, `describeHullmod` feeds tooltips.
+
+### Game Data
+_Files_
+
+hull_mods.csv - src/hullModData
+.ship, .skin files, ship_data.csv & wing_data.csv - src/shipData
+.wpn, .proj files & weapon_data.csv - src/weaponData
+
+
+_Images_ 
+grahpics/hullmods - public/hullmods (converted to .webp)
+graphics/missiles - public/missiles (converted to .webp)
+graphics/ships - public/ships (converted to .webp)
+grapics/weapons - public/weapons (stays as pngs)
