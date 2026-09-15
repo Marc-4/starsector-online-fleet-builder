@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import { getAllShipStats } from "#/lib/csvParser"
 import { getMaxCapsVents } from "#/lib/fluxLimits"
 import { getModifiedStat } from "#/lib/statModifier"
@@ -25,7 +25,12 @@ import ShipDisplay from "./shipDisplay"
 import ShipInfoCard from "./shipInfoCard"
 import ShipName from "./shipName"
 import StatCluster from "./statCluster"
-import { getCrPenalty, getMaxCr, getVentMult } from "#/hullModData"
+import {
+  getCrPenalty,
+  getFluxMult,
+  getMaxCr,
+  getVentMult
+} from "#/hullModData"
 import { useLoadoutOp } from "../../hooks/useLoadoutOp"
 import ZoomControls from "./zoomControls"
 
@@ -93,6 +98,15 @@ export default function ActiveShipPanel({
     wouldExceedFighterOp,
     wouldExceedHullmodOp
   } = useLoadoutOp(activeTile)
+
+  const allModIds = useMemo(
+    () => [
+      ...(activeTile.ship.meta.builtInMods ?? []),
+      ...(activeTile.hullmods ?? [])
+    ],
+    [activeTile.ship.meta.builtInMods, activeTile.hullmods]
+  )
+  const fluxMult = getFluxMult(allModIds)
 
   const handleBayShiftClick = useCallback(
     (bayIndex: number) => {
@@ -194,16 +208,9 @@ export default function ActiveShipPanel({
           <CombatReadinessBar
             cr={Math.max(
               0,
-              activeTile.cr -
-                getCrPenalty([
-                  ...(activeTile.ship.meta.builtInMods ?? []),
-                  ...(activeTile.hullmods ?? [])
-                ])
+              activeTile.cr - getCrPenalty(allModIds)
             )}
-            maxCr={getMaxCr([
-              ...(activeTile.ship.meta.builtInMods ?? []),
-              ...(activeTile.hullmods ?? [])
-            ])}
+            maxCr={getMaxCr(allModIds)}
           />
         </div>
         <div className="pointer-events-auto flex flex-col lg:ml-auto max-lg:self-end origin-top-right">
@@ -223,22 +230,21 @@ export default function ActiveShipPanel({
             vents={activeTile.vents}
             maxVents={getMaxCapsVents(activeTile.ship.meta.hullSize)}
             fluxCapacity={
-              getModifiedStat(moddedShip.stats, "max flux", {
-                capacitors: activeTile.capacitors
-              }).total
+              Math.round(
+                getModifiedStat(moddedShip.stats, "max flux", {
+                  capacitors: activeTile.capacitors
+                }).total * fluxMult
+              )
             }
             fluxCapacityBase={
               getModifiedStat(activeTile.ship.stats, "max flux").base
             }
             fluxDissipation={
-              getModifiedStat(moddedShip.stats, "flux dissipation", {
-                vents:
-                  activeTile.vents *
-                  getVentMult([
-                    ...(activeTile.ship.meta.builtInMods ?? []),
-                    ...(activeTile.hullmods ?? [])
-                  ])
-              }).total
+              Math.round(
+                getModifiedStat(moddedShip.stats, "flux dissipation", {
+                  vents: activeTile.vents * getVentMult(allModIds)
+                }).total * fluxMult
+              )
             }
             fluxDissipationBase={
               getModifiedStat(activeTile.ship.stats, "flux dissipation").base
