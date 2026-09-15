@@ -25,6 +25,7 @@ import ShipDisplay from "./shipDisplay"
 import ShipInfoCard from "./shipInfoCard"
 import ShipName from "./shipName"
 import StatCluster from "./statCluster"
+import { getCrPenalty, getMaxCr, getVentMult } from "#/hullModData"
 import { useLoadoutOp } from "../../hooks/useLoadoutOp"
 import ZoomControls from "./zoomControls"
 
@@ -190,7 +191,20 @@ export default function ActiveShipPanel({
     <>
       <div className="absolute top-1 left-1 right-1 z-20 flex flex-col gap-2 lg:flex-row lg:items-start lg:justify-between pointer-events-none">
         <div className="pointer-events-auto max-lg:w-fit max-lg:self-end origin-top-left">
-          <CombatReadinessBar cr={activeTile.cr} />
+          <CombatReadinessBar
+            cr={Math.max(
+              0,
+              activeTile.cr -
+                getCrPenalty([
+                  ...(activeTile.ship.meta.builtInMods ?? []),
+                  ...(activeTile.hullmods ?? [])
+                ])
+            )}
+            maxCr={getMaxCr([
+              ...(activeTile.ship.meta.builtInMods ?? []),
+              ...(activeTile.hullmods ?? [])
+            ])}
+          />
         </div>
         <div className="pointer-events-auto flex flex-col lg:ml-auto max-lg:self-end origin-top-right">
           <StatCluster
@@ -218,7 +232,12 @@ export default function ActiveShipPanel({
             }
             fluxDissipation={
               getModifiedStat(moddedShip.stats, "flux dissipation", {
-                vents: activeTile.vents
+                vents:
+                  activeTile.vents *
+                  getVentMult([
+                    ...(activeTile.ship.meta.builtInMods ?? []),
+                    ...(activeTile.hullmods ?? [])
+                  ])
               }).total
             }
             fluxDissipationBase={

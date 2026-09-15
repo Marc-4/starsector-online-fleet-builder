@@ -1,5 +1,5 @@
 import type { completeShip } from "#/types"
-import { getSensorMults } from "#/hullModData"
+import { getMaxCr, getSensorMults, getVentMult } from "#/hullModData"
 import { getModifiedStat } from "#/lib/statModifier"
 
 type Stats = completeShip["stats"]
@@ -252,7 +252,9 @@ export default function ShipInfoCard({
   const sensorStrength = sensorBase * sensorMults.strength
 
   const fluxCap = getModifiedStat(s, "max flux", { capacitors })
-  const fluxDiss = getModifiedStat(s, "flux dissipation", { vents })
+  const fluxDiss = getModifiedStat(s, "flux dissipation", {
+    vents: vents * getVentMult(hullmodIds)
+  })
   const fluxCapBonus = fluxCap.bonus
   const fluxDissBonus = fluxDiss.bonus
 
@@ -280,6 +282,15 @@ export default function ShipInfoCard({
             {LOGISTICS_A.slice(0, 3).map((spec) => (
               <NumRow key={spec.label} spec={spec} s={s} b={b} />
             ))}
+            <Row
+              label="Maximum CR"
+              value={
+                <span className="text-cyan-50">
+                  {getMaxCr(hullmodIds)}%
+                  <ModMark base={100} current={getMaxCr(hullmodIds)} />
+                </span>
+              }
+            />
             <Row
               label="Deployment points"
               value={

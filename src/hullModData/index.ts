@@ -422,6 +422,36 @@ const SENSOR_MULTS: Record<string, SensorMults> = {
 }
 
 /**
+ * Vent bonus multiplier (Safety Overrides doubles dissipation including vents;
+ * applyHullmods only sees base stats, so the vent leg is scaled at display).
+ */
+export function getVentMult(ids: string[]): number {
+  return ids.includes("safetyoverrides") ? 2 : 1
+}
+
+/**
+ * Max-CR point reductions by hullmod id (percentage points off the 100% max).
+ * Like sensors, max CR lives outside shipStats, so it chains here.
+ */
+export const CR_MAX_REDUCTIONS: Record<string, number> = {
+  faulty_auto: 5,
+  degraded_life_support: 5,
+  increased_maintenance: 5
+}
+
+/** Total max-CR point reduction for a hullmod id list. */
+export function getCrPenalty(ids: string[]): number {
+  let total = 0
+  for (const id of ids) total += CR_MAX_REDUCTIONS[id] ?? 0
+  return total
+}
+
+/** Effective max CR (percent) after hullmod reductions. */
+export function getMaxCr(ids: string[]): number {
+  return Math.max(0, 100 - getCrPenalty(ids))
+}
+
+/**
  * Combined sensor multipliers for a hullmod id list (sensors live outside
  * shipStats, so they chain here instead of in applyHullmods).
  */
