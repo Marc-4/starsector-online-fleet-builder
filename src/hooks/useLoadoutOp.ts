@@ -91,7 +91,7 @@ export function useLoadoutOp(activeTile: fleetEntry) {
     }
     return out
   }, [activeTile.hullmods, activeTile.ship.meta.hullSize, hullModById])
-  // Built-ins come straight from the hull — no props needed. They cost 0 OP
+  // Built-ins come straight from the hull, no props needed. They cost 0 OP
   // and can't be removed, so they render locked above the assigned mods.
   const builtInHullmods: BuiltInHullmod[] = useMemo(() => {
     const out: { id: string; mod: hullMod | null }[] = []

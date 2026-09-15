@@ -1,7 +1,7 @@
 import { resolveHullModSpriteUrl } from "#/lib/csvParser"
 import type { hullMod } from "#/types"
 import CommonButton from "../commonBtn"
-import type { AssignedHullmod, BuiltInHullmod } from "./useLoadoutOp"
+import type { AssignedHullmod, BuiltInHullmod } from "../../hooks/useLoadoutOp"
 
 type Props = {
   assignedHullmods: AssignedHullmod[]
