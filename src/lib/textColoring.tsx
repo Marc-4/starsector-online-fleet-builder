@@ -8,11 +8,15 @@ function toCss(rgb: readonly [number, number, number]): string {
   return `rgb(${rgb[0]}, ${rgb[1]}, ${rgb[2]})`
 }
 
+export type Rgb = readonly [number, number, number]
+
 export type StatDeltaColorOpts = {
   /** True for lower-is-better stats (shield efficiency, weapon flux/sec). */
   invert?: boolean
   /** Fractional delta that saturates full red/green. Default 0.25. */
   maxDeltaPct?: number
+  /** RGB used when current equals base. Default cyan. */
+  baseColor?: Rgb
 }
 
 /**
@@ -24,12 +28,12 @@ export function getStatDeltaColor(
   base: number,
   opts: StatDeltaColorOpts = {}
 ): string {
-  const { invert = false } = opts
-  if (!Number.isFinite(current) || !Number.isFinite(base)) return toCss(CYAN)
+  const { invert = false, baseColor = CYAN } = opts
+  if (!Number.isFinite(current) || !Number.isFinite(base)) return toCss(baseColor)
   const delta = invert ? base - current : current - base
   if (delta > 0) return toCss(GREEN)
   if (delta < 0) return toCss(RED)
-  return toCss(CYAN)
+  return toCss(baseColor)
 }
 
 export function StatValue({
@@ -37,6 +41,7 @@ export function StatValue({
   base,
   invert = false,
   maxDeltaPct = 0.25,
+  baseColor = CYAN,
   format,
   className,
   style,
@@ -46,6 +51,7 @@ export function StatValue({
   base?: number | null
   invert?: boolean
   maxDeltaPct?: number
+  baseColor?: Rgb
   format?: (n: number) => ReactNode
   className?: string
   style?: CSSProperties
@@ -56,7 +62,7 @@ export function StatValue({
   return (
     <span
       className={className}
-      style={{ color: getStatDeltaColor(current, b, { invert, maxDeltaPct }), ...style }}
+      style={{ color: getStatDeltaColor(current, b, { invert, maxDeltaPct, baseColor }), ...style }}
     >
       {format ? format(current) : current}
     </span>
