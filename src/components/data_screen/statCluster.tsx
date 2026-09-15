@@ -21,6 +21,14 @@ export default function StatCluster({
   fluxDissipationBase,
   shieldEfficiency,
   shieldEfficiencyBase,
+  shieldArc,
+  shieldArcBase,
+  shieldUpkeep,
+  shieldUpkeepBase,
+  phaseActivationCost,
+  phaseActivationCostBase,
+  phaseUpkeep,
+  phaseUpkeepBase,
   weaponFluxPerSecond,
   weaponFluxPerSecondBase,
   showInfo,
@@ -48,6 +56,14 @@ export default function StatCluster({
   fluxDissipationBase?: number
   shieldEfficiency?: number
   shieldEfficiencyBase?: number
+  shieldArc?: number
+  shieldArcBase?: number
+  shieldUpkeep?: number
+  shieldUpkeepBase?: number
+  phaseActivationCost?: number
+  phaseActivationCostBase?: number
+  phaseUpkeep?: number
+  phaseUpkeepBase?: number
   weaponFluxPerSecond?: number
   weaponFluxPerSecondBase?: number
   showInfo?: boolean
@@ -175,7 +191,7 @@ export default function StatCluster({
         </div>
       </div>
       <div className="flex mt-2 gap-1 max-sm:gap-0.5">
-        <div className="flex flex-col gap-2 sm:gap-4">
+        <div className="flex  absolute flex-col gap-2 sm:gap-4">
           <div className="flex gap-2 sm:gap-3 items-center self-end">
             <p className="text-sm sm:text-base">Capacitors</p>
             <CommonButton
@@ -254,16 +270,81 @@ export default function StatCluster({
               <StatValue current={fluxDissipation} base={fluxDissipationBase} />
             </p>
           </div>
-          <div className="flex flex-col">
-            <p className="ss-label-text max-sm:text-[11px]">SHIELD FLUX/DAM</p>
-            <p className="self-end text-sm sm:text-base">
-              <StatValue
-                current={shieldEfficiency}
-                base={shieldEfficiencyBase}
-                invert
-              />
-            </p>
-          </div>
+          {phaseUpkeep &&
+            phaseActivationCost &&
+            phaseActivationCostBase &&
+            phaseUpkeepBase && (
+              <div className="flex gap-2">
+                <div className="flex flex-col">
+                  <p className="ss-label-text max-sm:text-[11px]">
+                    PHASE ACTIVATION COST
+                  </p>
+                  <p className="self-end text-sm sm:text-base">
+                    <StatValue
+                      current={phaseActivationCost * (fluxCapacityBase ?? 1)}
+                      base={phaseActivationCostBase * (fluxCapacityBase ?? 1)}
+                      format={(n) => `${n}`}
+                      invert
+                    />
+                  </p>
+                </div>
+                <div className="flex flex-col">
+                  <p className="ss-label-text max-sm:text-[11px]">
+                    PHASE UPKEEP
+                  </p>
+                  <p className="self-end text-sm sm:text-base">
+                    <StatValue
+                      current={phaseUpkeep * (fluxCapacityBase ?? 1)}
+                      base={phaseUpkeepBase * (fluxCapacityBase ?? 1)}
+                      format={(n) => `${n}`}
+                      invert
+                    />
+                  </p>
+                </div>
+              </div>
+            )}
+          {shieldArc &&
+            shieldEfficiency &&
+            shieldUpkeep &&
+            shieldUpkeepBase && (
+              <div className="flex gap-2">
+                <div className="flex flex-col">
+                  <p className="ss-label-text max-sm:text-[11px]">SHIELD ARC</p>
+                  <p className="self-end text-sm sm:text-base">
+                    <StatValue
+                      current={shieldArc}
+                      base={shieldArcBase}
+                      format={(n) => `${n}°`}
+                    />
+                  </p>
+                </div>
+                <div className="flex flex-col">
+                  <p className="ss-label-text max-sm:text-[11px]">
+                    SHIELD UPKEEP
+                  </p>
+                  <p className="self-end text-sm sm:text-base">
+                    <StatValue
+                      current={shieldUpkeep * (fluxDissipationBase ?? 1)}
+                      base={shieldUpkeepBase * (fluxDissipationBase ?? 1)}
+                      format={(n) => `${n}`}
+                      invert
+                    />
+                  </p>
+                </div>
+                <div className="flex flex-col">
+                  <p className="ss-label-text max-sm:text-[11px]">
+                    SHIELD EFFICIENCY
+                  </p>
+                  <p className="self-end text-sm sm:text-base">
+                    <StatValue
+                      current={shieldEfficiency}
+                      base={shieldEfficiencyBase}
+                      invert
+                    />
+                  </p>
+                </div>
+              </div>
+            )}
           <div className="flex flex-col">
             <p className="ss-label-text max-sm:text-[11px]">WEAPON FLUX/SEC</p>
             <p className="self-end text-sm sm:text-base">
