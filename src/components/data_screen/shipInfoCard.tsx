@@ -1,5 +1,5 @@
 import type { completeShip } from "#/types"
-import { getMaxCr, getSensorMults, getVentMult } from "#/hullModData"
+import { getFluxMult, getMaxCr, getSensorMults, getVentMult } from "#/hullModData"
 import { getModifiedStat } from "#/lib/statModifier"
 
 type Stats = completeShip["stats"]
@@ -79,30 +79,6 @@ function ModMark({
       {" "}
       ({positive ? `+` : ``}
       {diff})
-    </span>
-  )
-}
-
-/** Merged hullmod + capacitor/vent bonus, e.g. (+30) (+100) -> (+130). */
-function MergedBonus({
-  base,
-  current,
-  bonus
-}: {
-  base: unknown
-  current: unknown
-  bonus: number
-}) {
-  if (typeof base !== "number" || typeof current !== "number") return null
-  if (!Number.isFinite(base) || !Number.isFinite(current)) return null
-  const total = Math.round((current - base + bonus) * 10000) / 10000
-  if (total === 0) return null
-  const positive = total > 0
-  return (
-    <span className={positive ? "text-lime-400" : "text-orange-400"}>
-      {" "}
-      ({positive ? `+` : ``}
-      {total})
     </span>
   )
 }
@@ -257,6 +233,12 @@ export default function ShipInfoCard({
   })
   const fluxCapBonus = fluxCap.bonus
   const fluxDissBonus = fluxDiss.bonus
+  // Design Compromises scales the finished totals (base + caps/vents + hullmods).
+  const fluxMult = getFluxMult(hullmodIds)
+  const fluxCapTotal = Math.round((s["max flux"] + fluxCapBonus) * fluxMult)
+  const fluxDissTotal = Math.round(
+    (s["flux dissipation"] + fluxDissBonus) * fluxMult
+  )
 
   const shieldUpkeepCur = b
     ? (s["shield upkeep"] as number) * (b["flux dissipation"] as number)
@@ -404,12 +386,8 @@ export default function ShipInfoCard({
             label="Flux capacity"
             value={
               <span className="text-amber-300">
-                {s["max flux"] + fluxCapBonus}
-                <MergedBonus
-                  base={b?.["max flux"]}
-                  current={s["max flux"]}
-                  bonus={fluxCapBonus}
-                />
+                {fluxCapTotal}
+                <ModMark base={b?.["max flux"]} current={fluxCapTotal} />
               </span>
             }
           />
@@ -417,11 +395,10 @@ export default function ShipInfoCard({
             label="Flux dissipation"
             value={
               <span className="text-amber-300">
-                {s["flux dissipation"] + fluxDissBonus}
-                <MergedBonus
+                {fluxDissTotal}
+                <ModMark
                   base={b?.["flux dissipation"]}
-                  current={s["flux dissipation"]}
-                  bonus={fluxDissBonus}
+                  current={fluxDissTotal}
                 />
               </span>
             }

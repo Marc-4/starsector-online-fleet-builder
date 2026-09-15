@@ -175,12 +175,9 @@ export function describeRuggedConstruction(mod: hullMod): string {
   return formatHullmodDesc(rawDesc(mod), ["50%", "50%", "50%"])
 }
 
-export function applyDesignCompromises(ship: completeShip): completeShip {
-  const next = cloneShip(ship)
-  mulStat(next.stats, "max flux", 0.6)
-  mulStat(next.stats, "flux dissipation", 0.6)
-  return next
-}
+// Flux penalty applies to the final totals (after caps/vents and other
+// hullmods), so it is applied at display via getFluxMult, not here.
+export const DESIGN_COMPROMISES_FLUX_MULT = 0.6
 
 export function describeDesignCompromises(mod: hullMod): string {
   return formatHullmodDesc(rawDesc(mod), ["40%", "15%", "50%", "100%", "Converted Hangar", "1"])

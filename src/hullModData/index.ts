@@ -218,7 +218,7 @@ import {
   describeRuggedConstruction,
   applyRuggedConstruction,
   describeDesignCompromises,
-  applyDesignCompromises,
+  DESIGN_COMPROMISES_FLUX_MULT,
   describeAndradaMods,
   applyAndradaMods
 } from "./general"
@@ -355,7 +355,7 @@ export const HULLMOD_IMPLS: Record<string, HullmodImpl> = {
   ablative_armor: { describe: describeAblativeArmor },
   automated: { describe: describeAutomatedShip, apply: applyAutomatedShip },
   rugged: { describe: describeRuggedConstruction, apply: applyRuggedConstruction },
-  design_compromises: { describe: describeDesignCompromises, apply: applyDesignCompromises },
+  design_compromises: { describe: describeDesignCompromises },
   andrada_mods: { describe: describeAndradaMods, apply: applyAndradaMods },
   fragment_swarm: { describe: describeFragmentSwarm, describeSMod: describeFragmentSwarmSMod },
   secondary_fabricator: { describe: describeSecondaryFabricator, describeSMod: describeSecondaryFabricatorSMod },
@@ -419,6 +419,15 @@ const SENSOR_MULTS: Record<string, SensorMults> = {
     profile: MILITARIZED_SENSOR_PROFILE_MULT,
     strength: MILITARIZED_SENSOR_STRENGTH_MULT
   }
+}
+
+/**
+ * Final flux total multiplier (Design Compromises hits capacity and
+ * dissipation after caps/vents and other hullmods; applyHullmods only sees
+ * base stats, so this scales the display totals).
+ */
+export function getFluxMult(ids: string[]): number {
+  return ids.includes("design_compromises") ? DESIGN_COMPROMISES_FLUX_MULT : 1
 }
 
 /**
