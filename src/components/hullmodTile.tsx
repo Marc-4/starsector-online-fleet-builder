@@ -1,10 +1,8 @@
 import { getHullModDesignType, resolveHullModSpriteUrl } from "#/lib/csvParser"
 import type { hullMod } from "#/types"
 
-function costColor(cost: number): string {
-  if (cost >= 25) return "text-amber-400"
-  if (cost >= 15) return "text-yellow-300"
-  return "text-amber-200/90"
+function costColor(_cost: number): string {
+  return "text-amber-300"
 }
 
 export default function HullmodTile({
