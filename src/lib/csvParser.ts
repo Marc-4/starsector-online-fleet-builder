@@ -83,22 +83,10 @@ export function getWeaponStats({  weapon,
 export function isWeaponSelectable(stats: weaponStats | null): boolean {
   if (!stats) return false
   const hints = (stats.hints || "").toUpperCase()
-  const tags = (stats.tags || "").toLowerCase()
-  // System / fighter / bomb bay weapons
-  if (hints.includes("SYSTEM")) return false
-  // Explicitly not sold / not droppable (built-in hull weapons like bomb, heavy_adjudicator variants)
-  if (
-    tags.includes("no_sell") ||
-    // tags.includes("no_drop") ||
-    tags.includes("no_drop_salvage")
-    // tags.includes("no_dealer") ||
-    // tags.includes("no_standard_data")
-  )
-    return false
-  // NOTE: groupTag no longer filtered. Only 3 weapons use it
-  // (amblaster, tpc, heavy_adjudicator), nothing hull-side
-  // references those values, and filtering it hides the AM Blaster from every slot.
-  // The SYSTEM / no-sell rules above still catch the tpc and heavy_adjudicator.
+  // System / fighter / bomb bay weapons (incl. built-in bomber bombs)
+  if (hints.includes("SYSTEM") || hints.includes("BOMB")) return false
+  // The SYSTEM / BOMB / no-OP rules above still catch the non-mountable
+  // built-ins (tpc, heavy_adjudicator, bomb, fighter weapons).
   if (stats.OPs == null || String(stats.OPs).trim() === "") return false
   return true
 }
