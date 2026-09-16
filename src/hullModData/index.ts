@@ -204,6 +204,7 @@ import {
   tablesMissileAutoloader,
   describeMissileReload,
   describeHeavyBallisticsIntegration,
+  getHeavyBallisticsIntegrationDiscount,
   describePdIntegration,
   describeAdaptivePhaseCoils,
   describeExperimentalPhaseCoils,
@@ -250,6 +251,16 @@ export type DeploymentCostCtx = {
   hullSize: string
 }
 
+export type WeaponOpCtx = {
+  weaponId: string
+  /** Mount size from the .wpn spec (SMALL/MEDIUM/LARGE). */
+  size: string
+  /** Effective mount type (mountTypeOverride wins, e.g. Mining Blaster). */
+  mountType: string
+  /** Base OP cost from weapon_data.csv. */
+  baseOp: number
+}
+
 export type HullmodImpl = {
   /** Flat stat mutation. Absent when the mod touches no ship stat directly. */
   apply?: (ship: completeShip) => completeShip
@@ -259,6 +270,12 @@ export type HullmodImpl = {
    * ship stats (e.g. Converted Hangar: ceil(fightersOp / 5), min 1).
    */
   getDeploymentCostDelta?: (ctx: DeploymentCostCtx) => number
+  /**
+   * Flat OP discount for a mounted weapon (e.g. Heavy Ballistics
+   * Integration: -10 for large ballistics). Absent when the mod does not
+   * touch weapon OP. Returning 0 = no effect on that weapon.
+   */
+  getWeaponOpDiscount?: (ctx: WeaponOpCtx) => number
   /** Complete description string with `%s` placeholders filled. */
   describe: (mod: hullMod) => string
   /** S-mod bonus string with `%s` placeholders filled. Absent when no S-mod bonus. */
@@ -582,7 +599,10 @@ export const HULLMOD_IMPLS: Record<string, HullmodImpl> = {
     tables: tablesMissileAutoloader
   },
   missile_reload: { describe: describeMissileReload },
-  hbi: { describe: describeHeavyBallisticsIntegration },
+  hbi: {
+    describe: describeHeavyBallisticsIntegration,
+    getWeaponOpDiscount: getHeavyBallisticsIntegrationDiscount
+  },
   pdintegration: { describe: describePdIntegration },
   adaptive_coils: { describe: describeAdaptivePhaseCoils },
   ex_phase_coils: { describe: describeExperimentalPhaseCoils },
@@ -696,6 +716,30 @@ export function getEffectiveDeploymentCost(
     suppliesRec: baseRec + delta,
     delta
   }
+}
+
+/**
+ * Total flat weapon OP discount for one mounted weapon across a hullmod id
+ * list. Needs the weapon's size/mount type, which live in the .wpn spec
+ * (not the CSV stats) — callers resolve those via getWeaponMountInfoMap().
+ */
+export function getWeaponOpDiscount(
+  ids: string[],
+  ctx: WeaponOpCtx
+): number {
+  let total = 0
+  for (const id of ids)
+    total += HULLMOD_IMPLS[id]?.getWeaponOpDiscount?.(ctx) ?? 0
+  return total
+}
+
+export function getEffectiveWeaponOp(
+  baseOp: number,
+  ids: string[],
+  ctx: Omit<WeaponOpCtx, "baseOp">
+): number {
+  const base = Number.isFinite(baseOp) ? baseOp : 0
+  return Math.max(0, base - getWeaponOpDiscount(ids, { ...ctx, baseOp: base }))
 }
 
 export type SensorMults = { profile: number; strength: number }

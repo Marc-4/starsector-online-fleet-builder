@@ -426,6 +426,10 @@ export default function ActiveShipPanel({
             opOf(activeTile.weapons?.[selectedSlot.id])
           }
           mountedWeaponIds={activeTile.weapons ?? {}}
+          installedHullmodIds={[
+            ...(activeTile.ship.meta.builtInMods ?? []),
+            ...(activeTile.hullmods ?? [])
+          ]}
           onRemoveWeapon={(w) => {
             // Unmount only from the currently open slot.
             if (activeTile.weapons?.[selectedSlot.id] !== w.id) return

@@ -2,6 +2,7 @@ import { useCallback, useMemo } from "react"
 import {
   applyHullmods,
   getEffectiveDeploymentCost,
+  getEffectiveWeaponOp,
   HIDDEN_BUILTIN_MOD_IDS
 } from "#/hullModData"
 import {
@@ -12,6 +13,7 @@ import {
   getWeaponFluxPerSecond
 } from "#/lib/csvParser"
 import type { fleetEntry, hullMod } from "#/types"
+import { useWeaponMountInfo } from "./useWeaponMountInfo"
 
 export type AssignedHullmod = { id: string; mod: hullMod; cost: number }
 export type BuiltInHullmod = { id: string; mod: hullMod }
@@ -23,13 +25,28 @@ export function useLoadoutOp(activeTile: fleetEntry) {
     () => new Map(allWeaponStats.map((s) => [s.id, Number(s.OPs)])),
     [allWeaponStats]
   )
+  const mountInfo = useWeaponMountInfo()
+  const allDiscountIds = useMemo(
+    () => [
+      ...(activeTile.ship.meta.builtInMods ?? []),
+      ...(activeTile.hullmods ?? [])
+    ],
+    [activeTile.ship.meta.builtInMods, activeTile.hullmods]
+  )
   const opOf = useCallback(
     (wid: string | undefined) => {
       if (!wid) return 0
       const op = opById.get(wid)
-      return Number.isFinite(op) ? (op as number) : 0
+      const base = Number.isFinite(op) ? (op as number) : 0
+      const info = mountInfo.get(wid)
+      if (!info) return base
+      return getEffectiveWeaponOp(base, allDiscountIds, {
+        weaponId: wid,
+        size: info.size,
+        mountType: info.mountType
+      })
     },
-    [opById]
+    [opById, mountInfo, allDiscountIds]
   )
   const weaponsOp = useMemo(() => {
     return Object.values(activeTile.weapons ?? {}).reduce(

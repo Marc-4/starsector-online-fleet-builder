@@ -5,6 +5,8 @@ import {
   getAllWingStats,
   getHullModCost
 } from "#/lib/csvParser"
+import { getEffectiveWeaponOp } from "#/hullModData"
+import { useWeaponMountInfo } from "#/hooks/useWeaponMountInfo"
 import type { fleetEntry } from "#/types"
 import ShipDisplay from "./data_screen/shipDisplay"
 import CommonButton from "./commonBtn"
@@ -46,6 +48,7 @@ export default function SidebarShipTile({
   const targetMax = tileSize > 0 ? tileSize * fill : 0
   const zoom = targetMax > 0 ? targetMax / maxDim : 0.5
 
+  const mountInfo = useWeaponMountInfo()
   const unspentOp = useMemo(() => {
     const available = entry.ship.stats["ordnance points"] ?? 0
     const weaponOpById = new Map(
@@ -55,10 +58,22 @@ export default function SidebarShipTile({
       getAllWingStats().map((s) => [s.id, Number(s["op cost"])])
     )
     const hullModById = new Map(getAllHullMods().map((h) => [h.id, h]))
+    const discountIds = [
+      ...(entry.ship.meta.builtInMods ?? []),
+      ...(entry.hullmods ?? [])
+    ]
     const num = (n: unknown) => (Number.isFinite(Number(n)) ? Number(n) : 0)
     let spent = entry.capacitors + entry.vents
     for (const wid of Object.values(entry.weapons ?? {})) {
-      spent += num(weaponOpById.get(wid))
+      const base = num(weaponOpById.get(wid))
+      const info = mountInfo.get(wid)
+      spent += info
+        ? getEffectiveWeaponOp(base, discountIds, {
+            weaponId: wid,
+            size: info.size,
+            mountType: info.mountType
+          })
+        : base
     }
     for (const wingId of entry.fighters ?? []) {
       if (wingId) spent += num(wingOpById.get(wingId))
@@ -68,7 +83,7 @@ export default function SidebarShipTile({
       if (mod) spent += getHullModCost(mod, meta.hullSize)
     }
     return available - spent
-  }, [entry, meta.hullSize])
+  }, [entry, meta.hullSize, mountInfo])
 
   return (
     // biome-ignore lint: dont care.

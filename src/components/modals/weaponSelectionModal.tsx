@@ -11,6 +11,7 @@ import {
   getWeaponMountType,
   isWeaponSizeCompatible
 } from "#/lib/weaponCompat"
+import { getEffectiveWeaponOp } from "#/hullModData"
 import { getAllWeapons } from "#/lib/weaponParser"
 import type { weapon, weaponSlot, weaponStats } from "#/types"
 import CommonButton from "../commonBtn"
@@ -24,7 +25,8 @@ export default function WeaponSelectionModal({
   onSelect,
   onRemoveWeapon,
   mountedWeaponIds,
-  remainingOpForSlot
+  remainingOpForSlot,
+  installedHullmodIds = []
 }: {
   slot: weaponSlot
   onClose: () => void
@@ -32,6 +34,8 @@ export default function WeaponSelectionModal({
   onRemoveWeapon?: (weapon: weapon) => void
   mountedWeaponIds?: Record<string, string>
   remainingOpForSlot?: number
+  /** Built-in + installed hullmod ids, for weapon OP discounts (e.g. HBI). */
+  installedHullmodIds?: string[]
 }) {
   const [allWeapons, setAllWeapons] = useState<weapon[]>([])
   const [allWeaponStats, setAllWeaponStats] = useState<weaponStats[]>([])
@@ -284,9 +288,18 @@ export default function WeaponSelectionModal({
 
             <div className="w-full flex-1 flex flex-col gap-1 p-2 max-h-72 min-h-72 overflow-auto">
               {filteredWeapons.map((w) => {
-                const op = Number(
+                const base = Number(
                   getWeaponStats({ weapon: w, weaponStats: allWeaponStats })
                     ?.OPs
+                )
+                const op = getEffectiveWeaponOp(
+                  base,
+                  installedHullmodIds,
+                  {
+                    weaponId: w.id,
+                    size: w.size,
+                    mountType: getWeaponMountType(w)
+                  }
                 )
                 const unaffordable =
                   remainingOpForSlot != null &&
@@ -298,6 +311,7 @@ export default function WeaponSelectionModal({
                     key={w.id}
                     weapon={w}
                     allWeaponStats={allWeaponStats}
+                    opCost={Number.isFinite(base) ? op : undefined}
                     onSelect={onSelect}
                     onRemove={onRemoveWeapon}
                     onClose={onClose}

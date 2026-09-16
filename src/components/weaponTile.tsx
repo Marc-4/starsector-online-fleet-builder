@@ -6,6 +6,8 @@ import type { weapon, weaponStats, weaponType } from "#/types"
 type Props = {
   weapon: weapon
   allWeaponStats: weaponStats[]
+  /** Effective OP cost after hullmod discounts; falls back to CSV OPs. */
+  opCost?: number
   onSelect?: (weapon: weapon) => void
   onRemove?: (weapon: weapon) => void
   mounted?: boolean
@@ -30,6 +32,7 @@ export const TYPE_COLOR_MAP: Record<weaponType, string> = {
 export default function WeaponTile({
   weapon: w,
   allWeaponStats,
+  opCost,
   onSelect,
   onRemove,
   onClose,
@@ -83,7 +86,7 @@ export default function WeaponTile({
       </div>
       <div className="absolute bottom-0 h-fit right-1 flex flex-col items-end gap-0 shrink-0">
         <span className="text-amber-300 text-md">
-          {stats ? `${stats.OPs ?? "-"}` : ""}
+          {opCost ?? (stats ? `${stats.OPs ?? "-"}` : "")}
         </span>
         <span className="text-gray-400 text-[10px]">ORDINANCE POINTS</span>
       </div>

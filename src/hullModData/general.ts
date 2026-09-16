@@ -189,6 +189,13 @@ export function describeHeavyBallisticsIntegration(mod: hullMod): string {
   return formatHullmodDesc(rawDesc(mod), ["10"])
 }
 
+export function getHeavyBallisticsIntegrationDiscount(ctx: {
+  size: string
+  mountType: string
+}): number {
+  return ctx.size === "LARGE" && ctx.mountType === "BALLISTIC" ? 10 : 0
+}
+
 export function describePdIntegration(mod: hullMod): string {
   return formatHullmodDesc(rawDesc(mod), ["4", "50%"])
 }

@@ -12,8 +12,9 @@ import {
   hydrateFleet
 } from "#/lib/fleetCodec"
 import { getMaxCapsVents } from "#/lib/fluxLimits"
-import { getDeploymentCostDelta } from "#/hullModData"
+import { getDeploymentCostDelta, getEffectiveWeaponOp } from "#/hullModData"
 import { getAllShips } from "#/lib/shipParser"
+import { useWeaponMountInfo } from "#/hooks/useWeaponMountInfo"
 import type { fleetEntry } from "#/types"
 import AddShipButton from "./addShipBtn"
 import ActiveShipPanel from "./data_screen/activeShipPanel"
@@ -75,10 +76,24 @@ export default function Screen({ children }: { children?: ReactNode }) {
     () => new Map(allWingStats.map((s) => [s.id, Number(s["op cost"])])),
     [allWingStats]
   )
-  const weaponsOpOf = (weapons?: Record<string, string>) =>
+  const mountInfo = useWeaponMountInfo()
+  const weaponsOpOf = (
+    weapons?: Record<string, string>,
+    entry?: Pick<fleetEntry, "hullmods" | "ship">
+  ) =>
     Object.values(weapons ?? {}).reduce((sum, wid) => {
       const op = opById.get(wid)
-      return sum + (Number.isFinite(op) ? (op as number) : 0)
+      const base = Number.isFinite(op) ? (op as number) : 0
+      const info = mountInfo.get(wid)
+      if (!info || !entry) return sum + base
+      return (
+        sum +
+        getEffectiveWeaponOp(
+          base,
+          [...(entry.ship.meta.builtInMods ?? []), ...(entry.hullmods ?? [])],
+          { weaponId: wid, size: info.size, mountType: info.mountType }
+        )
+      )
     }, 0)
   const fightersOpOf = (fighters?: string[]) =>
     (fighters ?? []).reduce((sum, wingId) => {
@@ -222,7 +237,7 @@ export default function Screen({ children }: { children?: ReactNode }) {
       if (cur >= max) return prev
       const nxt = Math.min(max, cur + step)
       const loadoutOp =
-        weaponsOpOf(prev[idx].weapons) +
+        weaponsOpOf(prev[idx].weapons, prev[idx]) +
         fightersOpOf(prev[idx].fighters) +
         hullmodsOpOf(prev[idx].hullmods, prev[idx].ship.meta.hullSize)
       const clamped = Math.min(
@@ -243,7 +258,7 @@ export default function Screen({ children }: { children?: ReactNode }) {
         nxt,
         availableOp -
           prev.vents -
-          weaponsOpOf(prev.weapons) -
+          weaponsOpOf(prev.weapons, prev) -
           fightersOpOf(prev.fighters) -
           hullmodsOpOf(prev.hullmods, prev.ship.meta.hullSize)
       )
@@ -288,7 +303,7 @@ export default function Screen({ children }: { children?: ReactNode }) {
       if (cur >= max) return prev
       const nxt = Math.min(max, cur + step)
       const loadoutOp =
-        weaponsOpOf(prev[idx].weapons) +
+        weaponsOpOf(prev[idx].weapons, prev[idx]) +
         fightersOpOf(prev[idx].fighters) +
         hullmodsOpOf(prev[idx].hullmods, prev[idx].ship.meta.hullSize)
       const clamped = Math.min(
@@ -309,7 +324,7 @@ export default function Screen({ children }: { children?: ReactNode }) {
         nxt,
         availableOp -
           prev.capacitors -
-          weaponsOpOf(prev.weapons) -
+          weaponsOpOf(prev.weapons, prev) -
           fightersOpOf(prev.fighters) -
           hullmodsOpOf(prev.hullmods, prev.ship.meta.hullSize)
       )
