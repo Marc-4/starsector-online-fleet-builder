@@ -35,6 +35,7 @@ export default function WeaponSelectionModal({
 }) {
   const [allWeapons, setAllWeapons] = useState<weapon[]>([])
   const [allWeaponStats, setAllWeaponStats] = useState<weaponStats[]>([])
+  const [isLoading, setIsLoading] = useState(true)
   const [searchString, setSearchString] = useState("")
   const [activeWeaponTypeFilters, setActiveWeaponTypeFilters] = useState<
     string[]
@@ -187,14 +188,20 @@ export default function WeaponSelectionModal({
   ])
 
   useEffect(() => {
+    let cancelled = false
     void (async () => {
       const [weapons, stats] = await Promise.all([
         getAllWeapons(),
         getAllWeaponStats()
       ])
+      if (cancelled) return
       setAllWeapons(weapons.sort((a, b) => a.id.localeCompare(b.id)))
       setAllWeaponStats(stats)
+      setIsLoading(false)
     })()
+    return () => {
+      cancelled = true
+    }
   }, [])
 
   useEffect(() => {
@@ -301,10 +308,16 @@ export default function WeaponSelectionModal({
                   />
                 )
               })}
-              {filteredWeapons.length === 0 && (
-                <p className="text-cyan-200/60 text-sm text-center py-8">
-                  No weapons fit {slot.type} {slot.size}
+              {isLoading ? (
+                <p className="text-cyan-200/60 text-sm text-center py-8 animate-pulse">
+                  Loading weapon data…
                 </p>
+              ) : (
+                filteredWeapons.length === 0 && (
+                  <p className="text-cyan-200/60 text-sm text-center py-8">
+                    No weapons fit {slot.type} {slot.size}
+                  </p>
+                )
               )}
             </div>
           </div>
