@@ -68,3 +68,44 @@ export function StatValue({
     </span>
   )
 }
+
+/**
+ * Matches a number with optional sign/decimal and optional %/x/° suffix,
+ * e.g. "+100", "-40%", "0.22", "1.5x", "60°".
+ */
+const NUMBER_TOKEN =
+  /[+-]?\d+(?:\.\d+)?(?:\s?(?:%|x|°))?|\(\+\d+(?:\.\d+)?\)/g
+
+/**
+ * Splits prose into text/number segments, coloring every number amber-300.
+ * With `negativeOrange`, negatively-signed numbers render orange-400 instead.
+ * Used for hullmod descriptions so values stand out from the body text.
+ */
+export function highlightNumbers(
+  text: string,
+  opts: { negativeOrange?: boolean } = {}
+): ReactNode {
+  const out: ReactNode[] = []
+  let last = 0
+  let key = 0
+  for (const m of text.matchAll(NUMBER_TOKEN)) {
+    const idx = m.index ?? 0
+    if (idx > last) out.push(text.slice(last, idx))
+    const isNegative = m[0].startsWith("-")
+    out.push(
+      <span
+        key={key++}
+        className={
+          opts.negativeOrange && isNegative
+            ? "text-orange-400"
+            : "text-amber-300"
+        }
+      >
+        {m[0]}
+      </span>
+    )
+    last = idx + m[0].length
+  }
+  if (last < text.length) out.push(text.slice(last))
+  return <>{out}</>
+}

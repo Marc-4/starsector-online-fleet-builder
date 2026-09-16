@@ -175,14 +175,14 @@ export default function HullmodSelectionModal({
         onClick={onClose}
         className="fixed inset-0 z-30 bg-transparent cursor-default"
       />
-      <div className="fixed inset-0 z-40 flex gap-1 w-[70%] max-lg:flex-col mx-auto h-full justify-center items-center pointer-events-none">
+      <div className="fixed inset-0 z-40 flex gap-1 w-[80%] max-lg:flex-col mx-auto h-full justify-center items-center pointer-events-none">
         {hovered ? (
-          <div className="flex w-[50%] min-w-80 h-fit max-h-full overflow-auto">
+          <div className="flex w-[60%] min-w-80 h-fit max-h-full overflow-auto">
             <HullmodTooltip hullmod={hovered} />
           </div>
         ) : (
           <div
-            className="flex w-[50%] min-w-80 opacity-0 h-64 pointer-events-none"
+            className="flex w-[60%] min-w-80 opacity-0 h-64 pointer-events-none"
             aria-hidden="true"
           />
         )}
