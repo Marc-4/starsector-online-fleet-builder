@@ -87,10 +87,9 @@ routes → Screen ─┬─ sidebar: SidebarShipTile[] + AddShipButton
 ### Game Data
 _Files_
 
-hull_mods.csv - src/hullModData
-.ship, .skin files, ship_data.csv & wing_data.csv - src/shipData
-.wpn, .proj files & weapon_data.csv - src/weaponData
-
+data/hullmods/hull_mods.csv - src/hullModData
+data/hulls - src/shipData
+data/weapons - src/weaponData
 
 _Images_ 
 grahpics/hullmods - public/hullmods (converted to .webp)
