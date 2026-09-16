@@ -329,11 +329,6 @@ export function getHullModInapplicability(
   const tags = `,${(h.tags || "").toLowerCase().replace(/\s+/g, "")},`
   const has = (...ts: string[]) => ts.some((t) => tags.includes(`,${t},`))
 
-  // Hull-exclusive faction tech
-  if (has("fragment") && !ctx.isThreat)
-    return "Requires a Threat hull"
-  if (has("shrouded") && !ctx.isDweller)
-    return "Requires a Dweller hull"
   // Phase-only mods (coils, anchor)
   if (has("phase") && !has("non_phase") && !ctx.isPhase)
     return "Can only be installed on phase ships"
