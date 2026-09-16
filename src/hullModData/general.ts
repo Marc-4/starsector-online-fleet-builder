@@ -160,6 +160,27 @@ export function describeMissileAutoloaderSMod(mod: hullMod): string {
   return formatHullmodDesc(rawSModDesc(mod), ["10"])
 }
 
+export function tablesMissileAutoloader(mod: hullMod): HullmodTable[] {
+  void mod
+  return [
+    {
+      head: ["Ship size", "Small missiles", "Reload capacity"],
+      rows: [
+        ["Frigate", "2+", "4"],
+        ["Frigate", "1", "6"],
+        ["Destroyer", "2+", "4"],
+        ["Destroyer", "1", "9"],
+        ["Cruiser", "4+", "8"],
+        ["Cruiser", "3", "12"],
+        ["Cruiser", "1-2", "15"],
+        ["Capital", "7+", "10"],
+        ["Capital", "4-6", "18"],
+        ["Capital", "1-3", "24"]
+      ]
+    }
+  ]
+}
+
 export function describeMissileReload(mod: hullMod): string {
   return formatHullmodDesc(rawDesc(mod), [])
 }

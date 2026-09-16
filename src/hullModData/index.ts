@@ -200,6 +200,7 @@ import {
   describeHighScatterAmpSMod,
   describeMissileAutoloader,
   describeMissileAutoloaderSMod,
+  tablesMissileAutoloader,
   describeMissileReload,
   describeHeavyBallisticsIntegration,
   describePdIntegration,
@@ -563,7 +564,8 @@ export const HULLMOD_IMPLS: Record<string, HullmodImpl> = {
   },
   missile_autoloader: {
     describe: describeMissileAutoloader,
-    describeSMod: describeMissileAutoloaderSMod
+    describeSMod: describeMissileAutoloaderSMod,
+    tables: tablesMissileAutoloader
   },
   missile_reload: { describe: describeMissileReload },
   hbi: { describe: describeHeavyBallisticsIntegration },
