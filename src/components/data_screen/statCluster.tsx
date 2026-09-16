@@ -31,8 +31,6 @@ export default function StatCluster({
   phaseUpkeepBase,
   weaponFluxPerSecond,
   weaponFluxPerSecondBase,
-  deploymentCost,
-  deploymentBase,
   showInfo,
   onInfoToggle,
   onCapacitorsIncrement,
@@ -68,8 +66,6 @@ export default function StatCluster({
   phaseUpkeepBase?: number
   weaponFluxPerSecond?: number
   weaponFluxPerSecondBase?: number
-  deploymentCost?: number
-  deploymentBase?: number
   showInfo?: boolean
   onInfoToggle?: () => void
   onCapacitorsIncrement?: (e?: React.MouseEvent) => void
