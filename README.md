@@ -14,10 +14,10 @@ React SPA for creating starsector fleets: assign weapons, hullmods, fighters, an
 - add fighters
 - view fighter details
 - view hullmod details 
+- add hullmods to ships
 
 ## In Progress (in order of importance)
 
-- add hullmods to ships (almost done)
 - build in hullmods
 - assign officers to ships
 - customize officer skills 
