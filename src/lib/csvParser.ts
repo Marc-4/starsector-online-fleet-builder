@@ -291,6 +291,12 @@ export function getHullModShipContext(
     m.toLowerCase()
   )
   const installed = (installedIds ?? []).map((m) => m.toLowerCase())
+  // Vanilla counts built-in mods as installed for incompatibility purposes
+  // (e.g. a built-in Integrated Targeting Unit still blocks Dedicated
+  // Targeting Core).
+  for (const m of builtInMods) {
+    if (!installed.includes(m)) installed.push(m)
+  }
   const slots = ship.meta.weaponSlots ?? []
   return {
     hullSize: (ship.meta.hullSize || "").toUpperCase(),
@@ -355,6 +361,20 @@ export function getHullModInapplicability(
   }
   if (has("shields") && !ctx.hasShields)
     return "Requires shields"
+  // Targeting/range exclusives: ITU, DTC, and Distributed Fire Control are
+  // mutually incompatible in vanilla (none of their bonuses stack).
+  const thisId = (h.id || "").toLowerCase()
+  const RANGE_EXCLUSIVES: Record<string, string> = {
+    targetingunit: "Integrated Targeting Unit",
+    dedicated_targeting_core: "Dedicated Targeting Core",
+    distributed_fire_control: "Distributed Fire Control"
+  }
+  if (thisId in RANGE_EXCLUSIVES) {
+    const clash = Object.keys(RANGE_EXCLUSIVES).find(
+      (other) => other !== thisId && ctx.installedIds.includes(other)
+    )
+    if (clash) return `Incompatible with ${RANGE_EXCLUSIVES[clash]}`
+  }
   // Carrier mods
   if (h.id === "converted_hangar" && ctx.hullSize === "FRIGATE")
     return "Can not be installed on frigates"
