@@ -75,9 +75,11 @@ export function isWeaponSizeCompatible(
   weaponType: weapon["type"]
 ): boolean {
   if (weaponSize === slotSize) return true
+  // Vanilla allows mounting one size smaller when the mount type accepts the
+  // weapon (e.g. a SMALL energy weapon in a MEDIUM universal mount).
   if (
     SIZE_ORDER[weaponSize] === SIZE_ORDER[slotSize] - 1 &&
-    weaponType === slotType
+    canFitWeaponMount(slotType, weaponType)
   )
     return true
   return false
