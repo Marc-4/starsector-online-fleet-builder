@@ -193,14 +193,6 @@ export default function StatCluster({
             <StatValue current={hull} base={hullBase} />
           </p>
         </div>
-        {deploymentCost !== undefined && (
-          <div className="ss-label-col">
-            <p className="ss-label-text max-sm:text-xs">DEPLOYMENT</p>
-            <p className="text-base sm:text-lg">
-              <StatValue current={deploymentCost} base={deploymentBase} />
-            </p>
-          </div>
-        )}
       </div>
       <div className="flex mt-2 gap-1 max-sm:gap-0.5">
         <div className="flex  absolute flex-col gap-2 sm:gap-4">
