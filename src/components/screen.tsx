@@ -42,9 +42,7 @@ export default function Screen({ children }: { children?: ReactNode }) {
   useEffect(() => {
     if (activeTile && !fleet.some((e) => e.id === activeTile.id)) {
       setActiveTile(
-        prevFleetLenRef.current === 0 && fleet.length > 0
-          ? fleet[0]
-          : undefined
+        prevFleetLenRef.current === 0 && fleet.length > 0 ? fleet[0] : undefined
       )
     } else if (
       prevFleetLenRef.current === 0 &&
@@ -178,7 +176,16 @@ export default function Screen({ children }: { children?: ReactNode }) {
   const updateEntry = (
     id: string,
     patch: Partial<
-      Pick<fleetEntry, "capacitors" | "vents" | "cr" | "customName" | "weapons" | "fighters" | "hullmods">
+      Pick<
+        fleetEntry,
+        | "capacitors"
+        | "vents"
+        | "cr"
+        | "customName"
+        | "weapons"
+        | "fighters"
+        | "hullmods"
+      >
     >
   ) => {
     setFleet((prev) => {
@@ -339,7 +346,13 @@ export default function Screen({ children }: { children?: ReactNode }) {
   }
   const onStrip = () => {
     if (!activeTile) return
-    updateEntry(activeTile.id, { weapons: {}, fighters: [], hullmods: [], capacitors: 0, vents: 0 })
+    updateEntry(activeTile.id, {
+      weapons: {},
+      fighters: [],
+      hullmods: [],
+      capacitors: 0,
+      vents: 0
+    })
   }
   const updateGrid = () => {
     if (!gridRef.current) return
@@ -456,6 +469,10 @@ export default function Screen({ children }: { children?: ReactNode }) {
             />
           )}
           {children}
+        </div>
+        <div className="pointer-events-none absolute bottom-6 right-3 z-20 text-right text-xs font-normal text-blue-200/70 leading-tight">
+          <p>right click to remove weapon/fighter</p>
+          <p>shift + click to place the previously placed weapon/fighter</p>
         </div>
       </div>
     </div>

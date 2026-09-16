@@ -3,7 +3,7 @@ import { getAllShipStats, getShipStats } from "#/lib/csvParser"
 import {
   decodeFleetEntries,
   encodeFleetToHash,
-  hydrateFleet,
+  hydrateFleet
 } from "#/lib/fleetCodec"
 import { getAllShips, isModule } from "#/lib/shipParser"
 import type { ship, shipStats } from "#/types"
@@ -12,7 +12,7 @@ import ShipFilters from "../shipFilters"
 import ShipTile from "../shipTile"
 
 export default function ShipSelectionModal({
-  onClose,
+  onClose
 }: {
   onClose: () => void
 }) {
@@ -57,24 +57,38 @@ export default function ShipSelectionModal({
     []
   )
   const [showModules, setShowModules] = useState(false)
+  const [showSelectedFirst, setShowSelectedFirst] = useState(false)
 
   const filteredShips = useMemo(() => {
-    return allShips.filter((ship) => {
-      if (searchString.length > 0) {
-        const haystack = `${ship.hullId} ${ship.hullName}`.toLowerCase()
-        if (!haystack.includes(searchString)) return false
-      }
-      if (!showModules && isModule({ ship })) return false
-      const stylePass =
-        activeStyleFilters.length === 0 ||
-        activeStyleFilters.includes(ship.style)
-      const hullSizePass =
-        activeHullSizeFilters.length === 0 ||
-        activeHullSizeFilters.includes(ship.hullSize)
-      return stylePass && hullSizePass
-    })
+    const selectedIds = new Set(selectedShips.map((s) => s.hullId))
+    return (
+      allShips
+        .filter((ship) => {
+          if (searchString.length > 0) {
+            const haystack = `${ship.hullId} ${ship.hullName}`.toLowerCase()
+            if (!haystack.includes(searchString)) return false
+          }
+          if (!showModules && isModule({ ship })) return false
+          const stylePass =
+            activeStyleFilters.length === 0 ||
+            activeStyleFilters.includes(ship.style)
+          const hullSizePass =
+            activeHullSizeFilters.length === 0 ||
+            activeHullSizeFilters.includes(ship.hullSize)
+          return stylePass && hullSizePass
+        })
+        // Stable sort: selected tiles bubble to the top, order kept otherwise.
+        .sort((a, b) =>
+          showSelectedFirst
+            ? Number(selectedIds.has(b.hullId)) -
+              Number(selectedIds.has(a.hullId))
+            : 0
+        )
+    )
   }, [
     allShips,
+    selectedShips,
+    showSelectedFirst,
     activeStyleFilters,
     activeHullSizeFilters,
     showModules,
@@ -110,13 +124,19 @@ export default function ShipSelectionModal({
 
   const onConfirm = () => {
     const addedIds = selectedShips.flatMap((s) =>
-      Array.from(
-        { length: selectedShipCounts[s.hullId] ?? 1 },
-        () => s.hullId
-      )
+      Array.from({ length: selectedShipCounts[s.hullId] ?? 1 }, () => s.hullId)
     )
     const existingEntries = decodeFleetEntries(window.location.hash) ?? []
-    const addedEntries = addedIds.map((hullId) => ({ hullId, capacitors: 0, vents: 0, cr: 70, customName: "", weapons: {}, fighters: [], hullmods: [] }))
+    const addedEntries = addedIds.map((hullId) => ({
+      hullId,
+      capacitors: 0,
+      vents: 0,
+      cr: 70,
+      customName: "",
+      weapons: {},
+      fighters: [],
+      hullmods: []
+    }))
     const mergedEntries = [...existingEntries, ...addedEntries]
     const mergedFleet = hydrateFleet(mergedEntries, allShips, allShipStats)
     const hash = encodeFleetToHash(mergedFleet)
@@ -157,13 +177,13 @@ export default function ShipSelectionModal({
         onClick={onClose}
         className="absolute inset-0 bg-gray-950/60"
       />
-      <div className="relative z-10 flex flex-col gap-2 w-[80%] h-[80%] bg-gray-950/30 p-1 border border-cyan-200">
-        <div className="flex m-1 mb-0 p-1 pb-0 gap-1 justify-center ">
-          <div className="gap-2 flex flex-col">
-            <div className="flex gap-2 items-center">
+      <div className="relative z-10 flex flex-col gap-2 w-[80%] h-[80%] max-md:w-[95%] max-md:h-[93%] bg-gray-950/30 p-1 border border-cyan-200 overflow-hidden">
+        <div className="flex max-md:flex-col m-1 mb-0 p-1 pb-0 gap-1 justify-center max-md:justify-start">
+          <div className="gap-2 flex flex-col min-w-0 flex-1 max-md:overflow-y-auto max-md:max-h-[32vh] max-md:pr-8">
+            <div className="flex gap-2 items-center flex-wrap">
               <h2 className="text-cyan-200 ">Search: </h2>
               <input
-                className="border border-cyan-200 w-56 max-[470px]:w-40 text-cyan-200"
+                className="border border-cyan-200 w-56 max-md:w-full max-md:max-w-56 text-cyan-200"
                 type="search"
                 value={searchString}
                 onChange={(e) =>
@@ -178,17 +198,25 @@ export default function ShipSelectionModal({
               setActiveStyleFilters={setActiveStyleFilters}
               setShowModules={setShowModules}
               showModules={showModules}
+              setShowSelectedFirst={setShowSelectedFirst}
+              showSelectedFirst={showSelectedFirst}
             />
-            <p className="text-cyan-200 text-xs">{`showing ${filteredShipCount} of ${totalShipCount} ships`}</p>
+
+            <div className="flex gap-2">
+              <p className="text-cyan-200 text-xs">{`showing ${filteredShipCount} of ${totalShipCount} ships`}</p>
+              <span className="text-xs text-gray-400">
+                alt + click to single out a filter
+              </span>
+            </div>
           </div>
           <CommonButton
             text="x"
             onClick={() => onClose()}
             clipPath={false}
-            className="cursor-pointer rounded-xs ml-auto w-7 h-7 px-2 font-bold hover:brightness-110 text-2xl text-cyan-200 flex items-center justify-center"
+            className="cursor-pointer rounded-xs ml-auto max-md:ml-0 max-md:absolute max-md:top-1 max-md:right-1 w-7 h-7 px-2 font-bold hover:brightness-110 text-2xl text-cyan-200 flex items-center justify-center shrink-0"
           />
         </div>
-        <div className="w-full h-full mb-4 grid grid-cols-[repeat(auto-fit,13rem)] justify-center gap-2 content-start p-4 overflow-auto">
+        <div className="w-full flex-1 min-h-0 mb-4 grid grid-cols-[repeat(auto-fit,13rem)] max-md:grid-cols-[repeat(auto-fit,minmax(9rem,1fr))] justify-center gap-2 max-md:gap-1.5 content-start p-4 max-md:p-2 overflow-auto [&>*]:max-md:w-full [&>*]:max-md:h-44">
           {filteredShips.map((ship, i) => {
             return (
               <ShipTile
@@ -203,20 +231,23 @@ export default function ShipSelectionModal({
             )
           })}
         </div>
-        <CommonButton
-          text="Ok"
-          onClick={onConfirm}
-          className="disabled:brightness-50 disabled:cursor-not-allowed shadow-2xl shadow-black w-fit absolute bottom-2 left-0 right-0 mx-auto"
-          disabled={selectedShips.length === 0}
-        />
-        <div className="absolute left-0 bottom-0 text-amber-300 flex gap-0 flex-col">
-          <p>
-            {`
+        <div className="flex items-end justify-between gap-2 px-1 pb-1 max-md:text-sm">
+          <div className="text-amber-300 flex gap-0 flex-col leading-tight">
+            <p>
+              {`
           Ship Count:
           ${totalSelectedShipsCount}
           `}
-          </p>
-          <p>{`Total DP: ${totalSelectedShipsDPCost}`} </p>
+            </p>
+            <p>{`Total DP: ${totalSelectedShipsDPCost}`} </p>
+          </div>
+          <CommonButton
+            text="Ok"
+            onClick={onConfirm}
+            className="disabled:brightness-50 disabled:cursor-not-allowed shadow-2xl shadow-black w-fit"
+            disabled={selectedShips.length === 0}
+          />
+          <div className="w-[7rem] max-md:hidden" />
         </div>
       </div>
     </div>

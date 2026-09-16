@@ -31,6 +31,11 @@ export default function HullmodRoster({
               className="flex items-center gap-1 text-sm"
               onMouseEnter={() => onHoverHullmod(mod)}
               onMouseLeave={() => onHoverHullmod(null)}
+              onFocus={() => onHoverHullmod(mod)}
+              onBlur={() => onHoverHullmod(null)}
+              onTouchStart={() => onHoverHullmod(mod)}
+              onTouchEnd={() => onHoverHullmod(null)}
+              onTouchCancel={() => onHoverHullmod(null)}
             >
               <span className="text-white font-bold [-webkit-text-stroke:0.5px_var(--color-gray-950)]">
                 {mod.name}
@@ -58,6 +63,11 @@ export default function HullmodRoster({
               className="flex items-center gap-1 text-sm"
               onMouseEnter={() => onHoverHullmod(mod)}
               onMouseLeave={() => onHoverHullmod(null)}
+              onFocus={() => onHoverHullmod(mod)}
+              onBlur={() => onHoverHullmod(null)}
+              onTouchStart={() => onHoverHullmod(mod)}
+              onTouchEnd={() => onHoverHullmod(null)}
+              onTouchCancel={() => onHoverHullmod(null)}
             >
               <span className="text-cyan-100">{mod.name}</span>
               <span className="text-amber-300 text-lg font-bold ">{cost}</span>
@@ -90,8 +100,9 @@ export default function HullmodRoster({
         onClick={onAdd}
       />
       <CommonButton
+        disabled
         text="Build in"
-        className="w-32 bg-lime-700 py-0.5 self-end"
+        className="w-32 disabled:opacity-50 disabled:cursor-not-allowed bg-lime-700 py-0.5 self-end"
       />
     </div>
   )

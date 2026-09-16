@@ -25,7 +25,9 @@ export default function ShipFilters({
   setActiveHullSizeFilters,
   activeHullSizeFilters,
   setShowModules,
-  showModules
+  showModules,
+  setShowSelectedFirst,
+  showSelectedFirst
 }: {
   setActiveStyleFilters: React.Dispatch<React.SetStateAction<string[]>>
   activeStyleFilters: string[]
@@ -33,6 +35,8 @@ export default function ShipFilters({
   activeHullSizeFilters: string[]
   setShowModules: React.Dispatch<React.SetStateAction<boolean>>
   showModules: boolean
+  setShowSelectedFirst: React.Dispatch<React.SetStateAction<boolean>>
+  showSelectedFirst: boolean
 }) {
   const onStyleFilterToggle = (
     filter: string,
@@ -68,40 +72,53 @@ export default function ShipFilters({
     setShowModules((prev) => !prev)
   }
 
+  const onShowSelectedFirstToggle = () => {
+    setShowSelectedFirst((prev) => !prev)
+  }
+
   return (
     <div className="flex gap-4 items-center">
       <h2
         title="alt+click on filters for inverse behavior."
-        className="text-cyan-200"
+        className="text-cyan-200 max-md:hidden"
       >
         Filters:{" "}
       </h2>
-      <div className="flex gap-1 flex-wrap w-full">
-        {SHIP_STYLE_FILTERS.map((style) => (
-          <ToggleButton
-            title="alt+click on filters for inverse behavior."
-            key={style}
-            active={activeStyleFilters.includes(style)}
-            onClick={(e) => onStyleFilterToggle(style, e)}
-            text={style.toLowerCase().replace("_", " ")}
-          />
-        ))}
-        <div className="w-px h-8 bg-cyan-200" />
-        {HULL_SIZE_FILTERS.map((size) => (
-          <ToggleButton
-            title="alt+click on filters for inverse behavior."
-            key={size}
-            active={activeHullSizeFilters.includes(size)}
-            onClick={(e) => onHullSizeFilterToggle(size, e)}
-            text={size.toLowerCase().replace("_", " ")}
-          />
-        ))}
-        <div className="w-px h-8 bg-cyan-200" />
+      <div className="flex gap-3 flex-row flex-wrap w-full">
+        <div className="flex gap-1 flex-wrap">
+          {SHIP_STYLE_FILTERS.map((style) => (
+            <ToggleButton
+              title="alt+click on filters for inverse behavior."
+              key={style}
+              active={activeStyleFilters.includes(style)}
+              onClick={(e) => onStyleFilterToggle(style, e)}
+              text={style.toLowerCase().replace("_", " ")}
+            />
+          ))}
+        </div>
+        <div className="w-px h-8 bg-cyan-200 max-md:hidden" />
+        <div className="flex gap-1 flex-wrap">
+          {HULL_SIZE_FILTERS.map((size) => (
+            <ToggleButton
+              title="alt+click on filters for inverse behavior."
+              key={size}
+              active={activeHullSizeFilters.includes(size)}
+              onClick={(e) => onHullSizeFilterToggle(size, e)}
+              text={size.toLowerCase().replace("_", " ")}
+            />
+          ))}
+        </div>
+        <div className="w-px h-8 bg-cyan-200 max-md:hidden" />
         <ToggleButton
           title="alt+click on filters for inverse behavior."
           active={showModules}
           onClick={() => onShowModuleToggle()}
           text={"Modules"}
+        />
+        <ToggleButton
+          active={showSelectedFirst}
+          onClick={() => onShowSelectedFirstToggle()}
+          text={"Selected first"}
         />
         <CommonButton
           text="reset"
