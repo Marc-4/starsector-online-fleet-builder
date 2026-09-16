@@ -28,7 +28,7 @@ React SPA for creating starsector fleets: assign weapons, hullmods, fighters, an
 - customize weapon groups
 - modded ships support
 
-## development setup
+## Development setup
 - run these in order
   - `npm install`
   - `npm run generate:manifests`
@@ -36,7 +36,7 @@ React SPA for creating starsector fleets: assign weapons, hullmods, fighters, an
   - `npm run dev`
 - visit `localhost:3000` in browser
 
-## component architecture
+## Component architecture
 
 State lives in `Screen` (`src/components/screen.tsx`). It owns the
 `fleetEntry[]` fleet plus the `activeTile`, and every mutation flows back
@@ -57,10 +57,10 @@ routes → Screen ─┬─ sidebar: SidebarShipTile[] + AddShipButton
                  │     ├─ HullmodRoster ── HullmodSelectionModal
                  │     ├─ ShipInfoCard / ShipName / ZoomControls / Strip btn
                  │     └─ hover tooltips (Weapon / Fighter / Hullmod)
-                 └─ URL hash (#fleet=…) ── fleetCodec (v3 binary + v1/v2 readers)
+                 └─ URL hash param ── fleetCodec
 ```
 
-## data propagatation
+## Data propagatation
 
 1. **User acts** in a component (e.g. mounts a weapon, adds vents/caps, picks a hullmod).
 2. **Guard first**: the component checks a `wouldExceed*` guard /
@@ -75,7 +75,7 @@ routes → Screen ─┬─ sidebar: SidebarShipTile[] + AddShipButton
    modded stats, guards → `StatCluster`, roster, bays, sidebar tile all
    reflect the new state.
 
-## data parsers
+## Data parsers
 
 - `lib/shipParser` / `weaponParser` / `projectileParser` — raw
   `.ship` / `.skin` / `.wpn` / `.proj` files (+ generated manifests).
