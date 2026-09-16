@@ -12,11 +12,11 @@ export function describeAugmentedEngines(mod: hullMod): string {
   return formatHullmodDesc(rawDesc(mod), ["2", "1"])
 }
 
-
 export function describeAugmentedEnginesSMod(mod: hullMod): string {
   return formatHullmodDesc(rawSModDesc(mod), ["1"])
 }
 
+export const INSULATED_ENGINES_MULT = 0.5
 export function applyInsulatedEngines(ship: completeShip): completeShip {
   const next = cloneShip(ship)
   mulStat(next.stats, "hitpoints", 1.1)
@@ -27,7 +27,6 @@ export function describeInsulatedEngines(mod: hullMod): string {
   return formatHullmodDesc(rawDesc(mod), ["100%", "10%", "50%", "100%", "90%"])
 }
 
-
 export function describeInsulatedEnginesSMod(mod: hullMod): string {
   return formatHullmodDesc(rawSModDesc(mod), ["100%", "90%"])
 }
@@ -36,15 +35,20 @@ export function describeSolarShielding(mod: hullMod): string {
   return formatHullmodDesc(rawDesc(mod), ["75%", "25%", "100%"])
 }
 
-
 export function describeSolarShieldingSMod(mod: hullMod): string {
   return formatHullmodDesc(rawSModDesc(mod), ["100%"])
 }
 
 export function describeSurveying(mod: hullMod): string {
-  return formatHullmodDesc(rawDesc(mod), ["40%", "40%", "40%", "40%", "5", "50%"])
+  return formatHullmodDesc(rawDesc(mod), [
+    "40%",
+    "40%",
+    "40%",
+    "40%",
+    "5",
+    "50%"
+  ])
 }
-
 
 export function describeSurveyingSMod(mod: hullMod): string {
   return formatHullmodDesc(rawSModDesc(mod), ["50%"])
@@ -69,7 +73,6 @@ export function describeConvertedFighterBay(mod: hullMod): string {
   return formatHullmodDesc(rawDesc(mod), ["50", "20%", "80%"])
 }
 
-
 export function describeConvertedFighterBaySMod(mod: hullMod): string {
   return formatHullmodDesc(rawSModDesc(mod), ["15%"])
 }
@@ -93,7 +96,6 @@ export function describeMilitarizedSubsystems(mod: hullMod): string {
   return formatHullmodDesc(rawDesc(mod), ["1", "100%"])
 }
 
-
 export function describeMilitarizedSubsystemsSMod(mod: hullMod): string {
   return formatHullmodDesc(rawSModDesc(mod), [])
 }
@@ -106,7 +108,10 @@ export function applyAdditionalBerthing(ship: completeShip): completeShip {
   addStat(
     next.stats,
     "max crew",
-    Math.max(byHullSize(ship.meta.hullSize, [30, 60, 100, 200]), Math.round(base * 0.3))
+    Math.max(
+      byHullSize(ship.meta.hullSize, [30, 60, 100, 200]),
+      Math.round(base * 0.3)
+    )
   )
   if ((ship.meta.builtInMods ?? []).includes("civgrade")) {
     mulStat(next.stats, "supplies/mo", 1.5, false)
@@ -115,7 +120,14 @@ export function applyAdditionalBerthing(ship: completeShip): completeShip {
 }
 
 export function describeAdditionalBerthing(mod: hullMod): string {
-  return formatHullmodDesc(rawDesc(mod), ["30", "60", "100", "200", "30%", "50%"])
+  return formatHullmodDesc(rawDesc(mod), [
+    "30",
+    "60",
+    "100",
+    "200",
+    "30%",
+    "50%"
+  ])
 }
 
 export function describeAdditionalBerthingSMod(mod: hullMod): string {
@@ -131,7 +143,11 @@ function applyCapacityCommon(
 ): completeShip {
   const next = cloneShip(ship)
   const base = Math.max(0, Number(next.stats[stat] ?? 0))
-  addStat(next.stats, stat, Math.max(byHullSize(ship.meta.hullSize, flat), Math.round(base * 0.3)))
+  addStat(
+    next.stats,
+    stat,
+    Math.max(byHullSize(ship.meta.hullSize, flat), Math.round(base * 0.3))
+  )
   if ((ship.meta.builtInMods ?? []).includes("civgrade")) {
     mulStat(next.stats, "supplies/mo", 1.5, false)
   }
@@ -143,7 +159,14 @@ export function applyAuxiliaryFuelTanks(ship: completeShip): completeShip {
 }
 
 export function describeAuxiliaryFuelTanks(mod: hullMod): string {
-  return formatHullmodDesc(rawDesc(mod), ["30", "60", "100", "200", "30%", "50%"])
+  return formatHullmodDesc(rawDesc(mod), [
+    "30",
+    "60",
+    "100",
+    "200",
+    "30%",
+    "50%"
+  ])
 }
 
 export function describeAuxiliaryFuelTanksSMod(mod: hullMod): string {
@@ -155,7 +178,14 @@ export function applyExpandedCargoHolds(ship: completeShip): completeShip {
 }
 
 export function describeExpandedCargoHolds(mod: hullMod): string {
-  return formatHullmodDesc(rawDesc(mod), ["30", "60", "100", "200", "30%", "50%"])
+  return formatHullmodDesc(rawDesc(mod), [
+    "30",
+    "60",
+    "100",
+    "200",
+    "30%",
+    "50%"
+  ])
 }
 
 export function describeExpandedCargoHoldsSMod(mod: hullMod): string {
@@ -181,7 +211,11 @@ export function describeEfficiencyOverhaulSMod(mod: hullMod): string {
 
 // Fleet sensors and combat vision are fleet-level (describe-only).
 export function describeHighResSensors(mod: hullMod): string {
-  return formatHullmodDesc(rawDesc(mod), [])
+  void mod
+  return [
+    "Increases the fleet's sensor strength by 50/75/100/150 based on hull size, with diminishing returns from multiple ships.",
+    "Requires at least 10% combat readiness to function."
+  ].join("\n\n")
 }
 
 export function describeHighResSensorsSMod(mod: hullMod): string {
@@ -244,7 +278,13 @@ export function applyConvertedHangar(ship: completeShip): completeShip {
 }
 
 export function describeConvertedHangar(mod: hullMod): string {
-  return formatHullmodDesc(rawDesc(mod), [])
+  void mod
+  return [
+    "Adds a fighter bay to the ship using an improvised converted hangar.",
+    "Increases fighter refit time by 1.5x, and the fighter replacement rate decays and recovers 1.5x more slowly.",
+    "Increases the minimum crew required by 20 to account for pilots and fighter crews.",
+    "Increases the ship's deployment points and supply cost to recover by 1 for every 5 ordnance points spent on fighters, or by at least 1 point."
+  ].join("\n\n")
 }
 
 export function describeConvertedHangarSMod(mod: hullMod): string {

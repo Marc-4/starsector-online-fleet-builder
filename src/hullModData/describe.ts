@@ -1,5 +1,13 @@
 import type { hullMod } from "#/types"
 
+/** Structured tooltip table: header labels plus body rows. */
+export type HullmodTable = {
+  /** Optional lead-in line rendered above the table. */
+  caption?: string
+  head: string[]
+  rows: string[][]
+}
+
 /** Fill `%s` placeholders left-to-right. Surplus placeholders are kept. */
 export function formatHullmodDesc(
   template: string | null | undefined,

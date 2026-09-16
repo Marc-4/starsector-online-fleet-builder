@@ -25,12 +25,7 @@ import ShipDisplay from "./shipDisplay"
 import ShipInfoCard from "./shipInfoCard"
 import ShipName from "./shipName"
 import StatCluster from "./statCluster"
-import {
-  getCrPenalty,
-  getFluxMult,
-  getMaxCr,
-  getVentMult
-} from "#/hullModData"
+import { getCrPenalty, getFluxMult, getMaxCr, getVentMult } from "#/hullModData"
 import { useLoadoutOp } from "../../hooks/useLoadoutOp"
 import ZoomControls from "./zoomControls"
 
@@ -206,10 +201,7 @@ export default function ActiveShipPanel({
       <div className="absolute top-1 left-1 right-1 z-20 flex flex-col gap-2 lg:flex-row lg:items-start lg:justify-between pointer-events-none">
         <div className="pointer-events-auto max-lg:w-fit max-lg:self-end origin-top-left">
           <CombatReadinessBar
-            cr={Math.max(
-              0,
-              activeTile.cr - getCrPenalty(allModIds)
-            )}
+            cr={Math.max(0, activeTile.cr - getCrPenalty(allModIds))}
             maxCr={getMaxCr(allModIds)}
           />
         </div>
@@ -229,23 +221,19 @@ export default function ActiveShipPanel({
             maxCapacitors={getMaxCapsVents(activeTile.ship.meta.hullSize)}
             vents={activeTile.vents}
             maxVents={getMaxCapsVents(activeTile.ship.meta.hullSize)}
-            fluxCapacity={
-              Math.round(
-                getModifiedStat(moddedShip.stats, "max flux", {
-                  capacitors: activeTile.capacitors
-                }).total * fluxMult
-              )
-            }
+            fluxCapacity={Math.round(
+              getModifiedStat(moddedShip.stats, "max flux", {
+                capacitors: activeTile.capacitors
+              }).total * fluxMult
+            )}
             fluxCapacityBase={
               getModifiedStat(activeTile.ship.stats, "max flux").base
             }
-            fluxDissipation={
-              Math.round(
-                getModifiedStat(moddedShip.stats, "flux dissipation", {
-                  vents: activeTile.vents * getVentMult(allModIds)
-                }).total * fluxMult
-              )
-            }
+            fluxDissipation={Math.round(
+              getModifiedStat(moddedShip.stats, "flux dissipation", {
+                vents: activeTile.vents * getVentMult(allModIds)
+              }).total * fluxMult
+            )}
             fluxDissipationBase={
               getModifiedStat(activeTile.ship.stats, "flux dissipation").base
             }
@@ -406,7 +394,7 @@ export default function ActiveShipPanel({
         />
       </div>
       {(hoveredWeapon || hoveredWing || hoveredHullmod) && !selectedSlot && (
-        <div className="absolute left-1 top-16 z-30 w-96 max-w-[80vw] h-fit overflow-auto pointer-events-none">
+        <div className="absolute left-1 top-16 z-30 w-[35%] h-fit overflow-auto pointer-events-none">
           {hoveredWeapon ? (
             <WeaponTooltip
               weapon={hoveredWeapon}

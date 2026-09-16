@@ -1,6 +1,11 @@
 /** Installable general-purpose ("Special") hullmods. */
 import type { completeShip, hullMod } from "#/types"
-import { formatHullmodDesc, rawDesc, rawSModDesc } from "./describe"
+import {
+  formatHullmodDesc,
+  rawDesc,
+  rawSModDesc,
+  type HullmodTable
+} from "./describe"
 import { addStat, byHullSize, cloneShip, mulStat } from "./modUtils"
 const PEAK_TIME_MULT = 1.5
 const CR_LOSS_MULT = 0.75
@@ -18,14 +23,26 @@ export function describeHardenedSubsystems(mod: hullMod): string {
 
 export function applyFluxCoil(ship: completeShip): completeShip {
   const next = cloneShip(ship)
-  addStat(next.stats, "max flux", byHullSize(ship.meta.hullSize, [600, 1200, 1800, 3000]))
+  addStat(
+    next.stats,
+    "max flux",
+    byHullSize(ship.meta.hullSize, [600, 1200, 1800, 3000])
+  )
   return next
 }
 
 export function describeFluxCoil(mod: hullMod): string {
-  return formatHullmodDesc(rawDesc(mod), ["600", "1200", "1800", "3000", "200", "400", "600", "1000"])
+  return formatHullmodDesc(rawDesc(mod), [
+    "600",
+    "1200",
+    "1800",
+    "3000",
+    "200",
+    "400",
+    "600",
+    "1000"
+  ])
 }
-
 
 export function describeFluxCoilSMod(mod: hullMod): string {
   return formatHullmodDesc(rawSModDesc(mod), ["200", "400", "600", "1000"])
@@ -33,14 +50,26 @@ export function describeFluxCoilSMod(mod: hullMod): string {
 
 export function applyFluxDistributor(ship: completeShip): completeShip {
   const next = cloneShip(ship)
-  addStat(next.stats, "flux dissipation", byHullSize(ship.meta.hullSize, [30, 60, 90, 150]))
+  addStat(
+    next.stats,
+    "flux dissipation",
+    byHullSize(ship.meta.hullSize, [30, 60, 90, 150])
+  )
   return next
 }
 
 export function describeFluxDistributor(mod: hullMod): string {
-  return formatHullmodDesc(rawDesc(mod), ["30", "60", "90", "150", "10", "20", "30", "50"])
+  return formatHullmodDesc(rawDesc(mod), [
+    "30",
+    "60",
+    "90",
+    "150",
+    "10",
+    "20",
+    "30",
+    "50"
+  ])
 }
-
 
 export function describeFluxDistributorSMod(mod: hullMod): string {
   return formatHullmodDesc(rawSModDesc(mod), ["10", "20", "30", "50"])
@@ -49,7 +78,6 @@ export function describeFluxDistributorSMod(mod: hullMod): string {
 export function describeFluxBreakers(mod: hullMod): string {
   return formatHullmodDesc(rawDesc(mod), ["50%", "25%", "25%"])
 }
-
 
 export function describeFluxBreakersSMod(mod: hullMod): string {
   return formatHullmodDesc(rawSModDesc(mod), ["25%"])
@@ -70,23 +98,62 @@ export function describeOperationsCenter(mod: hullMod): string {
 }
 
 export function describeBallisticRangefinder(mod: hullMod): string {
-  return formatHullmodDesc(rawDesc(mod), [])
+  void mod
+  return [
+    "Utilizes targeting data from the ship's largest ballistic slot to benefit certain weapons, extending the base range of typical ballistic weapons to match similar but larger weapons. Greatly benefits hybrid weapons. Point-defense weapons are unaffected.",
+    "The range bonus is based on the size of the largest ballistic slot, and the increased base range is capped, but still subject to other modifiers."
+  ].join("\n\n")
+}
+
+export function tablesBallisticRangefinder(mod: hullMod): HullmodTable[] {
+  void mod
+  return [
+    {
+      caption: "Affects small and medium ballistic weapons.",
+      head: ["Largest b. slot", "Small wpn", "Medium wpn", "Range cap"],
+      rows: [
+        ["Small / Medium", "+100", "---", "800"],
+        ["Large", "+200", "+100", "900"]
+      ]
+    },
+    {
+      caption: "Affects hybrid weapons of all sizes.",
+      head: ["Largest b. slot", "Small", "Medium", "Large", "Range cap"],
+      rows: [
+        ["Small / Medium", "+200", "+100", "+100", "800"],
+        ["Large", "+400", "+200", "+100", "900"]
+      ]
+    }
+  ]
 }
 
 export function describeEnergyBoltCoherer(mod: hullMod): string {
-  return formatHullmodDesc(rawDesc(mod), [])
+  void mod
+  return [
+    "Increases the range of the ship's energy bolt weapons by 200 for uncrewed ships, and by 100 for crewed ships.",
+    "Crewed ships suffer 50% more crew casualties in combat."
+  ].join("\n\n")
 }
 
 export function describeHighScatterAmp(mod: hullMod): string {
-  return formatHullmodDesc(rawDesc(mod), [])
+  void mod
+  return [
+    "Beam weapons deal 10% more damage and deal hard flux to shields.",
+    "Reduces the portion of the range of beam weapons that is above 200 units by 50%. The base range is affected.",
+    "Incompatible with Advanced Optics."
+  ].join("\n\n")
 }
 
 export function describeHighScatterAmpSMod(mod: hullMod): string {
-  return formatHullmodDesc(rawSModDesc(mod), ["15%"])
+  return formatHullmodDesc(rawSModDesc(mod), ["5%"])
 }
 
 export function describeMissileAutoloader(mod: hullMod): string {
-  return formatHullmodDesc(rawDesc(mod), [])
+  void mod
+  return [
+    "A combat-rated autoloader that provides a limited number of reloads, out of a shared reload capacity, to missile weapons installed in small missile mounts.",
+    "Does not affect weapons that do not use ammo or already regenerate it, or are mounted in any other type of slot. Reload size is not affected by skills or hullmods that increase missile ammo capacity."
+  ].join("\n\n")
 }
 
 export function describeMissileAutoloaderSMod(mod: hullMod): string {
@@ -118,7 +185,13 @@ export function describePhaseAnchor(mod: hullMod): string {
 }
 
 export function describeEscortPackage(mod: hullMod): string {
-  return formatHullmodDesc(rawDesc(mod), ["700", "25%", "10%", "20%", "doubled"])
+  return formatHullmodDesc(rawDesc(mod), [
+    "700",
+    "25%",
+    "10%",
+    "20%",
+    "doubled"
+  ])
 }
 
 export function describeEscortPackageSMod(mod: hullMod): string {
@@ -180,7 +253,14 @@ export function describeRuggedConstruction(mod: hullMod): string {
 export const DESIGN_COMPROMISES_FLUX_MULT = 0.6
 
 export function describeDesignCompromises(mod: hullMod): string {
-  return formatHullmodDesc(rawDesc(mod), ["40%", "15%", "50%", "100%", "Converted Hangar", "1"])
+  return formatHullmodDesc(rawDesc(mod), [
+    "40%",
+    "15%",
+    "50%",
+    "100%",
+    "Converted Hangar",
+    "1"
+  ])
 }
 
 export function applyAndradaMods(ship: completeShip): completeShip {
