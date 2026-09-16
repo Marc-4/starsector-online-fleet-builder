@@ -1,5 +1,5 @@
 import { useCallback, useMemo } from "react"
-import { applyHullmods } from "#/hullModData"
+import { applyHullmods, HIDDEN_BUILTIN_MOD_IDS } from "#/hullModData"
 import {
   getAllHullMods,
   getAllWeaponStats,
@@ -93,9 +93,11 @@ export function useLoadoutOp(activeTile: fleetEntry) {
   }, [activeTile.hullmods, activeTile.ship.meta.hullSize, hullModById])
   // Built-ins come straight from the hull, no props needed. They cost 0 OP
   // and can't be removed, so they render locked above the assigned mods.
+  // Pure marker mods (visuals/mechanics with no player-facing text) stay hidden.
   const builtInHullmods: BuiltInHullmod[] = useMemo(() => {
     const out: { id: string; mod: hullMod | null }[] = []
     for (const id of activeTile.ship.meta.builtInMods ?? []) {
+      if (HIDDEN_BUILTIN_MOD_IDS.has(id)) continue
       const mod = hullModById.get(id)
       out.push({ id, mod: mod ?? null })
     }
