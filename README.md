@@ -22,10 +22,14 @@ React SPA for creating starsector fleets: assign weapons, hullmods, fighters, an
 - assign officers to ships
 - customize officer skills 
 - autofit variants
+- fleet wide stats (nav/ecm rating, max burn level, etc.)
+- shortcuts
+- vertical layout support
 
 ## Roadmap
 
 - customize weapon groups
+- export fleet into a processable format
 - modded ships support
 
 ## Development setup
