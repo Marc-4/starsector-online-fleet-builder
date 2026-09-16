@@ -277,6 +277,17 @@ export function applyConvertedHangar(ship: completeShip): completeShip {
   return next
 }
 
+/**
+ * Vanilla Converted Hangar: +1 DP and +1 supply-to-recover per 5 OP spent on
+ * fighters (fighter OP / 5 rounded up), minimum +1 once installed — even with
+ * empty bays.
+ */
+export function getConvertedHangarDeploymentDelta(ctx: {
+  fightersOp: number
+}): number {
+  return Math.max(1, Math.ceil(ctx.fightersOp / 5))
+}
+
 export function describeConvertedHangar(mod: hullMod): string {
   void mod
   return [

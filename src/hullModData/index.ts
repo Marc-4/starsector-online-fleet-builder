@@ -179,6 +179,7 @@ import {
   describeRecoveryShuttlesSMod,
   describeConvertedHangar,
   applyConvertedHangar,
+  getConvertedHangarDeploymentDelta,
   describeConvertedHangarSMod,
   describeVastHangar,
   applyVastHangar,
@@ -243,9 +244,21 @@ import {
 import type { HullmodTable } from "./describe"
 export type { HullmodTable } from "./describe"
 
+export type DeploymentCostCtx = {
+  /** Total OP spent on fitted fighter wings. */
+  fightersOp: number
+  hullSize: string
+}
+
 export type HullmodImpl = {
   /** Flat stat mutation. Absent when the mod touches no ship stat directly. */
   apply?: (ship: completeShip) => completeShip
+  /**
+   * Loadout-aware deployment/supply cost delta. Absent when the mod does not
+   * touch deployment cost. Receives fighter OP because apply() only sees base
+   * ship stats (e.g. Converted Hangar: ceil(fightersOp / 5), min 1).
+   */
+  getDeploymentCostDelta?: (ctx: DeploymentCostCtx) => number
   /** Complete description string with `%s` placeholders filled. */
   describe: (mod: hullMod) => string
   /** S-mod bonus string with `%s` placeholders filled. Absent when no S-mod bonus. */
@@ -541,6 +554,7 @@ export const HULLMOD_IMPLS: Record<string, HullmodImpl> = {
   converted_hangar: {
     describe: describeConvertedHangar,
     apply: applyConvertedHangar,
+    getDeploymentCostDelta: getConvertedHangarDeploymentDelta,
     describeSMod: describeConvertedHangarSMod
   },
   vast_hangar: { describe: describeVastHangar, apply: applyVastHangar },
@@ -649,6 +663,39 @@ export function applyHullmods(ship: completeShip, ids: string[]): completeShip {
     if (apply) next = apply(next)
   }
   return next
+}
+
+/**
+ * Total deployment/supply cost delta for a hullmod id list.
+ * Loadout-aware (needs fighter OP); 0 when no mod touches deployment cost.
+ */
+export function getDeploymentCostDelta(
+  ids: string[],
+  ctx: DeploymentCostCtx
+): number {
+  let total = 0
+  for (const id of ids) total += HULLMOD_IMPLS[id]?.getDeploymentCostDelta?.(ctx) ?? 0
+  return total
+}
+
+/**
+ * Effective deployment cost + supply recovery cost after hullmods.
+ * Vanilla deployment cost tracks base monthly supplies, so the delta bumps
+ * both `supplies/mo` (DP) and `supplies/rec` by the same amount.
+ */
+export function getEffectiveDeploymentCost(
+  baseShip: completeShip,
+  ids: string[],
+  ctx: DeploymentCostCtx
+): { dp: number; suppliesRec: number; delta: number } {
+  const delta = getDeploymentCostDelta(ids, ctx)
+  const baseDp = Number(baseShip.stats["supplies/mo"] ?? 0)
+  const baseRec = Number(baseShip.stats["supplies/rec"] ?? 0)
+  return {
+    dp: baseDp + delta,
+    suppliesRec: baseRec + delta,
+    delta
+  }
 }
 
 export type SensorMults = { profile: number; strength: number }

@@ -12,6 +12,7 @@ import {
   hydrateFleet
 } from "#/lib/fleetCodec"
 import { getMaxCapsVents } from "#/lib/fluxLimits"
+import { getDeploymentCostDelta } from "#/hullModData"
 import { getAllShips } from "#/lib/shipParser"
 import type { fleetEntry } from "#/types"
 import AddShipButton from "./addShipBtn"
@@ -53,11 +54,6 @@ export default function Screen({ children }: { children?: ReactNode }) {
     }
     prevFleetLenRef.current = fleet.length
   }, [fleet, activeTile])
-  const totalFleetDP = useMemo(
-    () =>
-      fleet.reduce((sum, fe) => sum + (fe.ship.stats["supplies/mo"] ?? 0), 0),
-    [fleet]
-  )
   const sortedFleet = useMemo(
     () =>
       [...fleet].sort((a, b) => {
@@ -99,6 +95,23 @@ export default function Screen({ children }: { children?: ReactNode }) {
       const mod = hullModById.get(id)
       return sum + (mod ? getHullModCost(mod, hullSize) : 0)
     }, 0)
+  const totalFleetDP = useMemo(
+    () =>
+      fleet.reduce((sum, fe) => {
+        const base = fe.ship.stats["supplies/mo"] ?? 0
+        const delta = getDeploymentCostDelta(
+          [...(fe.ship.meta.builtInMods ?? []), ...(fe.hullmods ?? [])],
+          {
+            fightersOp: fightersOpOf(fe.fighters),
+            hullSize: fe.ship.meta.hullSize
+          }
+        )
+        return sum + base + delta
+      }, 0),
+    // biome-ignore lint: fightersOpOf/wingOpById are derived from allWingStats.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [fleet, allWingStats]
+  )
 
   const syncHash = (next: fleetEntry[]) => {
     if (next.length === 0) {

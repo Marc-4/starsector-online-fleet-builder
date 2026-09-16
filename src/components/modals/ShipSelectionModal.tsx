@@ -5,6 +5,7 @@ import {
   encodeFleetToHash,
   hydrateFleet
 } from "#/lib/fleetCodec"
+import { getEffectiveDeploymentCost } from "#/hullModData"
 import { getAllShips, isModule } from "#/lib/shipParser"
 import type { ship, shipStats } from "#/types"
 import CommonButton from "../commonBtn"
@@ -36,15 +37,19 @@ export default function ShipSelectionModal({
   const [allShipStats, setAllShipStats] = useState<shipStats[]>([])
   const totalSelectedShipsDPCost = useMemo(
     () =>
-      selectedShips.reduce(
-        (sum, s) =>
-          sum +
-          (getShipStats({ ship: s, shipStats: allShipStats })?.[
-            "supplies/mo"
-          ] ?? 0) *
-            (selectedShipCounts[s.hullId] ?? 1),
-        0
-      ),
+      selectedShips.reduce((sum, s) => {
+        const stats = getShipStats({ ship: s, shipStats: allShipStats })
+        if (!stats) return sum
+        // Fresh picks have no hullmods/fighters fitted yet, so the delta is
+        // 0 today; routed through the helper so future hullmod DP effects
+        // apply here automatically.
+        const { dp } = getEffectiveDeploymentCost(
+          { meta: s, stats },
+          [],
+          { fightersOp: 0, hullSize: s.hullSize }
+        )
+        return sum + dp * (selectedShipCounts[s.hullId] ?? 1)
+      }, 0),
     [selectedShips, allShipStats, selectedShipCounts]
   )
 

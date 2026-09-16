@@ -1,4 +1,10 @@
-import { getFluxMult, getMaxCr, getSensorMults, getVentMult } from "#/hullModData"
+import {
+  getDeploymentCostDelta,
+  getFluxMult,
+  getMaxCr,
+  getSensorMults,
+  getVentMult
+} from "#/hullModData"
 import { getModifiedStat } from "#/lib/statModifier"
 import type { completeShip } from "#/types"
 
@@ -128,16 +134,8 @@ const LOGISTICS_A: NumSpec[] = [
     get: (s) => s["cr %/day"],
     suffix: "%"
   },
-  {
-    label: "Recovery cost (supplies)",
-    color: "text-cyan-50",
-    get: (s) => {
-      // D-mod recovery mults (x0.8) produce fractions; supplies are whole.
-      const v = s["supplies/rec"]
-      return typeof v === "number" ? Math.round(v) : v
-    },
-    invert: true
-  },
+  // NOTE: "Recovery cost (supplies)" is rendered as a custom row below so the
+  // hullmod deployment-cost delta (e.g. Converted Hangar) is included.
   {
     label: "Peak performance (sec)",
     color: "text-cyan-50",
@@ -157,12 +155,8 @@ const LOGISTICS_A: NumSpec[] = [
 ]
 
 const LOGISTICS_B: NumSpec[] = [
-  {
-    label: "Maintenance (supplies/mo)",
-    color: "text-cyan-50",
-    get: (s) => s["supplies/mo"],
-    invert: true
-  },
+  // NOTE: "Maintenance (supplies/mo)" is rendered as a custom row below so
+  // the hullmod deployment-cost delta (e.g. Converted Hangar) is included.
   { label: "Cargo capacity", color: "text-amber-200", get: (s) => s.cargo },
   { label: "Maximum crew", color: "text-teal-400", get: (s) => s["max crew"] },
   {
@@ -210,13 +204,15 @@ export default function ShipInfoCard({
   baseShip,
   hullmodIds = [],
   capacitors = 0,
-  vents = 0
+  vents = 0,
+  fightersOp = 0
 }: {
   ship: completeShip
   baseShip?: completeShip
   hullmodIds?: string[]
   capacitors?: number
   vents?: number
+  fightersOp?: number
 }) {
   const s = ship.stats
   const m = ship.meta
@@ -240,6 +236,12 @@ export default function ShipInfoCard({
     (s["flux dissipation"] + fluxDissBonus) * fluxMult
   )
 
+  const baseDp = Number((b ?? s)["supplies/mo"] ?? 0)
+  const deploymentDelta = getDeploymentCostDelta(hullmodIds, {
+    fightersOp,
+    hullSize: m.hullSize
+  })
+
   const shieldUpkeepCur = b
     ? (s["shield upkeep"] as number) * (b["flux dissipation"] as number)
     : null
@@ -261,9 +263,26 @@ export default function ShipInfoCard({
       <div className="grid grid-cols-[1.7fr_1fr] gap-8">
         <div className="grid grid-cols-2 gap-6">
           <div className="flex flex-col gap-0.5 text-white">
-            {LOGISTICS_A.slice(0, 3).map((spec) => (
+            {LOGISTICS_A.slice(0, 2).map((spec) => (
               <NumRow key={spec.label} spec={spec} s={s} b={b} />
             ))}
+            <Row
+              label="Recovery cost (supplies)"
+              value={
+                <span className="text-cyan-50">
+                  {fmt(Math.round(Number(s["supplies/rec"] ?? 0) + deploymentDelta))}
+                  {b && (
+                    <ModMark
+                      base={b["supplies/rec"]}
+                      current={
+                        Number(s["supplies/rec"] ?? 0) + deploymentDelta
+                      }
+                      invert
+                    />
+                  )}
+                </span>
+              }
+            />
             <Row
               label="Maximum CR"
               value={
@@ -277,11 +296,12 @@ export default function ShipInfoCard({
               label="Deployment points"
               value={
                 <span className="text-cyan-300">
-                  {fmt((b ?? s)["supplies/mo"])}
+                  {fmt(baseDp + deploymentDelta)}
+                  <ModMark invert base={baseDp} current={baseDp + deploymentDelta} />
                 </span>
               }
             />
-            {LOGISTICS_A.slice(3, 5).map((spec) => (
+            {LOGISTICS_A.slice(2, 4).map((spec) => (
               <NumRow key={spec.label} spec={spec} s={s} b={b} />
             ))}
             <Row
@@ -292,12 +312,27 @@ export default function ShipInfoCard({
                 </span>
               }
             />
-            {LOGISTICS_A.slice(5).map((spec) => (
+            {LOGISTICS_A.slice(4).map((spec) => (
               <NumRow key={spec.label} spec={spec} s={s} b={b} />
             ))}
           </div>
           <div className="flex flex-col gap-0.5 text-white">
-            {LOGISTICS_B.map((spec) => (
+            <Row
+              label="Maintenance (supplies/mo)"
+              value={
+                <span className="text-cyan-50">
+                  {fmt(Number(s["supplies/mo"] ?? 0) + deploymentDelta)}
+                  {b && (
+                    <ModMark
+                      base={b["supplies/mo"]}
+                      current={Number(s["supplies/mo"] ?? 0) + deploymentDelta}
+                      invert
+                    />
+                  )}
+                </span>
+              }
+            />
+            {LOGISTICS_B.slice(1).map((spec) => (
               <NumRow key={spec.label} spec={spec} s={s} b={b} />
             ))}
             <Row

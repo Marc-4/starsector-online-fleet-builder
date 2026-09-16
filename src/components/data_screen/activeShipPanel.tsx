@@ -89,6 +89,7 @@ export default function ActiveShipPanel({
     assignedHullmods,
     builtInHullmods,
     moddedShip,
+    effectiveDP,
     wouldExceedOp,
     wouldExceedFighterOp,
     wouldExceedHullmodOp
@@ -248,6 +249,8 @@ export default function ActiveShipPanel({
             phaseUpkeep={moddedShip.stats["phase upkeep"]}
             phaseUpkeepBase={activeTile.ship.stats["phase upkeep"]}
             weaponFluxPerSecond={weaponFluxPerSecond}
+            deploymentCost={effectiveDP}
+            deploymentBase={activeTile.ship.stats["supplies/mo"]}
             onCapacitorsIncrement={onCapacitorsIncrement}
             onCapacitorsDecrement={onCapacitorsDecrement}
             onVentsIncrement={onVentsIncrement}
@@ -283,6 +286,7 @@ export default function ActiveShipPanel({
               ]}
               capacitors={activeTile.capacitors}
               vents={activeTile.vents}
+              fightersOp={fightersOp}
             />
           </div>
         </>

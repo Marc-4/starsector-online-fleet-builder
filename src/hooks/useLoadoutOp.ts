@@ -1,5 +1,9 @@
 import { useCallback, useMemo } from "react"
-import { applyHullmods, HIDDEN_BUILTIN_MOD_IDS } from "#/hullModData"
+import {
+  applyHullmods,
+  getEffectiveDeploymentCost,
+  HIDDEN_BUILTIN_MOD_IDS
+} from "#/hullModData"
 import {
   getAllHullMods,
   getAllWeaponStats,
@@ -114,6 +118,22 @@ export function useLoadoutOp(activeTile: fleetEntry) {
       ]),
     [activeTile.ship, activeTile.hullmods]
   )
+  const { dp: effectiveDP, suppliesRec: effectiveSuppliesRec, delta: deploymentDelta } =
+    useMemo(
+      () =>
+        getEffectiveDeploymentCost(
+          activeTile.ship,
+          [
+            ...(activeTile.ship.meta.builtInMods ?? []),
+            ...(activeTile.hullmods ?? [])
+          ],
+          {
+            fightersOp,
+            hullSize: activeTile.ship.meta.hullSize
+          }
+        ),
+      [activeTile.ship, activeTile.hullmods, fightersOp]
+    )
 
   const spentOp =
     activeTile.capacitors +
@@ -218,6 +238,9 @@ export function useLoadoutOp(activeTile: fleetEntry) {
     assignedHullmods,
     builtInHullmods,
     moddedShip,
+    deploymentDelta,
+    effectiveDP,
+    effectiveSuppliesRec,
     wouldExceedOp,
     wouldExceedFighterOp,
     wouldExceedHullmodOp
