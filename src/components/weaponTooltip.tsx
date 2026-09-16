@@ -89,7 +89,7 @@ export default function WeaponTooltip({
   const chargeup = num(stats?.chargeup) ?? 0
   const chargedown = num(stats?.chargedown) ?? 0
   const beamDuration = isBeam && hasBurst ? burstSizeN : 0
-  const burstInterval = isBeam ? burstDelay : burstSizeN * burstDelay
+  const burstInterval = isBeam ? burstDelay : (burstSizeN - 1) * burstDelay
   const cycle = chargeup + chargedown + burstInterval + beamDuration
   const refireDelay = !isProlongedBeam && cycle > 0 ? cycle : null
 
