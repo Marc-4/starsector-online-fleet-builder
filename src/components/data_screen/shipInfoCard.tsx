@@ -1,6 +1,6 @@
-import type { completeShip } from "#/types"
 import { getFluxMult, getMaxCr, getSensorMults, getVentMult } from "#/hullModData"
 import { getModifiedStat } from "#/lib/statModifier"
+import type { completeShip } from "#/types"
 
 type Stats = completeShip["stats"]
 

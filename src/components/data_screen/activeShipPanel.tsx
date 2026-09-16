@@ -340,7 +340,7 @@ export default function ActiveShipPanel({
         ))}
       </div>
       <div
-        className="absolute left-1/2 -translate-x-1/2 top-[60%] lg:top-[50%] -translate-y-1/2 flex items-center justify-center pointer-events-auto w-[72vw] h-[28vh] sm:w-[420px] sm:h-[280px] md:w-[520px] md:h-[340px] lg:w-130 lg:h-90 max-w-[90vw] max-h-[42vh] sm:max-h-[52vh] touch-manipulation"
+        className="absolute left-1/2 -translate-x-1/2 max-sm:left-1/2 max-sm:top-[70%] sm:max-xl:left-[38%] sm:max-xl:top-[62%] top-[50%] -translate-y-1/2 z-[25] flex items-center justify-center pointer-events-auto w-[72vw] h-[28vh] sm:w-[420px] sm:h-[280px] md:w-[520px] md:h-[340px] lg:w-130 lg:h-90 max-w-[90vw] max-h-[42vh] sm:max-h-[52vh] touch-manipulation"
         onWheel={handleWheel}
         onTouchStart={(e) => {
           if (e.touches.length === 2) {

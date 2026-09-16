@@ -132,7 +132,7 @@ export default function StatCluster({
   useEffect(() => () => clearHold(), [clearHold])
 
   return (
-    <div className="relative flex flex-col w-fit m-1 ml-2 max-sm:m-0.5">
+    <div className="relative flex flex-col w-fit m-1 ml-2 max-sm:m-0.5 max-sm:scale-[0.85] max-sm:origin-top-right">
       <div className="flex gap-2 items-center">
         <CommonButton
           text="?"
