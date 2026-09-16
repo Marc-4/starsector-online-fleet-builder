@@ -77,12 +77,11 @@ routes → Screen ─┬─ sidebar: SidebarShipTile[] + AddShipButton
 
 ## Data parsers
 
-- `lib/shipParser` / `weaponParser` / `projectileParser` — raw
-  `.ship` / `.skin` / `.wpn` / `.proj` files (+ generated manifests).
-- `lib/csvParser` — `ship_data` / `weapon_data` / `wing_data` /
-  `hull_mods` stats, selectability, OP costs, mount compatibility context,
-  hullmod installability (`isHullModSelectable`,
-  `getHullModInapplicability`).
+- `lib/shipParser` / `weaponParser` / `projectileParser`
+  -  raw `.ship` / `.skin` / `.wpn` / `.proj` files (+ generated manifests).
+- `lib/csvParser`
+  - `ship_data` / `weapon_data` / `wing_data` / `hull_mods` stats, selectability, OP costs, mount compatibility context
+  - hullmod installability (`isHullModSelectable`, `getHullModInapplicability`).
 
 ### Game Data
 _Files_
