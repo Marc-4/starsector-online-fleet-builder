@@ -77,9 +77,6 @@ export default function WeaponTooltip({
       .toLowerCase() === "true"
 
   // Burst DPS: prefer CSV damage/second, else derive from per-shot / cycle.
-  // Refire delay is the full cycle: chargeup + chargedown + burst delay,
-  // plus beam fire duration (burst size doubles as beam length for beams).
-  // e.g. Gauss: 1 + 1 = 2; Tachyon Lance: 0.5 + 1 + 4 + 1 = 6.5.
   const isBeam = w.specClass === "beam"
   const burstRaw = stats?.["burst size"]
   const hasBurst =
@@ -92,11 +89,11 @@ export default function WeaponTooltip({
   const chargeup = num(stats?.chargeup) ?? 0
   const chargedown = num(stats?.chargedown) ?? 0
   const beamDuration = isBeam && hasBurst ? burstSizeN : 0
-  const cycle = chargeup + chargedown + burstDelay + beamDuration
+  const burstInterval = isBeam ? burstDelay : burstSizeN * burstDelay
+  const cycle = chargeup + chargedown + burstInterval + beamDuration
   const refireDelay = !isProlongedBeam && cycle > 0 ? cycle : null
 
   const firingDps = hideDps ? null : num(stats?.["damage/second"])
-  const dpsRaw = firingDps
 
   // Burst beams (Tachyon Lance, Phase Lance): chargeup/chargedown also deal
   // damage on a quadratic ramp, contributing (chargeup + chargedown) / 3
