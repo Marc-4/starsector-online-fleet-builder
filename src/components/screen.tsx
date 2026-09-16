@@ -397,15 +397,15 @@ export default function Screen({ children }: { children?: ReactNode }) {
         aria-label={drawerOpen ? "Close fleet drawer" : "Open fleet drawer"}
         aria-expanded={drawerOpen}
         onClick={() => setDrawerOpen((v) => !v)}
-        className="hidden max-sm:flex fixed top-2 left-2 z-50 h-9 w-9 items-center justify-center rounded-xs bg-gray-900 border border-cyan-900 text-cyan-100 shadow-lg"
+        className="hidden max-md:flex fixed top-2 left-2 z-50 h-9 w-9 items-center justify-center rounded-xs bg-gray-900 border border-cyan-900 text-cyan-100 shadow-lg"
       >
         <span className="text-lg leading-none">{drawerOpen ? "✕" : "☰"}</span>
       </button>
       <div
         className={`flex flex-col bg-gray-950/70 h-full overflow-y-scroll
-          w-[15%] max-2xl:w-[17%] max-xl:w-[19%] max-lg:w-[21%] max-md:w-[23%]
-          max-sm:fixed max-sm:inset-y-0 max-sm:left-0 max-sm:z-40 max-sm:w-[78%] max-sm:max-w-[320px] max-sm:shadow-2xl max-sm:transition-transform max-sm:duration-200 max-sm:ease-out
-          ${drawerOpen ? "max-sm:translate-x-0" : "max-sm:-translate-x-full"}`}
+          w-[15%] max-2xl:w-[17%] max-xl:w-[19%] max-lg:w-[21%]
+          max-md:fixed max-md:inset-y-0 max-md:left-0 max-md:z-40 max-md:w-[78%] max-md:max-w-[320px] max-md:shadow-2xl max-md:transition-transform max-md:duration-200 max-md:ease-out
+          ${drawerOpen ? "max-md:translate-x-0" : "max-md:-translate-x-full"}`}
       >
         <div className="absolute top-4 z-10 text-amber-300 flex items-center justify-center gap-4 max-md:gap-2 max-sm:pl-10">
           {(() => {

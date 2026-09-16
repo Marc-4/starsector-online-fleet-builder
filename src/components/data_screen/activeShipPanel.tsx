@@ -198,14 +198,14 @@ export default function ActiveShipPanel({
 
   return (
     <>
-      <div className="absolute top-1 left-1 right-1 z-20 flex flex-col gap-2 lg:flex-row lg:items-start lg:justify-between pointer-events-none">
-        <div className="pointer-events-auto max-lg:w-fit max-lg:self-end origin-top-left">
+      <div className="absolute top-1 left-1 right-1 z-20 flex flex-col gap-2 min-[1127px]:flex-row min-[1127px]:items-start min-[1127px]:justify-between pointer-events-none">
+        <div className="pointer-events-auto max-[1127px]:w-fit max-[1127px]:self-end origin-top-left">
           <CombatReadinessBar
             cr={Math.max(0, activeTile.cr - getCrPenalty(allModIds))}
             maxCr={getMaxCr(allModIds)}
           />
         </div>
-        <div className="pointer-events-auto flex flex-col lg:ml-auto max-lg:self-end origin-top-right">
+        <div className="pointer-events-auto flex flex-col lg:ml-auto max-[1127px]:self-end origin-top-right">
           <StatCluster
             spentOp={spentOp}
             showInfo={showInfo}
@@ -394,7 +394,7 @@ export default function ActiveShipPanel({
         />
       </div>
       {(hoveredWeapon || hoveredWing || hoveredHullmod) && !selectedSlot && (
-        <div className="absolute left-1 top-16 z-30 w-[35%] h-fit overflow-auto pointer-events-none">
+        <div className="absolute left-1 top-16 z-30 w-[35%] lg:w-[50%] xl:w-[45%] h-fit overflow-auto pointer-events-none">
           {hoveredWeapon ? (
             <WeaponTooltip
               weapon={hoveredWeapon}
