@@ -90,9 +90,12 @@ routes → Screen ─┬─ sidebar: SidebarShipTile[] + AddShipButton
 ### Game Data
 _Files_
 
-- data/hullmods/hull_mods.csv - src/hullModData
-- data/hulls - src/shipData
-- data/weapons - src/weaponData
+- data/hullmods/hull_mods.csv - public/data/hull_mods.csv
+- data/hulls/ship_data.csv + data/hulls/wing_data.csv - public/data
+- data/weapons/weapon_data.csv - public/data
+- data/hulls (.ship/.skin) - public/data/ships + public/data/skins
+- data/weapons (.wpn/.proj) - public/data/weapons + public/data/proj
+- generated *-manifest.json - public/data (via `npm run generate:manifest`)
 
 _Images_ 
 

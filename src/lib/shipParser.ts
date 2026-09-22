@@ -1,16 +1,50 @@
 import type { ship, shipSkin } from "#/types"
-import manifest from "../shipData/manifest.json"
 
-const ships = import.meta.glob<string>("../shipData/*.ship", {
-  query: "?raw",
-  import: "default",
-  eager: false
-})
-const skins = import.meta.glob<string>("../shipData/skins/*.skin", {
-  query: "?raw",
-  import: "default",
-  eager: false
-})
+const DATA_BASE = `${import.meta.env.BASE_URL}data/`
+
+const textCache = new Map<string, Promise<string>>()
+function fetchDataText(path: string): Promise<string> {
+  let pending = textCache.get(path)
+  if (!pending) {
+    pending = fetch(`${DATA_BASE}${path}`).then((res) => {
+      if (!res.ok) throw new Error(`Missing data file: ${path}`)
+      return res.text()
+    })
+    // Don't cache failures: a 404 for ships/ falls through to skins/.
+    pending.catch(() => textCache.delete(path))
+    textCache.set(path, pending)
+  }
+  return pending
+}
+
+let manifestCache: Promise<string[]> | null = null
+let skinManifestCache: Promise<string[]> | null = null
+function fetchShipManifest(): Promise<string[]> {
+  if (!manifestCache) {
+    manifestCache = fetch(`${DATA_BASE}ship-manifest.json`).then((res) => {
+      if (!res.ok)
+        throw new Error(
+          "Error fetching ship manifest. Generate via `npm run generate:manifest`"
+        )
+      return res.json() as Promise<string[]>
+    })
+  }
+  return manifestCache
+}
+function fetchSkinManifest(): Promise<string[]> {
+  if (!skinManifestCache) {
+    skinManifestCache = fetch(`${DATA_BASE}skin-manifest.json`).then(
+      (res) => {
+        if (!res.ok)
+          throw new Error(
+            "Error fetching skin manifest. Generate via `npm run generate:manifest`"
+          )
+        return res.json() as Promise<string[]>
+      }
+    )
+  }
+  return skinManifestCache
+}
 
 function stripComments(s: string): string {
   return s
@@ -122,7 +156,7 @@ export function getCachedShips(): Promise<ship[]> {
 
 export async function getAllShips(): Promise<ship[]> {
   try {
-    const names = manifest as string[]
+    const names = await fetchShipManifest()
     const results = await Promise.allSettled(
       names.map((name) => getShip({ name }))
     )
@@ -149,22 +183,16 @@ export async function getAllShips(): Promise<ship[]> {
 
 export async function getShip({ name }: { name: string }): Promise<ship> {
   if (name === "cerberus") name = "warhound" //NOTE: alex man come on
-  const shipKey = `../shipData/${name}.ship`
-  if (ships[shipKey]) {
-    const loader = ships[shipKey]
-    if (!loader) throw new Error(`Ship ${name} not found`)
-
-    const content = await loader()
+  try {
+    const content = await fetchDataText(`ships/${name}.ship`)
     const shipJson = JSON.parse(content) as ship
     shipJson.spriteName = shipJson.spriteName
       .slice(14)
       .replace(/\.png$/i, ".webp")
     return shipJson
-  } else {
-    const skinKey = `../shipData/skins/${name}.skin`
-    const skinLoader = skins[skinKey]
-    if (!skinLoader) throw new Error(`Ship skin ${name} not found`)
-    const skin = parseSkin(await skinLoader()) as shipSkin
+  } catch {
+    // Not a base hull: try skins, then resolve against the base hull.
+    const skin = parseSkin(await fetchDataText(`skins/${name}.skin`)) as shipSkin
     const base = await getShip({ name: skin.baseHullId })
     return mergeSkin(base, skin)
   }
@@ -181,14 +209,11 @@ export function isModule({ ship }: { ship: ship }): boolean {
 }
 
 export async function getAllShipSkins(): Promise<shipSkin[]> {
-  const skinNames = (manifest as string[]).filter(
-    (n) => skins[`../shipData/skins/${n}.skin`]
-  )
+  const skinNames = await fetchSkinManifest()
   const results = await Promise.allSettled(
-    skinNames.map(async (name) => {
-      const loader = skins[`../shipData/skins/${name}.skin`]
-      return parseSkin(await loader()) as shipSkin
-    })
+    skinNames.map(async (name) =>
+      parseSkin(await fetchDataText(`skins/${name}.skin`))
+    )
   )
   const fulfilled = results
     .filter((r) => r.status === "fulfilled")

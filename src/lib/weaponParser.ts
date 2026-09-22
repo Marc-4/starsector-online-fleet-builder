@@ -1,11 +1,35 @@
 import type { weapon } from "#/types"
-import manifest from "../weaponData/manifest.json"
 
-const weapons = import.meta.glob<string>("../weaponData/*.wpn", {
-  query: "?raw",
-  import: "default",
-  eager: false
-})
+const DATA_BASE = `${import.meta.env.BASE_URL}data/`
+
+const textCache = new Map<string, Promise<string>>()
+function fetchWeaponText(id: string): Promise<string> {
+  const path = `weapons/${id}.wpn`
+  let pending = textCache.get(path)
+  if (!pending) {
+    pending = fetch(`${DATA_BASE}${path}`).then((res) => {
+      if (!res.ok) throw new Error(`Weapon ${id} not found`)
+      return res.text()
+    })
+    pending.catch(() => textCache.delete(path))
+    textCache.set(path, pending)
+  }
+  return pending
+}
+
+let manifestCache: Promise<string[]> | null = null
+function fetchWeaponManifest(): Promise<string[]> {
+  if (!manifestCache) {
+    manifestCache = fetch(`${DATA_BASE}weapon-manifest.json`).then((res) => {
+      if (!res.ok)
+        throw new Error(
+          "Error fetching weapon manifest. Generate via `npm run generate:manifest`"
+        )
+      return res.json() as Promise<string[]>
+    })
+  }
+  return manifestCache
+}
 
 function stripComments(s: string): string {
   return s
@@ -67,7 +91,7 @@ function parseWeapon(raw: string): weapon {
 
 export async function getAllWeapons(): Promise<weapon[]> {
   try {
-    const names = manifest as string[]
+    const names = await fetchWeaponManifest()
     const results = await Promise.allSettled(
       names.map((name) => getWeapon({ id: name }))
     )
@@ -93,9 +117,6 @@ export async function getAllWeapons(): Promise<weapon[]> {
 }
 
 export async function getWeapon({ id }: { id: string }): Promise<weapon> {
-  const key = `../weaponData/${id}.wpn`
-  const loader = weapons[key]
-  if (!loader) throw new Error(`Weapon ${id} not found`)
-  const content = await loader()
+  const content = await fetchWeaponText(id)
   return parseWeapon(content)
 }
