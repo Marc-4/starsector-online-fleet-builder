@@ -6,6 +6,7 @@ import {
   getAllWingStats,
   getHullModCost
 } from "#/lib/csvParser"
+import type { hullMod, weaponStats, wingStats } from "#/types"
 import {
   decodeFleetEntries,
   encodeFleetToHash,
@@ -65,12 +66,31 @@ export default function Screen({ children }: { children?: ReactNode }) {
     [fleet]
   )
 
-  const allWeaponStats = useMemo(() => getAllWeaponStats(), [])
+  const [allWeaponStats, setAllWeaponStats] = useState<weaponStats[]>([])
+  const [allWingStats, setAllWingStats] = useState<wingStats[]>([])
+  const [hullModById, setHullModById] = useState<Map<string, hullMod>>(new Map())
+
+  useEffect(() => {
+    let cancelled = false
+    void (async () => {
+      const [weapons, wings, mods] = await Promise.all([
+        getAllWeaponStats(),
+        getAllWingStats(),
+        getAllHullMods()
+      ])
+      if (cancelled) return
+      setAllWeaponStats(weapons)
+      setAllWingStats(wings)
+      setHullModById(new Map(mods.map((h) => [h.id, h])))
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [])
   const opById = useMemo(
     () => new Map(allWeaponStats.map((s) => [s.id, Number(s.OPs)])),
     [allWeaponStats]
   )
-  const allWingStats = useMemo(() => getAllWingStats(), [])
   const wingOpById = useMemo(
     () => new Map(allWingStats.map((s) => [s.id, Number(s["op cost"])])),
     [allWingStats]
@@ -100,10 +120,6 @@ export default function Screen({ children }: { children?: ReactNode }) {
       const op = wingOpById.get(wingId)
       return sum + (Number.isFinite(op) ? (op as number) : 0)
     }, 0)
-  const hullModById = useMemo(
-    () => new Map(getAllHullMods().map((h) => [h.id, h])),
-    []
-  )
   // S-mods cost 0 OP, so only regular installs count toward hullmod OP.
   const hullmodsOpOf = (hullmods?: string[], hullSize?: string) =>
     (hullmods ?? []).reduce((sum, id) => {

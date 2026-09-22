@@ -188,7 +188,7 @@ export default function FighterSelectionModal({
                 <div className="flex gap-2 items-center">
                   <h2 className="text-cyan-200 text-sm">Search: </h2>
                   <input
-                    className="border border-cyan-200 flex-1 w-full lg:max-w-[180px] min-h-11 lg:min-h-0 text-cyan-200 text-sm px-2 py-1 lg:py-0 bg-transparent"
+                    className="border border-cyan-200 flex-1 w-full max-w-[180px] text-cyan-200 text-sm px-2 py-0 bg-transparent"
                     type="search"
                     value={searchString}
                     onChange={(e) =>

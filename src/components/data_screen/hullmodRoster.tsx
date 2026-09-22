@@ -30,7 +30,7 @@ export default function HullmodRoster({
 }: Props) {
   const hasBuildable = assignedHullmods.some(({ cost }) => cost > 0)
   return (
-    <div className="flex gap-1 flex-col items-end">
+    <div className="flex gap-1 flex-col w-fit">
       <div className="flex flex-col gap-1 items-end max-h-56 overflow-y-auto">
         {builtInHullmods.map(({ id, mod }) => {
           const spriteUrl = resolveHullModSpriteUrl(mod.sprite)

@@ -150,13 +150,19 @@ export default function HullmodSelectionModal({
   ])
 
   useEffect(() => {
+    let cancelled = false
     setIsLoading(true)
-    try {
-      setAllHullmods(
-        getAllHullMods().sort((a, b) => a.name.localeCompare(b.name))
-      )
-    } finally {
-      setIsLoading(false)
+    void (async () => {
+      try {
+        const mods = await getAllHullMods()
+        if (cancelled) return
+        setAllHullmods(mods.sort((a, b) => a.name.localeCompare(b.name)))
+      } finally {
+        if (!cancelled) setIsLoading(false)
+      }
+    })()
+    return () => {
+      cancelled = true
     }
   }, [])
 
@@ -198,7 +204,7 @@ export default function HullmodSelectionModal({
                 <div className="flex gap-2 items-center">
                   <h2 className="text-cyan-200 text-sm">Search: </h2>
                   <input
-                    className="border border-cyan-200 flex-1 w-full lg:max-w-[180px] min-h-11 lg:min-h-0 text-cyan-200 text-sm px-2 py-1 lg:py-0 bg-transparent"
+                    className="border border-cyan-200 flex-1 w-full max-w-[180px] text-cyan-200 text-sm px-2 py-0 bg-transparent"
                     type="search"
                     value={searchString}
                     onChange={(e) =>
@@ -217,7 +223,7 @@ export default function HullmodSelectionModal({
 
             <table
               aria-label="Hullmods"
-              className="w-full flex-1 flex flex-col gap-0 p-2 pt-0 max-h-[52dvh] lg:max-h-72 lg:min-h-72 overflow-y-auto overscroll-contain"
+              className="w-full flex-1 flex flex-col gap-0 p-2 pt-0 min-h-[36dvh] max-h-[52dvh] sm:min-h-[44dvh] sm:max-h-[58dvh] lg:min-h-[50dvh] lg:max-h-[64dvh] overflow-y-auto overscroll-contain"
             >
               <tr
                 tabIndex={-1}

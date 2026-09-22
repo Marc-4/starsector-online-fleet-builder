@@ -189,7 +189,7 @@ export default function ShipSelectionModal({
             <div className="flex gap-2 items-center flex-wrap">
               <h2 className="text-cyan-200 ">Search: </h2>
               <input
-                className="border border-cyan-200 w-full sm:w-56 min-h-11 lg:min-h-0 px-2 py-1 lg:py-0 text-cyan-200"
+                className="border border-cyan-200 w-full max-w-56 px-2 py-0 text-cyan-200"
                 type="search"
                 value={searchString}
                 onChange={(e) =>

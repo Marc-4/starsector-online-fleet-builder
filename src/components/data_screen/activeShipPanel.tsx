@@ -1,5 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
-import { getCrPenalty, getFluxMult, getMaxCr, getVentMult, MAX_SMODS } from "#/hullModData"
+import {
+  getCrPenalty,
+  getFluxMult,
+  getMaxCr,
+  getVentMult,
+  MAX_SMODS
+} from "#/hullModData"
 import { getAllShipStats } from "#/lib/csvParser"
 import { getMaxCapsVents } from "#/lib/fluxLimits"
 import { getModifiedStat } from "#/lib/statModifier"
@@ -312,10 +318,7 @@ export default function ActiveShipPanel({
   const fighterBayProps = (bayIndex: number) => ({
     remainingOpForBay:
       availableOp -
-      (activeTile.capacitors +
-        activeTile.vents +
-        weaponsOp +
-        fightersOp) +
+      (activeTile.capacitors + activeTile.vents + weaponsOp + fightersOp) +
       wingOpOf(activeTile.fighters?.[bayIndex]),
     onSelect: (wing: wingStats) => {
       const next = [...(activeTile.fighters ?? [])]
@@ -348,7 +351,7 @@ export default function ActiveShipPanel({
     ] as const
     return (
       <div className="flex flex-col gap-2 p-2 pb-8 lg:hidden">
-        <div className="flex flex-col gap-2 rounded border border-cyan-900/60 bg-gray-950/70 p-2">
+        <div className="flex flex-col gap-2 rounded border items-end border-cyan-900/60 bg-gray-950/70 p-2">
           <CombatReadinessBar
             cr={Math.max(0, activeTile.cr - getCrPenalty(allModIds))}
             maxCr={getMaxCr(allModIds)}
@@ -397,8 +400,7 @@ export default function ActiveShipPanel({
             <CommonButton text="Strip" onClick={onStrip} className="py-1" />
           </div>
           <p className="ss-coarse-pointer-only text-xs font-normal text-blue-200/70">
-            Tap a slot below to fit a weapon. Mounted slots offer info and
-            remove actions.
+            Tap a slot below to fit a weapon.
           </p>
         </div>
         <div
@@ -450,7 +452,7 @@ export default function ActiveShipPanel({
           </div>
         )}
         {compactTab === "fighters" && (
-          <div role="tabpanel" className="flex flex-wrap gap-2">
+          <div role="tabpanel" className="flex flex-wrap gap-2 mt-2">
             {(moddedShip.meta.builtInWings ?? []).map((wingId) => (
               <FighterBay
                 key={`${activeTile.id}-builtin-${wingId}`}
@@ -485,10 +487,10 @@ export default function ActiveShipPanel({
         {compactTab === "hullmods" && (
           <div
             role="tabpanel"
-            className="rounded border border-cyan-900/60 bg-gray-950/70 p-2"
+            className="rounded border border-cyan-900/60 bg-gray-950/70 p-2 flex justify-end gap-2"
           >
             {hoveredHullmod && (
-              <div className="mb-2 max-h-72 overflow-auto">
+              <div className="mb-2 max-h-72 overflow-auto flex-1">
                 <HullmodTooltip hullmod={hoveredHullmod} />
               </div>
             )}
@@ -692,20 +694,22 @@ export default function ActiveShipPanel({
             onVentsIncrement={onVentsIncrement}
             onVentsDecrement={onVentsDecrement}
           />
-          <HullmodRoster
-            assignedHullmods={assignedHullmods}
-            builtInHullmods={builtInHullmods}
-            smoddedHullmods={smoddedHullmods}
-            onHoverHullmod={setHoveredHullmod}
-            onRemoveHullmod={(id) =>
-              onHullmodsChange(
-                (activeTile.hullmods ?? []).filter((x) => x !== id)
-              )
-            }
-            onRemoveSmod={handleUnbuildSmod}
-            onAdd={() => setShowHullmods(true)}
-            onBuildIn={() => setShowBuildIn(true)}
-          />
+          <div className="flex justify-end w-full">
+            <HullmodRoster
+              assignedHullmods={assignedHullmods}
+              builtInHullmods={builtInHullmods}
+              smoddedHullmods={smoddedHullmods}
+              onHoverHullmod={setHoveredHullmod}
+              onRemoveHullmod={(id) =>
+                onHullmodsChange(
+                  (activeTile.hullmods ?? []).filter((x) => x !== id)
+                )
+              }
+              onRemoveSmod={handleUnbuildSmod}
+              onAdd={() => setShowHullmods(true)}
+              onBuildIn={() => setShowBuildIn(true)}
+            />
+          </div>
         </div>
       </div>
       {showInfo && (
@@ -715,7 +719,7 @@ export default function ActiveShipPanel({
             onClick={() => setShowInfo(false)}
             className="absolute inset-0 z-30 bg-transparent cursor-default"
           />
-          <div className="absolute left-1 top-16 z-40 w-[calc(100%-0.5rem)] max-w-3xl overflow-x-auto">
+          <div className="absolute left-1 top-16 z-40 w-[calc(100%-0.5rem)] max-w-5xl overflow-x-auto">
             <ShipInfoCard
               ship={moddedShip}
               baseShip={activeTile.ship}
@@ -880,7 +884,10 @@ export default function ActiveShipPanel({
         <HullmodSelectionModal
           ship={activeTile.ship}
           hullSize={activeTile.ship.meta.hullSize}
-          mountedHullmodIds={[...(activeTile.hullmods ?? []), ...(activeTile.smods ?? [])]}
+          mountedHullmodIds={[
+            ...(activeTile.hullmods ?? []),
+            ...(activeTile.smods ?? [])
+          ]}
           remainingOp={availableOp - spentOp}
           onClose={() => setShowHullmods(false)}
           onSelect={(h) => {

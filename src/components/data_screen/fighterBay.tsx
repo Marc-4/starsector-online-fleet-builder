@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useState } from "react"
 import { getAllWingStats, getWingHullIds } from "#/lib/csvParser"
 import { getCachedShips } from "#/lib/shipParser"
 import type { ship, wingStats } from "#/types"
@@ -27,7 +27,17 @@ export default function FighterBay({
   const [isFighterSelectionModalOpen, setIsFighterSelectionModalOpen] =
     useState(false)
   const [allShips, setAllShips] = useState<ship[]>([])
-  const allWingStats = useMemo(() => getAllWingStats(), [])
+  const [allWingStats, setAllWingStats] = useState<wingStats[]>([])
+  useEffect(() => {
+    let cancelled = false
+    void (async () => {
+      const wings = await getAllWingStats()
+      if (!cancelled) setAllWingStats(wings)
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [])
   const wing = wingId
     ? (allWingStats.find((w) => w.id === wingId) ?? null)
     : null
@@ -89,35 +99,31 @@ export default function FighterBay({
           type="button"
           aria-label={wingId ? `Fighter bay: ${wingId}` : "Select fighter wing"}
           title={wingId || "Empty fighter bay. click to select"}
-        onClick={(e) => {
-          if (e.shiftKey) {
-            onShiftClick?.()
-            return
-          }
-          setIsFighterSelectionModalOpen(true)
-        }}
-        onMouseEnter={hoverIn}
-        onMouseLeave={hoverOut}
-        onFocus={hoverIn}
-        onBlur={hoverOut}
-        onContextMenu={(e) => {
-          e.preventDefault()
-          if (wingId) onRemove?.()
-        }}
-        className="w-20 h-20 border-cyan-800 border bg-gray-950 cursor-pointer touch-manipulation hover:border-cyan-600 flex items-center justify-center overflow-hidden"
-      >
-        {fighterShip ? (
-          <FighterSprite
-            ship={fighterShip}
-            variant={wing?.variant}
-            className="max-h-full max-w-full pointer-events-none"
-          />
-        ) : (
-          <span className="text-cyan-200 text-xs px-1 text-center">
-            + Fighters
-          </span>
-        )}
-      </button>
+          onClick={(e) => {
+            if (e.shiftKey) {
+              onShiftClick?.()
+              return
+            }
+            setIsFighterSelectionModalOpen(true)
+          }}
+          onMouseEnter={hoverIn}
+          onMouseLeave={hoverOut}
+          onFocus={hoverIn}
+          onBlur={hoverOut}
+          onContextMenu={(e) => {
+            e.preventDefault()
+            if (wingId) onRemove?.()
+          }}
+          className="w-20 h-20 border-cyan-800 border bg-gray-950 cursor-pointer touch-manipulation hover:border-cyan-600 flex items-center justify-center overflow-hidden"
+        >
+          {fighterShip && (
+            <FighterSprite
+              ship={fighterShip}
+              variant={wing?.variant}
+              className="max-h-full max-w-full pointer-events-none"
+            />
+          )}
+        </button>
         {wingId && onRemove && (
           <button
             type="button"
