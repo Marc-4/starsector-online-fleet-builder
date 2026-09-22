@@ -22,7 +22,7 @@ export default function ToggleButton({
       onClick={onClick}
       type="button"
       className={twMerge(
-        `text-cyan-200 text-sm cursor-pointer ${active ? "bg-cyan-900" : "bg-transparent"} border border-cyan-800 hover:brightness-110 p-1 px-4`,
+        `text-cyan-200 text-sm cursor-pointer touch-manipulation ${active ? "bg-cyan-900" : "bg-transparent"} border border-cyan-800 hover:brightness-110 p-1 px-4 min-h-9`,
         className
       )}
     >

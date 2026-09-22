@@ -173,16 +173,16 @@ export default function HullmodSelectionModal({
       <div
         aria-hidden="true"
         onClick={onClose}
-        className="fixed inset-0 z-30 bg-transparent cursor-default"
+        className="fixed inset-0 z-30 bg-gray-950/60 cursor-default"
       />
-      <div className="fixed inset-0 z-40 flex gap-1 w-[90%] max-lg:flex-col mx-auto h-full justify-center items-center pointer-events-none">
+      <div className="fixed inset-0 z-40 flex flex-col lg:flex-row gap-2 w-[95%] sm:w-[92%] lg:w-[90%] mx-auto max-h-[92dvh] my-auto justify-center lg:items-center overflow-y-auto lg:overflow-visible py-2 pointer-events-none">
         {hovered ? (
-          <div className="flex w-[95%] sm:w-[80%] lg:w-[85%] xl:w-[80%] 2xl:w-[70%] min-w-80 h-fit max-h-full overflow-auto">
+          <div className="hidden lg:flex w-[40%] min-w-80 h-fit max-h-[86dvh] overflow-auto">
             <HullmodTooltip hullmod={hovered} />
           </div>
         ) : (
           <div
-            className="flex w-[95%] sm:w-[80%] lg:w-[85%] xl:w-[80%] 2xl:w-[70%] min-w-80 opacity-0 h-64 pointer-events-none"
+            className="hidden lg:flex w-[40%] min-w-80 opacity-0 h-64 pointer-events-none"
             aria-hidden="true"
           />
         )}
@@ -190,15 +190,15 @@ export default function HullmodSelectionModal({
           role="dialog"
           aria-modal="true"
           aria-label="Hullmod selection"
-          className="relative flex items-center w-full min-w-80 justify-center pointer-events-none bg-gray-950"
+          className="relative flex items-center w-full lg:w-[60%] lg:min-w-80 justify-center pointer-events-none bg-gray-950"
         >
-          <div className="flex w-full z-40 flex-col gap-2 p-1 border border-cyan-200 pointer-events-auto shadow-xl">
+          <div className="flex w-full z-40 flex-col gap-2 p-1 border border-cyan-200 pointer-events-auto shadow-xl max-h-[88dvh]">
             <div className="flex m-1 mb-0 p-1 pb-0 gap-1 justify-between items-start">
-              <div className="gap-2 flex flex-col flex-1">
+              <div className="gap-2 flex flex-col flex-1 min-w-0">
                 <div className="flex gap-2 items-center">
                   <h2 className="text-cyan-200 text-sm">Search: </h2>
                   <input
-                    className="border border-cyan-200 flex-1 max-w-[180px] text-cyan-200 text-sm px-1 bg-transparent"
+                    className="border border-cyan-200 flex-1 w-full lg:max-w-[180px] min-h-11 lg:min-h-0 text-cyan-200 text-sm px-2 py-1 lg:py-0 bg-transparent"
                     type="search"
                     value={searchString}
                     onChange={(e) =>
@@ -217,11 +217,11 @@ export default function HullmodSelectionModal({
 
             <table
               aria-label="Hullmods"
-              className="w-full flex-1 flex flex-col gap-0 p-2 pt-0 max-h-72 min-h-72 overflow-auto"
+              className="w-full flex-1 flex flex-col gap-0 p-2 pt-0 max-h-[52dvh] lg:max-h-72 lg:min-h-72 overflow-y-auto overscroll-contain"
             >
               <tr
                 tabIndex={-1}
-                className="sticky top-0 z-10 grid grid-cols-[2rem_minmax(0,1fr)_10rem_5rem_6rem] gap-2 bg-gray-950 px-2 pb-1 text-xs text-cyan-200/70"
+                className="sticky top-0 z-10 grid grid-cols-[2rem_minmax(0,1fr)_5rem_6rem] sm:grid-cols-[2rem_minmax(0,1fr)_10rem_5rem_6rem] gap-2 bg-gray-950 px-2 pb-1 text-xs text-cyan-200/70"
               >
                 <span />
                 {(
@@ -236,7 +236,7 @@ export default function HullmodSelectionModal({
                     key={key}
                     onClick={() => cycleSort(key)}
                     title={`Sort by ${label}`}
-                    className={`flex cursor-pointer items-center gap-1 hover:text-cyan-200 ${align}`}
+                    className={`flex cursor-pointer touch-manipulation items-center gap-1 hover:text-cyan-200 ${align} ${key === "design" ? "max-sm:hidden" : ""}`}
                   >
                     <span>{label}</span>
                     <span aria-hidden="true">
@@ -312,7 +312,7 @@ export default function HullmodSelectionModal({
                 )}
             </table>
 
-            <div className="flex flex-wrap gap-1 p-1">
+            <div className="ss-chip-rail p-1">
               {designOptions.map(([d, n]) => (
                 <button
                   type="button"
@@ -320,13 +320,13 @@ export default function HullmodSelectionModal({
                   onClick={() =>
                     toggle(activeDesignFilters, setActiveDesignFilters, d)
                   }
-                  className={`text-xs px-2 text-cyan-200 border border-cyan-800 py-0.5 hover:brightness-110 ${activeDesignFilters.includes(d) && "bg-cyan-900"}`}
+                  className={`shrink-0 text-xs px-2 min-h-9 text-cyan-200 border border-cyan-800 py-1 hover:brightness-110 touch-manipulation ${activeDesignFilters.includes(d) && "bg-cyan-900"}`}
                 >
                   {`${d} (${n})`}
                 </button>
               ))}
             </div>
-            <div className="flex flex-wrap gap-1 p-1 pt-0">
+            <div className="ss-chip-rail p-1 pt-0">
               {typeOptions.map(([t, n]) => (
                 <button
                   type="button"
@@ -334,7 +334,7 @@ export default function HullmodSelectionModal({
                   onClick={() =>
                     toggle(activeTypeFilters, setActiveTypeFilters, t)
                   }
-                  className={`text-xs px-2 text-cyan-200 border border-cyan-800 py-0.5 hover:brightness-110 ${activeTypeFilters.includes(t) && "bg-cyan-900"}`}
+                  className={`shrink-0 text-xs px-2 min-h-9 text-cyan-200 border border-cyan-800 py-1 hover:brightness-110 touch-manipulation ${activeTypeFilters.includes(t) && "bg-cyan-900"}`}
                 >{`${t} (${n})`}</button>
               ))}
             </div>

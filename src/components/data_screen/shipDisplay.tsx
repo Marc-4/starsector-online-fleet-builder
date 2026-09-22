@@ -271,7 +271,7 @@ export default function ShipDisplay({
                 top: ship.height - ship.center[1] - (slot.locations?.[0] ?? 0),
                 transform: "translate(-50%, -50%)"
               }}
-              className={`${buildSlotStyle(slot)} group absolute z-10 shrink-0 drop-shadow-[0_1px_1px_rgba(0,0,0,0.9)] ${mounted ? "opacity-100" : "opacity-70 hover:opacity-100"} ${onSlotClick ? "cursor-pointer pointer-events-auto" : "pointer-events-auto"}`}
+              className={`${buildSlotStyle(slot)} group absolute z-10 shrink-0 touch-manipulation drop-shadow-[0_1px_1px_rgba(0,0,0,0.9)] after:absolute after:-inset-3 after:content-[''] ${mounted ? "opacity-100" : "opacity-70 hover:opacity-100"} ${onSlotClick ? "cursor-pointer pointer-events-auto" : "pointer-events-auto"}`}
               title={`${slot.id} • ${slot.type} ${slot.size} ${slot.mount}${mountedId ? " • Right-click to unmount" : ""}`}
             >
               {mounted ? (

@@ -41,7 +41,7 @@ export default function WeaponFilters({
                     t
                   )
                 }
-                className={`text-xs px-2 py-0.5 border text-cyan-200 border-cyan-800 ${active ? "bg-cyan-900" : "bg-transparent border-cyan-800  hover:brightness-110"}`}
+                className={`text-xs px-2 py-1 min-h-9 border touch-manipulation text-cyan-200 border-cyan-800 ${active ? "bg-cyan-900" : "bg-transparent border-cyan-800  hover:brightness-110"}`}
               >
                 {t.toLowerCase()}
               </button>
@@ -73,7 +73,7 @@ export default function WeaponFilters({
                   t
                 )
               }
-              className={`text-xs px-2 py-0.5 border text-cyan-200 border-cyan-800 ${active ? "bg-cyan-900" : "bg-transparent border-cyan-800  hover:brightness-110"}`}
+              className={`text-xs px-2 py-1 min-h-9 border touch-manipulation text-cyan-200 border-cyan-800 ${active ? "bg-cyan-900" : "bg-transparent border-cyan-800  hover:brightness-110"}`}
             >
               {t.toLowerCase().replace("_", " ")}
             </button>
@@ -99,7 +99,7 @@ export default function WeaponFilters({
                 key={tag}
                 type="button"
                 onClick={() => onToggle(activeTags, setActiveSpecialTags, tag)}
-                className={`text-xs px-2 py-0.5 border text-cyan-200 border-cyan-800 ${active ? "bg-cyan-900" : "bg-transparent border-cyan-800  hover:brightness-110"}`}
+                className={`text-xs px-2 py-1 min-h-9 border touch-manipulation text-cyan-200 border-cyan-800 ${active ? "bg-cyan-900" : "bg-transparent border-cyan-800  hover:brightness-110"}`}
                 title={`${active ? "hide" : "show"} ${tag} weapons`}
               >
                 {tag}

@@ -85,7 +85,7 @@ export default function FighterTile({
         <span className="text-amber-300 text-md">
           {w["op cost"] ?? "-"}
         </span>
-        <span className="text-gray-400 text-[10px]">ORDINANCE POINTS</span>
+        <span className="text-gray-400 text-[11px]">ORDINANCE POINTS</span>
       </div>
     </button>
   )

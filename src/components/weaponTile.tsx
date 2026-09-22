@@ -68,7 +68,7 @@ export default function WeaponTile({
             ? "Not enough OP"
             : "Click to mount"
       }
-      className={`relative w-full min-h-16 flex gap-3 px-3 py-2 border bg-gray-950/40 text-left pointer-events-auto shrink-0 ${mounted ? "border-amber-300 cursor-pointer hover:bg-cyan-900/40 hover:border-cyan-600" : disabled ? "border-cyan-950 opacity-40 cursor-not-allowed" : "border-cyan-800 cursor-pointer hover:bg-cyan-900/40 hover:border-cyan-600"}`}
+      className={`relative w-full min-h-16 flex gap-3 px-3 py-2 border bg-gray-950/40 text-left pointer-events-auto shrink-0 touch-manipulation ${mounted ? "border-amber-300 cursor-pointer hover:bg-cyan-900/40 hover:border-cyan-600" : disabled ? "border-cyan-950 opacity-40 cursor-not-allowed" : "border-cyan-800 cursor-pointer hover:bg-cyan-900/40 hover:border-cyan-600"}`}
     >
       <div
         className="relative border w-16 h-16 shrink-0 flex items-center justify-center overflow-hidden"
@@ -88,7 +88,7 @@ export default function WeaponTile({
         <span className="text-amber-300 text-md">
           {opCost ?? (stats ? `${stats.OPs ?? "-"}` : "")}
         </span>
-        <span className="text-gray-400 text-[10px]">ORDINANCE POINTS</span>
+        <span className="text-gray-400 text-[11px]">ORDINANCE POINTS</span>
       </div>
     </button>
   )

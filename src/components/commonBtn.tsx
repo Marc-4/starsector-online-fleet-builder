@@ -23,7 +23,7 @@ export default function CommonButton({
       type="button"
       {...rest}
       className={twMerge(
-        "text-cyan-200 cursor-pointer bg-cyan-700 hover:brightness-110 p-1 px-6",
+        "text-cyan-200 cursor-pointer touch-manipulation select-none bg-cyan-700 hover:brightness-110 p-1 px-6",
         className
       )}
       style={{

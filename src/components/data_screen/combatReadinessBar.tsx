@@ -8,9 +8,9 @@ export default function CombatReadinessBar({
 }) {
   const penalty = Math.max(0, Math.round((100 - maxCr) * 10000) / 10000)
   return (
-    <div className="flex p-2 w-fit flex-col justify-center">
+    <div className="flex p-2 w-fit max-w-full flex-col justify-center">
       <div className="flex gap-2 items-center">
-        <div className="relative w-80 max-sm:w-56 h-4 ss-cr-bar">
+        <div className="relative w-64 sm:w-80 max-w-[60vw] h-4 ss-cr-bar">
           <div
             className="absolute inset-y-0 left-0 bg-gray-950 pointer-events-none"
             style={{ width: `${100 - cr}%`, right: 0, left: "auto" }}

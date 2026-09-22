@@ -38,7 +38,6 @@ export default function Screen({ children }: { children?: ReactNode }) {
   const ready = bgLoaded && grid
   const [fleet, setFleet] = useState<fleetEntry[]>([])
   const [activeTile, setActiveTile] = useState<fleetEntry>()
-  const [drawerOpen, setDrawerOpen] = useState(false)
   const prevFleetLenRef = useRef(0)
 
   useEffect(() => {
@@ -199,7 +198,6 @@ export default function Screen({ children }: { children?: ReactNode }) {
   const onTileClick = (entry: fleetEntry) => {
     if (activeTile?.id === entry.id) setActiveTile(undefined)
     else setActiveTile(entry)
-    if (window.matchMedia("(max-width: 640px)").matches) setDrawerOpen(false)
   }
 
   const updateEntry = (
@@ -424,7 +422,7 @@ export default function Screen({ children }: { children?: ReactNode }) {
 
   return (
     <div
-      className="relative flex gap-0 h-screen w-screen p-10 flex-row bg-gray-950"
+      className="relative flex h-dvh w-full flex-col gap-2 bg-gray-950 p-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] sm:p-4 lg:flex-row lg:gap-0 lg:p-6"
       style={bgImage ? { backgroundImage: `url(bgs/${bgImage})` } : undefined}
     >
       {!ready && (
@@ -432,63 +430,51 @@ export default function Screen({ children }: { children?: ReactNode }) {
           <Spinner />
         </div>
       )}
-      {drawerOpen && (
-        <button
-          type="button"
-          aria-label="Close fleet drawer"
-          onClick={() => setDrawerOpen(false)}
-          className="hidden max-sm:block fixed inset-0 z-30 bg-gray-950/50"
-        />
-      )}
-      <button
-        type="button"
-        aria-label={drawerOpen ? "Close fleet drawer" : "Open fleet drawer"}
-        aria-expanded={drawerOpen}
-        onClick={() => setDrawerOpen((v) => !v)}
-        className="hidden max-md:flex fixed top-2 left-2 z-50 h-9 w-9 items-center justify-center rounded-xs bg-gray-900 border border-cyan-900 text-cyan-100 shadow-lg"
-      >
-        <span className="text-lg leading-none">{drawerOpen ? "✕" : "☰"}</span>
-      </button>
       <div
-        className={`flex flex-col bg-gray-950/70 h-full overflow-y-scroll
-          w-[15%] max-2xl:w-[17%] max-xl:w-[19%] max-lg:w-[21%]
-          max-md:fixed max-md:inset-y-0 max-md:left-0 max-md:z-40 max-md:w-[78%] max-md:max-w-[320px] max-md:shadow-2xl max-md:transition-transform max-md:duration-200 max-md:ease-out
-          ${drawerOpen ? "max-md:translate-x-0" : "max-md:-translate-x-full"}`}
+        className="flex shrink-0 items-stretch gap-2 overflow-x-auto overflow-y-hidden pb-1 lg:h-full
+          lg:w-[15%] lg:max-2xl:w-[17%] lg:max-xl:w-[19%] lg:max-lg:w-[21%]
+          lg:flex-col lg:gap-0 lg:overflow-x-hidden lg:overflow-y-auto lg:bg-gray-950/70 lg:pb-0"
       >
-        <div className="absolute top-4 z-10 text-amber-300 flex items-center justify-center gap-4 max-md:gap-2 max-sm:pl-10">
+        <div className="sticky left-0 z-10 flex shrink-0 items-center gap-3 self-center bg-gray-950/85 px-2 py-1 text-sm text-amber-300 backdrop-blur-sm lg:w-full lg:justify-center lg:self-auto lg:bg-transparent lg:py-4 lg:text-base">
           {(() => {
             const totalShips = fleet.length
             return (
               <>
                 <p>{`${totalShips === 1 ? `${totalShips} ship` : `${totalShips} ships`}`}</p>
-                <div className="w-px h-4 bg-amber-300" />
+                <div className="h-4 w-px bg-amber-300" />
                 <p>{`${totalFleetDP} DP`}</p>
               </>
             )
           })()}
         </div>
         {sortedFleet.map((entry) => (
-          <SidebarShipTile
-            onClick={onTileClick}
-            active={activeTile?.id === entry.id}
-            entry={entry}
+          <div
             key={entry.id}
-            removeOne={removeOne}
-          />
+            className="w-24 shrink-0 sm:w-28 lg:w-full lg:shrink"
+          >
+            <SidebarShipTile
+              onClick={onTileClick}
+              active={activeTile?.id === entry.id}
+              entry={entry}
+              removeOne={removeOne}
+            />
+          </div>
         ))}
-        <AddShipButton />
+        <div className="w-24 shrink-0 sm:w-28 lg:w-full lg:shrink-0">
+          <AddShipButton />
+        </div>
       </div>
       <div
         ref={gridRef}
         id="grid"
-        className="relative text-blue-200 bg-gray-950/50 font-semibold text-lg flex-1 h-full bg-cover"
+        className="relative min-h-0 flex-1 overflow-y-auto bg-gray-950/50 font-semibold text-lg bg-cover text-blue-200 lg:h-full lg:overflow-hidden"
       >
         <div
           id="screen"
           className="absolute inset-0 z-0 opacity-20 bg-[#49dbff]"
         ></div>
         {renderGrid()}
-        <div className="relative z-10 w-full h-full">
+        <div className="relative z-10 w-full min-h-full">
           {activeTile && (
             <ActiveShipPanel
               activeTile={activeTile}
@@ -506,7 +492,7 @@ export default function Screen({ children }: { children?: ReactNode }) {
           )}
           {children}
         </div>
-        <div className="pointer-events-none absolute bottom-6 right-3 z-20 text-right text-xs font-normal text-blue-200/70 leading-tight">
+        <div className="ss-fine-pointer-only pointer-events-none absolute bottom-6 right-3 z-20 text-right text-xs font-normal text-blue-200/70 leading-tight">
           <p>right click to remove weapon/fighter</p>
           <p>shift + click to place the previously placed weapon/fighter</p>
         </div>

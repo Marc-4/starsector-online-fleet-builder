@@ -36,16 +36,16 @@ export default function BuildInModal({
       <div
         aria-hidden="true"
         onClick={onClose}
-        className="fixed inset-0 z-30 bg-transparent cursor-default"
+        className="fixed inset-0 z-30 bg-gray-950/60 cursor-default"
       />
-      <div className="fixed inset-0 z-40 flex gap-1 w-[90%] max-lg:flex-col mx-auto h-full justify-center items-center pointer-events-none">
+      <div className="fixed inset-0 z-40 flex flex-col lg:flex-row gap-2 w-[95%] sm:w-[90%] lg:w-[80%] mx-auto max-h-[92dvh] my-auto justify-center lg:items-center overflow-y-auto lg:overflow-visible py-2 pointer-events-none">
         {hovered ? (
-          <div className="flex w-[95%] sm:w-[80%] lg:w-[85%] xl:w-[80%] 2xl:w-[70%] min-w-80 h-fit max-h-full overflow-auto">
+          <div className="hidden lg:flex w-[40%] min-w-80 h-fit max-h-[86dvh] overflow-auto">
             <HullmodTooltip hullmod={hovered} />
           </div>
         ) : (
           <div
-            className="flex w-[95%] sm:w-[80%] lg:w-[85%] xl:w-[80%] 2xl:w-[70%] min-w-80 opacity-0 h-64 pointer-events-none"
+            className="hidden lg:flex w-[40%] min-w-80 opacity-0 h-64 pointer-events-none"
             aria-hidden="true"
           />
         )}
@@ -53,9 +53,9 @@ export default function BuildInModal({
           role="dialog"
           aria-modal="true"
           aria-label="Build in hullmod"
-          className="relative flex items-center w-full min-w-80 justify-center pointer-events-none bg-gray-950"
+          className="relative flex items-center w-full lg:w-[60%] lg:min-w-80 justify-center pointer-events-none bg-gray-950"
         >
-          <div className="flex w-full z-40 flex-col gap-2 p-1 border border-lime-200 pointer-events-auto shadow-xl">
+          <div className="flex w-full z-40 flex-col gap-2 p-1 border border-lime-200 pointer-events-auto shadow-xl max-h-[88dvh]">
             <div className="flex m-1 mb-0 p-1 pb-0 gap-1 justify-between items-start">
               <div className="flex flex-col">
                 <h2 className="text-lime-200 text-sm">
@@ -75,7 +75,7 @@ export default function BuildInModal({
               />
             </div>
 
-            <div className="w-full flex-1 flex flex-col gap-0 p-2 pt-0 max-h-72 min-h-72 overflow-auto">
+            <div className="w-full flex-1 flex flex-col gap-0 p-2 pt-0 max-h-[52dvh] lg:max-h-72 lg:min-h-72 overflow-y-auto overscroll-contain">
               {buildable.length === 0 && (
                 <div className="text-cyan-200/60 text-sm text-center py-8">
                   {assignedHullmods.length === 0

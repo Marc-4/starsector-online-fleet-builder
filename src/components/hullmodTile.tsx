@@ -45,7 +45,7 @@ export default function HullmodTile({
       onMouseLeave={() => onHover(null)}
       onFocus={() => onHover(hullmod)}
       onBlur={() => onHover(null)}
-      className={`grid w-full grid-cols-[2rem_minmax(0,1fr)_10rem_5rem_6rem] items-center gap-2 px-2 py-1 text-left text-sm ${locked ? "cursor-default opacity-60" : disabled && !installed ? "cursor-not-allowed opacity-40" : "cursor-pointer hover:bg-cyan-950/60"}`}
+      className={`grid w-full grid-cols-[2rem_minmax(0,1fr)_5rem_6rem] sm:grid-cols-[2rem_minmax(0,1fr)_10rem_5rem_6rem] items-center gap-2 px-2 py-2 sm:py-1 min-h-14 sm:min-h-0 text-left text-sm touch-manipulation ${locked ? "cursor-default opacity-60" : disabled && !installed ? "cursor-not-allowed opacity-40" : "cursor-pointer hover:bg-cyan-950/60"}`}
     >
       {spriteUrl ? (
         <img
@@ -64,7 +64,7 @@ export default function HullmodTile({
         {hullmod.name}
       </span>
       <span
-        className={`truncate text-center text-xs ${isCommon ? "text-cyan-200/50" : "text-lime-400/80"}`}
+        className={`truncate text-center text-xs max-sm:hidden ${isCommon ? "text-cyan-200/50" : "text-lime-400/80"}`}
       >
         {designType}
       </span>

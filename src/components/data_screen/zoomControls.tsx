@@ -7,12 +7,16 @@ export default function ZoomControls({
   setZoom,
   ZOOM_STEP,
   MIN_ZOOM,
+  showArcs,
+  onToggleArcs
 }: {
   zoom: number
   maxZoom: number
   setZoom: React.Dispatch<SetStateAction<number>>
   ZOOM_STEP: number
   MIN_ZOOM: number
+  showArcs?: boolean
+  onToggleArcs?: () => void
 }) {
   const zoomIn = useCallback(
     () =>
@@ -62,6 +66,20 @@ export default function ZoomControls({
         aria-label="Reset zoom"
         title="Reset zoom"
       />
+      {onToggleArcs && (
+        <>
+          <div className="w-px h-6 bg-cyan-900 mx-1" />
+          <CommonButton
+            text="Arc"
+            cutAllCorners
+            className={`px-2 py-0.5 text-xs ${showArcs ? "" : "opacity-50"}`}
+            onClick={onToggleArcs}
+            aria-pressed={showArcs}
+            aria-label={showArcs ? "Hide firing arcs" : "Show firing arcs"}
+            title="Toggle firing arcs (Alt on desktop)"
+          />
+        </>
+      )}
     </div>
   )
 }
