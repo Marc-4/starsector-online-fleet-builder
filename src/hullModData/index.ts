@@ -1,248 +1,257 @@
 import type { completeShip, hullMod } from "#/types"
 import {
+  applyConvertedCargoBay,
+  applyDelicateMachinery,
+  applyFourteenth,
+  applyHighMaintenance,
+  describeAdvancedTargetingCore,
+  describeCivGrade,
+  describeConvertedCargoBay,
+  describeDelicateMachinery,
+  describeDistributedFireControl,
+  describeFluxShunt,
+  describeFourteenth,
+  describeHighMaintenance,
+  describeNoWeaponFlux,
+  describeTargetingSupercomputer,
+  SENSOR_PROFILE_MULT,
+  SENSOR_STRENGTH_MULT
+} from "./builtin"
+import {
+  applyArmoredWeapons,
+  applyAssaultPackage,
+  applyAuxThrusters,
+  applyBlastDoors,
+  applyExtendedShields,
+  applyExtendedShieldsSMod,
+  applyFrontShieldEmitter,
+  applyFrontShieldEmitterSMod,
+  applyFrontShieldGenerator,
+  applyHardenedShieldEmitter,
+  applyHeavyArmor,
+  applyOmniShieldEmitter,
+  applyOmniShieldEmitterSMod,
+  applyReinforcedBulkheads,
+  applySafetyOverrides,
+  applyShieldShunt,
+  applyShieldShuntSMod,
+  applyStabilizedShields,
+  applyUnstableInjector,
   describeAccelShields,
   describeAccelShieldsSMod,
   describeAdvancedOptics,
   describeArmoredWeapons,
-  applyArmoredWeapons,
   describeArmoredWeaponsSMod,
+  describeAssaultPackage,
   describeAutoRepair,
   describeAutoRepairSMod,
   describeAuxThrusters,
-  applyAuxThrusters,
   describeAuxThrustersSMod,
   describeBlastDoors,
-  applyBlastDoors,
   describeBlastDoorsSMod,
   describeDedicatedCore,
   describeDedicatedCoreSMod,
   describeEccm,
   describeEccmSMod,
   describeExtendedShields,
-  applyExtendedShields,
   describeExtendedShieldsSMod,
   describeFrontShieldEmitter,
-  applyFrontShieldEmitter,
   describeFrontShieldEmitterSMod,
   describeFrontShieldGenerator,
-  applyFrontShieldGenerator,
   describeHardenedShieldEmitter,
-  applyHardenedShieldEmitter,
   describeHeavyArmor,
-  applyHeavyArmor,
   describeHeavyArmorSMod,
   describeMagazines,
   describeMagazinesSMod,
   describeMissileRacks,
   describeMissileRacksSMod,
   describeOmniShieldEmitter,
-  applyOmniShieldEmitter,
   describeOmniShieldEmitterSMod,
   describePointDefenseAI,
   describePointDefenseAISMod,
   describeReinforcedBulkheads,
-  applyReinforcedBulkheads,
+  describeSafetyOverrides,
+  describeShieldShunt,
+  describeShieldShuntSMod,
   describeStabilizedShields,
-  applyStabilizedShields,
   describeStabilizedShieldsSMod,
   describeTargetingUnit,
   describeTurretGyros,
   describeTurretGyrosSMod,
-  describeUnstableInjector,
-  applyUnstableInjector
+  describeUnstableInjector
 } from "./combat"
+import type { HullmodTable } from "./describe"
 import {
-  describeAugmentedEngines,
-  applyAugmentedEngines,
-  describeAugmentedEnginesSMod,
-  describeInsulatedEngines,
-  applyInsulatedEngines,
-  describeInsulatedEnginesSMod,
-  describeSolarShielding,
-  describeSolarShieldingSMod,
-  describeSurveying,
-  describeSurveyingSMod,
-  describeConvertedFighterBay,
-  applyConvertedFighterBay,
-  describeConvertedFighterBaySMod,
-  describeMilitarizedSubsystems,
-  applyMilitarizedSubsystems,
-  describeMilitarizedSubsystemsSMod,
-  describeAdditionalBerthing,
-  applyAdditionalBerthing,
-  describeAdditionalBerthingSMod,
-  INSULATED_ENGINES_MULT
-} from "./logistics"
-import {
-  describeHardenedSubsystems,
-  applyHardenedSubsystems,
-  describeFluxCoil,
-  applyFluxCoil,
-  describeFluxCoilSMod,
-  describeFluxDistributor,
-  applyFluxDistributor,
-  describeFluxDistributorSMod,
-  describeFluxBreakers,
-  describeFluxBreakersSMod
-} from "./general"
-import {
-  describeAdvancedTargetingCore,
-  describeCivGrade,
-  SENSOR_PROFILE_MULT,
-  SENSOR_STRENGTH_MULT,
-  describeDelicateMachinery,
-  applyDelicateMachinery,
-  describeFluxShunt,
-  describeFourteenth,
-  applyFourteenth,
-  describeHighMaintenance,
-  applyHighMaintenance,
-  describeNoWeaponFlux,
-  describeTargetingSupercomputer,
-  describeConvertedCargoBay,
-  applyConvertedCargoBay,
-  describeDistributedFireControl
-} from "./builtin"
-import {
-  describeCompromisedArmor,
   applyCompromisedArmor,
-  describeCompromisedHull,
   applyCompromisedHull,
-  describeDegradedDriveField,
-  applyDegradedDriveField,
-  DEGRADED_DRIVE_SENSOR_MULT,
-  describeDegradedEngines,
-  applyDegradedEngines,
-  describeFaultyPowerGrid,
-  applyFaultyPowerGrid,
-  FAULTY_GRID_SENSOR_MULT,
-  describePhaseCoilInstability,
-  applyPhaseCoilInstability,
-  describeDefectiveManufactory,
-  applyDefectiveManufactory,
-  describeCompromisedStorage,
   applyCompromisedStorage,
-  describeDamagedFlightDeck,
   applyDamagedFlightDeck,
-  describeFragileSubsystems,
-  applyFragileSubsystems,
-  describeIncreasedMaintenance,
-  applyIncreasedMaintenance,
-  describeStructuralDamage,
-  applyStructuralDamage,
-  describeGlitchedSensors,
-  applyGlitchedSensors,
-  GLITCHED_SENSOR_STRENGTH_MULT,
-  describeMalfunctioningComms,
-  applyMalfunctioningComms,
-  describeErraticInjector,
-  applyErraticInjector,
-  describeFaultyAutomatedSystems,
-  applyFaultyAutomatedSystems,
-  describeDamagedMounts,
   applyDamagedMounts,
-  describeDegradedLifeSupport,
+  applyDefectiveManufactory,
+  applyDegradedDriveField,
+  applyDegradedEngines,
   applyDegradedLifeSupport,
+  applyDegradedShields,
+  applyErraticInjector,
+  applyFaultyAutomatedSystems,
+  applyFaultyPowerGrid,
+  applyFragileSubsystems,
+  applyGlitchedSensors,
+  applyIncreasedMaintenance,
+  applyMalfunctioningComms,
+  applyPhaseCoilInstability,
+  applyStructuralDamage,
+  DEGRADED_DRIVE_SENSOR_MULT,
+  describeCompromisedArmor,
+  describeCompromisedHull,
+  describeCompromisedStorage,
+  describeDamagedFlightDeck,
+  describeDamagedMounts,
+  describeDefectiveManufactory,
+  describeDegradedDriveField,
+  describeDegradedEngines,
+  describeDegradedLifeSupport,
   describeDegradedShields,
-  applyDegradedShields
+  describeErraticInjector,
+  describeFaultyAutomatedSystems,
+  describeFaultyPowerGrid,
+  describeFragileSubsystems,
+  describeGlitchedSensors,
+  describeIncreasedMaintenance,
+  describeMalfunctioningComms,
+  describePhaseCoilInstability,
+  describeStructuralDamage,
+  FAULTY_GRID_SENSOR_MULT,
+  GLITCHED_SENSOR_STRENGTH_MULT
 } from "./dmods"
 import {
-  describeSafetyOverrides,
-  applySafetyOverrides,
-  describeAssaultPackage,
-  applyAssaultPackage,
-  describeShieldShunt,
-  applyShieldShunt,
-  describeShieldShuntSMod
-} from "./combat"
-import {
-  describeAuxiliaryFuelTanks,
-  applyAuxiliaryFuelTanks,
-  describeAuxiliaryFuelTanksSMod,
-  describeExpandedCargoHolds,
-  applyExpandedCargoHolds,
-  describeExpandedCargoHoldsSMod,
-  describeEfficiencyOverhaul,
-  applyEfficiencyOverhaul,
-  describeEfficiencyOverhaulSMod,
-  describeHighResSensors,
-  describeHighResSensorsSMod,
-  describeDriveFieldStabilizer,
-  describeRepairGantry,
-  describeGroundSupport,
-  describeAdvancedGroundSupport,
-  PHASE_FIELD_PROFILE_MULT,
-  describePhaseField,
-  describeExpandedDeckCrew,
-  applyExpandedDeckCrew,
-  describeRecoveryShuttles,
-  describeRecoveryShuttlesSMod,
-  describeConvertedHangar,
-  applyConvertedHangar,
-  getConvertedHangarDeploymentDelta,
-  describeConvertedHangarSMod,
-  describeVastHangar,
-  applyVastHangar,
-  describeDefensiveTargetingArray,
-  describeDefensiveTargetingArraySMod,
-  describeBDeck,
-  describeFighterChassisStorage,
-  MILITARIZED_SENSOR_PROFILE_MULT,
-  MILITARIZED_SENSOR_STRENGTH_MULT
-} from "./logistics"
-import {
-  describeNavRelay,
-  describeEcmPackage,
-  describeOperationsCenter,
+  applyAndradaMods,
+  applyAutomatedShip,
+  applyFluxCoil,
+  applyFluxCoilSMod,
+  applyFluxDistributor,
+  applyFluxDistributorSMod,
+  applyHardenedSubsystems,
+  applyRuggedConstruction,
+  DESIGN_COMPROMISES_FLUX_MULT,
+  describeAblativeArmor,
+  describeAdaptivePhaseCoils,
+  describeAndradaMods,
+  describeAutomatedShip,
   describeBallisticRangefinder,
-  tablesBallisticRangefinder,
+  describeDesignCompromises,
+  describeEcmPackage,
   describeEnergyBoltCoherer,
+  describeEscortPackage,
+  describeEscortPackageSMod,
+  describeExperimentalPhaseCoils,
+  describeFluxBreakers,
+  describeFluxBreakersSMod,
+  describeFluxCoil,
+  describeFluxCoilSMod,
+  describeFluxDistributor,
+  describeFluxDistributorSMod,
+  describeHardenedSubsystems,
+  describeHeavyBallisticsIntegration,
   describeHighScatterAmp,
   describeHighScatterAmpSMod,
   describeMissileAutoloader,
   describeMissileAutoloaderSMod,
-  tablesMissileAutoloader,
   describeMissileReload,
-  describeHeavyBallisticsIntegration,
-  getHeavyBallisticsIntegrationDiscount,
-  describePdIntegration,
-  describeAdaptivePhaseCoils,
-  describeExperimentalPhaseCoils,
-  describePhaseAnchor,
-  describeEscortPackage,
-  describeEscortPackageSMod,
-  describeNeuralInterface,
-  describeNeuralInterfaceSMod,
+  describeNavRelay,
   describeNeuralIntegrator,
   describeNeuralIntegratorSMod,
-  describeTerminatorCore,
-  describeSharedFluxSink,
-  describeAblativeArmor,
-  describeAutomatedShip,
-  applyAutomatedShip,
+  describeNeuralInterface,
+  describeNeuralInterfaceSMod,
+  describeOperationsCenter,
+  describePdIntegration,
+  describePhaseAnchor,
   describeRuggedConstruction,
-  applyRuggedConstruction,
-  describeDesignCompromises,
-  DESIGN_COMPROMISES_FLUX_MULT,
-  describeAndradaMods,
-  applyAndradaMods
+  describeSharedFluxSink,
+  describeTerminatorCore,
+  getHeavyBallisticsIntegrationDiscount,
+  tablesBallisticRangefinder,
+  tablesMissileAutoloader
 } from "./general"
 import {
+  applyAdditionalBerthing,
+  applyAdditionalBerthingSMod,
+  applyAugmentedEngines,
+  applyAugmentedEnginesSMod,
+  applyAuxiliaryFuelTanks,
+  applyAuxiliaryFuelTanksSMod,
+  applyConvertedFighterBay,
+  applyConvertedFighterBaySMod,
+  applyConvertedHangar,
+  applyEfficiencyOverhaul,
+  applyEfficiencyOverhaulSMod,
+  applyExpandedCargoHolds,
+  applyExpandedCargoHoldsSMod,
+  applyExpandedDeckCrew,
+  applyInsulatedEngines,
+  applyMilitarizedSubsystems,
+  applyMilitarizedSubsystemsSMod,
+  applyVastHangar,
+  describeAdditionalBerthing,
+  describeAdditionalBerthingSMod,
+  describeAdvancedGroundSupport,
+  describeAugmentedEngines,
+  describeAugmentedEnginesSMod,
+  describeAuxiliaryFuelTanks,
+  describeAuxiliaryFuelTanksSMod,
+  describeBDeck,
+  describeConvertedFighterBay,
+  describeConvertedFighterBaySMod,
+  describeConvertedHangar,
+  describeConvertedHangarSMod,
+  describeDefensiveTargetingArray,
+  describeDefensiveTargetingArraySMod,
+  describeDriveFieldStabilizer,
+  describeEfficiencyOverhaul,
+  describeEfficiencyOverhaulSMod,
+  describeExpandedCargoHolds,
+  describeExpandedCargoHoldsSMod,
+  describeExpandedDeckCrew,
+  describeFighterChassisStorage,
+  describeGroundSupport,
+  describeHighResSensors,
+  describeHighResSensorsSMod,
+  describeInsulatedEngines,
+  describeInsulatedEnginesSMod,
+  describeMilitarizedSubsystems,
+  describeMilitarizedSubsystemsSMod,
+  describePhaseField,
+  describeRecoveryShuttles,
+  describeRecoveryShuttlesSMod,
+  describeRepairGantry,
+  describeSolarShielding,
+  describeSolarShieldingSMod,
+  describeSurveying,
+  describeSurveyingSMod,
+  describeVastHangar,
+  getConvertedHangarDeploymentDelta,
+  INSULATED_ENGINES_MULT,
+  INSULATED_ENGINES_SMOD_MULT,
+  MILITARIZED_SENSOR_PROFILE_MULT,
+  MILITARIZED_SENSOR_STRENGTH_MULT,
+  PHASE_FIELD_PROFILE_MULT
+} from "./logistics"
+import {
+  describeFragmentCoordinator,
+  describeFragmentCoordinatorSMod,
   describeFragmentSwarm,
   describeFragmentSwarmSMod,
   describeSecondaryFabricator,
   describeSecondaryFabricatorSMod,
-  describeFragmentCoordinator,
-  describeFragmentCoordinatorSMod,
+  describeShroudedLens,
   describeShroudedMantle,
   describeShroudedMantleSMod,
   describeShroudedThunderhead,
-  tablesShroudedThunderhead,
-  describeShroudedLens,
+  describeThreatHull,
   tablesShroudedLens,
-  describeThreatHull
+  tablesShroudedThunderhead
 } from "./special"
-import type { HullmodTable } from "./describe"
+
 export type { HullmodTable } from "./describe"
 
 export type DeploymentCostCtx = {
@@ -262,8 +271,22 @@ export type WeaponOpCtx = {
 }
 
 export type HullmodImpl = {
-  /** Flat stat mutation. Absent when the mod touches no ship stat directly. */
-  apply?: (ship: completeShip) => completeShip
+  /**
+   * Flat stat mutation. Absent when the mod touches no ship stat directly.
+   * Receives the unmodified base ship alongside: vanilla percent bonuses
+   * (modifyPercent) key off base values, so mods like Shield Shunt need it
+   * to stay exact when other mods already changed the stat.
+   */
+  apply?: (ship: completeShip, base: completeShip) => completeShip
+  /**
+   * S-mod bonus stat mutation. Runs after ALL base applies, only for ids in
+   * the player's `smods` list (hull-native built-ins never count as S-mods).
+   * Receives the unmodified base ship alongside so bonuses computed from base
+   * values (e.g. capacity doublings) stay exact instead of compounding.
+   * Absent when the S-mod bonus touches no modeled ship stat — most S-mods
+   * are weapon/fighter/fleet/campaign-level and stay describe-only.
+   */
+  applySMod?: (ship: completeShip, base: completeShip) => completeShip
   /**
    * Loadout-aware deployment/supply cost delta. Absent when the mod does not
    * touch deployment cost. Receives fighter OP because apply() only sees base
@@ -292,6 +315,21 @@ export const HIDDEN_BUILTIN_MOD_IDS: ReadonlySet<string> = new Set([
   "dweller_hullmod"
 ])
 
+/** Vanilla-style cap on player-built S-mods per ship. */
+export const MAX_SMODS = 2
+
+/**
+ * S-mods whose effect is a drawback (the price of freeing OP): Heavy Armor
+ * hurts maneuverability, Missile Racks slow missile fire rate, Fragment Swarm
+ * cuts max CR and raises maintenance. Tooltips render these as "S-mod
+ * penalty" in orange instead of lime.
+ */
+export const DETRIMENTAL_SMOD_IDS: ReadonlySet<string> = new Set([
+  "heavyarmor",
+  "missleracks",
+  "fragment_swarm"
+])
+
 export const HULLMOD_IMPLS: Record<string, HullmodImpl> = {
   advancedcore: { describe: describeAdvancedTargetingCore },
   civgrade: { describe: describeCivGrade },
@@ -316,6 +354,7 @@ export const HULLMOD_IMPLS: Record<string, HullmodImpl> = {
   militarized_subsystems: {
     describe: describeMilitarizedSubsystems,
     apply: applyMilitarizedSubsystems,
+    applySMod: applyMilitarizedSubsystemsSMod,
     describeSMod: describeMilitarizedSubsystemsSMod
   },
   no_weapon_flux: { describe: describeNoWeaponFlux },
@@ -345,6 +384,7 @@ export const HULLMOD_IMPLS: Record<string, HullmodImpl> = {
   augmentedengines: {
     describe: describeAugmentedEngines,
     apply: applyAugmentedEngines,
+    applySMod: applyAugmentedEnginesSMod,
     describeSMod: describeAugmentedEnginesSMod
   },
   autorepair: {
@@ -373,6 +413,7 @@ export const HULLMOD_IMPLS: Record<string, HullmodImpl> = {
   extendedshieldemitter: {
     describe: describeExtendedShields,
     apply: applyExtendedShields,
+    applySMod: applyExtendedShieldsSMod,
     describeSMod: describeExtendedShieldsSMod
   },
   fluxbreakers: {
@@ -382,11 +423,13 @@ export const HULLMOD_IMPLS: Record<string, HullmodImpl> = {
   fluxcoil: {
     describe: describeFluxCoil,
     apply: applyFluxCoil,
+    applySMod: applyFluxCoilSMod,
     describeSMod: describeFluxCoilSMod
   },
   fluxdistributor: {
     describe: describeFluxDistributor,
     apply: applyFluxDistributor,
+    applySMod: applyFluxDistributorSMod,
     describeSMod: describeFluxDistributorSMod
   },
   heavyarmor: {
@@ -415,11 +458,13 @@ export const HULLMOD_IMPLS: Record<string, HullmodImpl> = {
   converted_fighterbay: {
     describe: describeConvertedFighterBay,
     apply: applyConvertedFighterBay,
+    applySMod: applyConvertedFighterBaySMod,
     describeSMod: describeConvertedFighterBaySMod
   },
   additional_berthing: {
     describe: describeAdditionalBerthing,
     apply: applyAdditionalBerthing,
+    applySMod: applyAdditionalBerthingSMod,
     describeSMod: describeAdditionalBerthingSMod
   },
   advancedoptics: { describe: describeAdvancedOptics },
@@ -504,11 +549,13 @@ export const HULLMOD_IMPLS: Record<string, HullmodImpl> = {
   frontemitter: {
     describe: describeFrontShieldEmitter,
     apply: applyFrontShieldEmitter,
+    applySMod: applyFrontShieldEmitterSMod,
     describeSMod: describeFrontShieldEmitterSMod
   },
   adaptiveshields: {
     describe: describeOmniShieldEmitter,
     apply: applyOmniShieldEmitter,
+    applySMod: applyOmniShieldEmitterSMod,
     describeSMod: describeOmniShieldEmitterSMod
   },
   frontshield: {
@@ -534,21 +581,25 @@ export const HULLMOD_IMPLS: Record<string, HullmodImpl> = {
   shield_shunt: {
     describe: describeShieldShunt,
     apply: applyShieldShunt,
+    applySMod: applyShieldShuntSMod,
     describeSMod: describeShieldShuntSMod
   },
   auxiliary_fuel_tanks: {
     describe: describeAuxiliaryFuelTanks,
     apply: applyAuxiliaryFuelTanks,
+    applySMod: applyAuxiliaryFuelTanksSMod,
     describeSMod: describeAuxiliaryFuelTanksSMod
   },
   expanded_cargo_holds: {
     describe: describeExpandedCargoHolds,
     apply: applyExpandedCargoHolds,
+    applySMod: applyExpandedCargoHoldsSMod,
     describeSMod: describeExpandedCargoHoldsSMod
   },
   efficiency_overhaul: {
     describe: describeEfficiencyOverhaul,
     apply: applyEfficiencyOverhaul,
+    applySMod: applyEfficiencyOverhaulSMod,
     describeSMod: describeEfficiencyOverhaulSMod
   },
   hiressensors: {
@@ -676,11 +727,23 @@ export function getHullmodTables(mod: hullMod): HullmodTable[] {
 }
 
 /** Chain flat stat mods over a ship, skipping unknown ids and describe-only mods. */
-export function applyHullmods(ship: completeShip, ids: string[]): completeShip {
+export function applyHullmods(
+  ship: completeShip,
+  ids: string[],
+  smodIds: string[] = []
+): completeShip {
   let next = ship
   for (const id of ids) {
     const apply = HULLMOD_IMPLS[id]?.apply
-    if (apply) next = apply(next)
+    if (apply) next = apply(next, ship)
+  }
+  // S-mod bonuses stack on top of every base effect (e.g. Adaptive Shields
+  // divides the arc AFTER the base ×0.7 penalty). Only player-built S-mods
+  // qualify — hull-native built-ins in `ids` never receive their S-mod bonus.
+  const smodded = new Set(smodIds)
+  for (const id of smodded) {
+    const applySMod = HULLMOD_IMPLS[id]?.applySMod
+    if (applySMod) next = applySMod(next, ship)
   }
   return next
 }
@@ -817,11 +880,17 @@ export function getMaxCr(ids: string[]): number {
 /**
  * Combined sensor multipliers for a hullmod id list (sensors live outside
  * shipStats, so they chain here instead of in applyHullmods).
+ * S-modded Insulated Engines reduce the profile to 90% (×0.1) instead of 50%.
  */
-export function getSensorMults(ids: string[]): SensorMults {
+export function getSensorMults(ids: string[], smodIds: string[] = []): SensorMults {
+  const smodded = new Set(smodIds)
   let profile = 1
   let strength = 1
   for (const id of ids) {
+    if (id === "insulatedengine" && smodded.has(id)) {
+      profile *= INSULATED_ENGINES_SMOD_MULT
+      continue
+    }
     const mults = SENSOR_MULTS[id]
     if (!mults) continue
     profile *= mults.profile

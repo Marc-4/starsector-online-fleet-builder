@@ -157,6 +157,12 @@ export type fleetEntry = {
   fighters?: string[]
   /** Mounted hullmod ids. */
   hullmods?: string[]
+  /**
+   * Built-in (S-modded) hullmod ids. Disjoint from `hullmods`: building in
+   * moves the id out of `hullmods` into here. Costs 0 OP and grants the
+   * S-mod bonus effect.
+   */
+  smods?: string[]
 }
 
 export type hullMod = {

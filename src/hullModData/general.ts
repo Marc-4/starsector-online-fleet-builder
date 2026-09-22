@@ -48,6 +48,17 @@ export function describeFluxCoilSMod(mod: hullMod): string {
   return formatHullmodDesc(rawSModDesc(mod), ["200", "400", "600", "1000"])
 }
 
+// S-mod top-up stacks on the base coil, matching a maxed capacitor layout.
+export function applyFluxCoilSMod(ship: completeShip): completeShip {
+  const next = cloneShip(ship)
+  addStat(
+    next.stats,
+    "max flux",
+    byHullSize(ship.meta.hullSize, [200, 400, 600, 1000])
+  )
+  return next
+}
+
 export function applyFluxDistributor(ship: completeShip): completeShip {
   const next = cloneShip(ship)
   addStat(
@@ -73,6 +84,17 @@ export function describeFluxDistributor(mod: hullMod): string {
 
 export function describeFluxDistributorSMod(mod: hullMod): string {
   return formatHullmodDesc(rawSModDesc(mod), ["10", "20", "30", "50"])
+}
+
+// S-mod top-up stacks on the base distributor, matching maxed vents.
+export function applyFluxDistributorSMod(ship: completeShip): completeShip {
+  const next = cloneShip(ship)
+  addStat(
+    next.stats,
+    "flux dissipation",
+    byHullSize(ship.meta.hullSize, [10, 20, 30, 50])
+  )
+  return next
 }
 
 export function describeFluxBreakers(mod: hullMod): string {

@@ -1,4 +1,5 @@
 import {
+  DETRIMENTAL_SMOD_IDS,
   describeHullmod,
   describeHullmodSMod,
   getHullmodTables
@@ -6,9 +7,14 @@ import {
 import { highlightNumbers } from "#/lib/textColoring"
 import type { hullMod } from "#/types"
 
-export default function HullmodTooltip({ hullmod }: { hullmod: hullMod }) {
+export default function HullmodTooltip({
+  hullmod
+}: {
+  hullmod: hullMod
+}) {
   const sModText = describeHullmodSMod(hullmod) ?? hullmod.sModDesc
   const tables = getHullmodTables(hullmod)
+  const isPenalty = DETRIMENTAL_SMOD_IDS.has(hullmod.id)
   return (
     <div className="flex w-full font-serif flex-col gap-1 border border-cyan-200 bg-gray-950 p-2 text-lg">
       <p className="text-cyan-200">{hullmod.name}</p>
@@ -54,8 +60,10 @@ export default function HullmodTooltip({ hullmod }: { hullmod: hullMod }) {
       ))}
       {sModText && (
         <>
-          <p className="bg-lime-900/60 py-0.5 text-center text-md text-lime-200">
-            S-mod bonus
+          <p
+            className={`py-0.5 text-center text-md ${isPenalty ? "bg-orange-900/60 text-orange-200" : "bg-lime-900/60 text-lime-200"}`}
+          >
+            {isPenalty ? "S-mod penalty" : "S-mod bonus"}
           </p>
           <p className="whitespace-pre-line text-md leading-tight text-cyan-100/90">
             {highlightNumbers(sModText)}

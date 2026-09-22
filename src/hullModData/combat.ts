@@ -59,9 +59,15 @@ export function describeTurretGyrosSMod(mod: hullMod): string {
   return formatHullmodDesc(rawSModDesc(mod), ["15%", "15%"])
 }
 
-export function applyArmoredWeapons(ship: completeShip): completeShip {
+export function applyArmoredWeapons(
+  ship: completeShip,
+  base: completeShip
+): completeShip {
   const next = cloneShip(ship)
-  mulStat(next.stats, "armor rating", 1.1)
+  // Vanilla percent semantics: +10% of BASE armor, stacking additively with
+  // other bonuses (e.g. 400 base + 100 Heavy Armor -> +40, not +50).
+  const baseArmor = Math.max(0, Number(base.stats["armor rating"] ?? 0))
+  addStat(next.stats, "armor rating", baseArmor * 0.1)
   return next
 }
 
@@ -155,6 +161,13 @@ export function describeExtendedShieldsSMod(mod: hullMod): string {
   return formatHullmodDesc(rawSModDesc(mod), ["60"])
 }
 
+// S-mod widening stacks on top of the base +60 arc.
+export function applyExtendedShieldsSMod(ship: completeShip): completeShip {
+  const next = cloneShip(ship)
+  addStat(next.stats, "shield arc", 60)
+  return next
+}
+
 export function applyHeavyArmor(ship: completeShip): completeShip {
   const next = cloneShip(ship)
   addStat(next.stats, "armor rating", byHullSize(ship.meta.hullSize, [150, 300, 400, 500]))
@@ -217,6 +230,13 @@ export function describeFrontShieldEmitterSMod(mod: hullMod): string {
   return formatHullmodDesc(rawSModDesc(mod), ["5%"])
 }
 
+// -5% shield damage taken == shield efficiency (flux/damage) x0.95.
+export function applyFrontShieldEmitterSMod(ship: completeShip): completeShip {
+  const next = cloneShip(ship)
+  mulStat(next.stats, "shield efficiency", 0.95, false)
+  return next
+}
+
 export function applyOmniShieldEmitter(ship: completeShip): completeShip {
   const next = cloneShip(ship)
   ;(next.stats as Record<string, unknown>)["shield type"] = "OMNI"
@@ -230,6 +250,14 @@ export function describeOmniShieldEmitter(mod: hullMod): string {
 
 export function describeOmniShieldEmitterSMod(mod: hullMod): string {
   return formatHullmodDesc(rawSModDesc(mod), [])
+}
+
+// Negates the base x0.7 arc penalty. Runs after the base apply (see
+// applyHullmods), so dividing restores the original arc.
+export function applyOmniShieldEmitterSMod(ship: completeShip): completeShip {
+  const next = cloneShip(ship)
+  mulStat(next.stats, "shield arc", 1 / 0.7)
+  return next
 }
 
 export function applyFrontShieldGenerator(ship: completeShip): completeShip {
@@ -284,11 +312,17 @@ export function describeAssaultPackage(mod: hullMod): string {
   return formatHullmodDesc(rawDesc(mod), ["10%", "5%", "10%"])
 }
 
-export function applyShieldShunt(ship: completeShip): completeShip {
+export function applyShieldShunt(
+  ship: completeShip,
+  base: completeShip
+): completeShip {
   const next = cloneShip(ship)
   ;(next.stats as Record<string, unknown>)["shield type"] = "NONE"
   ;(next.stats as Record<string, unknown>)["shield arc"] = 0
-  mulStat(next.stats, "armor rating", 1.15, false)
+  // Vanilla uses modifyPercent: +15% of BASE armor, stacking additively with
+  // other bonuses (e.g. 1500 base + 500 Heavy Armor -> +225, not +300).
+  const baseArmor = Math.max(0, Number(base.stats["armor rating"] ?? 0))
+  addStat(next.stats, "armor rating", baseArmor * 0.15)
   return next
 }
 
@@ -298,4 +332,16 @@ export function describeShieldShunt(mod: hullMod): string {
 
 export function describeShieldShuntSMod(mod: hullMod): string {
   return formatHullmodDesc(rawSModDesc(mod), ["15%"])
+}
+
+// S-mod bonus is additive: another +15% of BASE armor on top
+// (e.g. 1500 -> 1725 -> 1950), not a second x1.15 multiplier (= 1984).
+export function applyShieldShuntSMod(
+  ship: completeShip,
+  base: completeShip
+): completeShip {
+  const next = cloneShip(ship)
+  const baseArmor = Math.max(0, Number(base.stats["armor rating"] ?? 0))
+  addStat(next.stats, "armor rating", baseArmor * 0.15)
+  return next
 }

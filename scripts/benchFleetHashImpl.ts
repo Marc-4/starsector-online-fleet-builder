@@ -17,7 +17,7 @@ function toBase64Url(bytes: Uint8Array): string {
 
 function mkEntry(
   hullId: string,
-  opts: { capacitors?: number; vents?: number; cr?: number; customName?: string; weapons?: Record<string, string>; fighters?: string[]; hullmods?: string[] } = {}
+  opts: { capacitors?: number; vents?: number; cr?: number; customName?: string; weapons?: Record<string, string>; fighters?: string[]; hullmods?: string[]; smods?: string[] } = {}
 ): fleetEntry {
   return {
     id: `bench-${hullId}`,
@@ -28,7 +28,8 @@ function mkEntry(
     customName: opts.customName ?? "",
     weapons: opts.weapons ?? {},
     fighters: opts.fighters ?? [],
-    hullmods: opts.hullmods ?? []
+    hullmods: opts.hullmods ?? [],
+    smods: opts.smods ?? []
   }
 }
 
@@ -80,7 +81,8 @@ function norm(e: DecodedEntry) {
   while (fighters.length > 0 && !fighters[fighters.length - 1]) fighters.pop()
   // Mirror sanitizeHullmods: dedupe, preserve order, then sort for comparison.
   const hullmods = [...new Set(e.hullmods ?? [])].sort()
-  return { ...e, weapons: Object.fromEntries(Object.entries(e.weapons).sort(([a], [b]) => (a < b ? -1 : 1))), fighters, hullmods }
+  const smods = [...new Set(e.smods ?? [])].sort()
+  return { ...e, weapons: Object.fromEntries(Object.entries(e.weapons).sort(([a], [b]) => (a < b ? -1 : 1))), fighters, hullmods, smods }
 }
 
 function checkRoundTrip(label: string, fleet: fleetEntry[]): { v2: number; v3: number } {
@@ -88,7 +90,7 @@ function checkRoundTrip(label: string, fleet: fleetEntry[]): { v2: number; v3: n
   const v3 = encodeFleetToHash(fleet)
   const back = decodeFleetEntries(`#fleet=${v3}`)
   const expected = fleet.map((e) =>
-    norm({ hullId: e.ship.meta.hullId, capacitors: e.capacitors, vents: e.vents, cr: e.cr, customName: e.customName, weapons: e.weapons ?? {}, fighters: [...(e.fighters ?? [])], hullmods: [...(e.hullmods ?? [])] })
+    norm({ hullId: e.ship.meta.hullId, capacitors: e.capacitors, vents: e.vents, cr: e.cr, customName: e.customName, weapons: e.weapons ?? {}, fighters: [...(e.fighters ?? [])], hullmods: [...(e.hullmods ?? [])], smods: [...(e.smods ?? [])] })
   )
   const actual = (back ?? []).map(norm)
   const ok = JSON.stringify(actual) === JSON.stringify(expected)
@@ -145,6 +147,12 @@ export async function run(): Promise<void> {
     mkEntry("my_modded_hull", { hullmods: ["my_modded_hullmod", "targetingunit"] }),
     mkEntry("eagle", {})
   ]
+  // smods: built-in moves stay disjoint and round-trip
+  const smodded: fleetEntry[] = [
+    mkEntry("paragon", { hullmods: ["targetingunit"], smods: ["heavyarmor", "blast_doors"] }),
+    mkEntry("eagle", { smods: ["blast_doors", "auxiliarythrusters", "targetingunit"] }),
+    mkEntry("lasher", {})
+  ]
   // carriers: fighter-heavy stress case (full bays, trailing empties, modded wing)
   const carriers: fleetEntry[] = [
     mkEntry("astral", { fighters: ["longbow_wing", "dagger_wing", "piranha_wing", "thunder_wing", "gladius_wing", "wasp_wing"] }),
@@ -159,6 +167,7 @@ export async function run(): Promise<void> {
   const e = checkRoundTrip("modded/edge", edge)
   const c = checkRoundTrip("carrier 4-ship fighter-heavy", carriers)
   const h = checkRoundTrip("hullmod-heavy 4-ship", modded)
+  const s = checkRoundTrip("smod 3-ship", smodded)
 
   const empty = encodeFleetToHash([])
   const emptyBack = decodeFleetEntries(empty)
@@ -177,7 +186,7 @@ export async function run(): Promise<void> {
   console.log(`${decodeFleetEntries("###") === null ? "PASS" : "FAIL"} decode garbage -> null`)
 
   console.log("\n--- lengths (URL chars) ---")
-  for (const [label, r] of [["worst", w], ["typical", t], ["minimal", m], ["edge", e], ["carriers", c], ["hullmods", h]] as const) {
+  for (const [label, r] of [["worst", w], ["typical", t], ["minimal", m], ["edge", e], ["carriers", c], ["hullmods", h], ["smods", s]] as const) {
     const pct = Math.round((1 - r.v3 / r.v2) * 100)
     console.log(`${label}: v2=${r.v2} v3=${r.v3} (-${pct}%)`)
   }

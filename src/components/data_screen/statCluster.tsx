@@ -174,19 +174,31 @@ export default function StatCluster({
         <div className="ss-label-col">
           <p className="ss-label-text max-sm:text-xs">TOP SPEED</p>
           <p className="text-base sm:text-lg">
-            <StatValue current={topSpeed} base={topSpeedBase} />
+            <StatValue
+              current={topSpeed}
+              base={topSpeedBase}
+              format={(n) => `${Math.ceil(n)}`}
+            />
           </p>
         </div>
         <div className="ss-label-col">
           <p className="ss-label-text max-sm:text-xs">ARMOR</p>
           <p className="text-base sm:text-lg">
-            <StatValue current={armor} base={armorBase} />
+            <StatValue
+              current={armor}
+              base={armorBase}
+              format={(n) => `${Math.ceil(n)}`}
+            />
           </p>
         </div>
         <div className="ss-label-col">
           <p className="ss-label-text max-sm:text-xs">HULL</p>
           <p className="text-base sm:text-lg">
-            <StatValue current={hull} base={hullBase} />
+            <StatValue
+              current={hull}
+              base={hullBase}
+              format={(n) => `${Math.ceil(n)}`}
+            />
           </p>
         </div>
       </div>

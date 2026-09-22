@@ -11,14 +11,15 @@ import type { completeShip, fleetEntry } from "#/types"
  * `useLoadoutOp`, which wraps it) instead of reading `supplies/mo` directly.
  */
 export function getEntryDeploymentCost(
-  entry: Pick<fleetEntry, "ship" | "hullmods" | "fighters"> & {
+  entry: Pick<fleetEntry, "ship" | "hullmods" | "smods" | "fighters"> & {
     ship: completeShip
   },
   fightersOp: number
 ): { dp: number; suppliesRec: number; delta: number } {
   const ids = [
     ...(entry.ship.meta.builtInMods ?? []),
-    ...(entry.hullmods ?? [])
+    ...(entry.hullmods ?? []),
+    ...(entry.smods ?? [])
   ]
   return getEffectiveDeploymentCost(entry.ship, ids, {
     fightersOp,

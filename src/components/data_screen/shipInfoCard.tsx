@@ -203,6 +203,7 @@ export default function ShipInfoCard({
   ship,
   baseShip,
   hullmodIds = [],
+  smodIds = [],
   capacitors = 0,
   vents = 0,
   fightersOp = 0
@@ -210,6 +211,8 @@ export default function ShipInfoCard({
   ship: completeShip
   baseShip?: completeShip
   hullmodIds?: string[]
+  /** Player-built S-mods (subset of hullmodIds): only these get S-mod bonuses. */
+  smodIds?: string[]
   capacitors?: number
   vents?: number
   fightersOp?: number
@@ -218,7 +221,7 @@ export default function ShipInfoCard({
   const m = ship.meta
   const b = baseShip?.stats
 
-  const sensorMults = getSensorMults(hullmodIds)
+  const sensorMults = getSensorMults(hullmodIds, smodIds)
   const sensorBase = sensorProfileByHullSize(m.hullSize)
   const sensorProfile = sensorBase * sensorMults.profile
   const sensorStrength = sensorBase * sensorMults.strength

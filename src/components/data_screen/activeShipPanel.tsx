@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
+import { getCrPenalty, getFluxMult, getMaxCr, getVentMult, MAX_SMODS } from "#/hullModData"
 import { getAllShipStats } from "#/lib/csvParser"
 import { getMaxCapsVents } from "#/lib/fluxLimits"
 import { getModifiedStat } from "#/lib/statModifier"
@@ -12,9 +13,11 @@ import type {
   weaponSlot,
   wingStats
 } from "#/types"
+import { useLoadoutOp } from "../../hooks/useLoadoutOp"
 import CommonButton from "../commonBtn"
 import FighterTooltip from "../fighterTooltip"
 import HullmodTooltip from "../hullmodTooltip"
+import BuildInModal from "../modals/buildInModal"
 import HullmodSelectionModal from "../modals/hullmodSelectionModal"
 import WeaponSelectionModal from "../modals/weaponSelectionModal"
 import WeaponTooltip from "../weaponTooltip"
@@ -25,8 +28,6 @@ import ShipDisplay from "./shipDisplay"
 import ShipInfoCard from "./shipInfoCard"
 import ShipName from "./shipName"
 import StatCluster from "./statCluster"
-import { getCrPenalty, getFluxMult, getMaxCr, getVentMult } from "#/hullModData"
-import { useLoadoutOp } from "../../hooks/useLoadoutOp"
 import ZoomControls from "./zoomControls"
 
 const MIN_ZOOM = 1
@@ -44,6 +45,7 @@ type Props = {
   onWeaponsChange: (weapons: Record<string, string>) => void
   onFightersChange: (fighters: string[]) => void
   onHullmodsChange: (hullmods: string[]) => void
+  onSmodsChange: (smods: string[]) => void
   onStrip: () => void
 }
 
@@ -57,6 +59,7 @@ export default function ActiveShipPanel({
   onWeaponsChange,
   onFightersChange,
   onHullmodsChange,
+  onSmodsChange,
   onStrip
 }: Props) {
   const [zoom, setZoom] = useState(1)
@@ -72,6 +75,7 @@ export default function ActiveShipPanel({
   const [hoveredWing, setHoveredWing] = useState<wingStats | null>(null)
   const [hoveredHullmod, setHoveredHullmod] = useState<hullMod | null>(null)
   const [showHullmods, setShowHullmods] = useState(false)
+  const [showBuildIn, setShowBuildIn] = useState(false)
   const [showInfo, setShowInfo] = useState(false)
   const [allShipStats, setAllShipStats] = useState<shipStats[]>([])
   const maxZoom = isMobile ? MAX_ZOOM_MOBILE : MAX_ZOOM_DESKTOP
@@ -88,18 +92,21 @@ export default function ActiveShipPanel({
     spentOp,
     assignedHullmods,
     builtInHullmods,
+    smoddedHullmods,
     moddedShip,
     wouldExceedOp,
     wouldExceedFighterOp,
-    wouldExceedHullmodOp
+    wouldExceedHullmodOp,
+    wouldExceedSmodRemovalOp
   } = useLoadoutOp(activeTile)
 
   const allModIds = useMemo(
     () => [
       ...(activeTile.ship.meta.builtInMods ?? []),
-      ...(activeTile.hullmods ?? [])
+      ...(activeTile.hullmods ?? []),
+      ...(activeTile.smods ?? [])
     ],
-    [activeTile.ship.meta.builtInMods, activeTile.hullmods]
+    [activeTile.ship.meta.builtInMods, activeTile.hullmods, activeTile.smods]
   )
   const fluxMult = getFluxMult(allModIds)
 
@@ -137,6 +144,38 @@ export default function ActiveShipPanel({
       onWeaponsChange({ ...activeTile.weapons, [slot.id]: w.id })
     },
     [lastSlottedId, activeTile.weapons, onWeaponsChange, wouldExceedOp]
+  )
+
+  const handleBuildIn = useCallback(
+    (id: string) => {
+      const current = activeTile.hullmods ?? []
+      const smods = activeTile.smods ?? []
+      if (!current.includes(id)) return
+      if (smods.includes(id)) return
+      if (smods.length >= MAX_SMODS) return
+      onHullmodsChange(current.filter((x) => x !== id))
+      onSmodsChange([...smods, id])
+      setShowBuildIn(false)
+    },
+    [activeTile.hullmods, activeTile.smods, onHullmodsChange, onSmodsChange]
+  )
+
+  const handleUnbuildSmod = useCallback(
+    (id: string) => {
+      const smods = activeTile.smods ?? []
+      if (!smods.includes(id)) return
+      // Un-building restores the OP cost — block when the loadout is full.
+      if (wouldExceedSmodRemovalOp(id)) return
+      onSmodsChange(smods.filter((x) => x !== id))
+      onHullmodsChange([...(activeTile.hullmods ?? []), id])
+    },
+    [
+      activeTile.smods,
+      activeTile.hullmods,
+      onSmodsChange,
+      onHullmodsChange,
+      wouldExceedSmodRemovalOp
+    ]
   )
 
   useEffect(() => {
@@ -256,13 +295,16 @@ export default function ActiveShipPanel({
           <HullmodRoster
             assignedHullmods={assignedHullmods}
             builtInHullmods={builtInHullmods}
+            smoddedHullmods={smoddedHullmods}
             onHoverHullmod={setHoveredHullmod}
             onRemoveHullmod={(id) =>
               onHullmodsChange(
                 (activeTile.hullmods ?? []).filter((x) => x !== id)
               )
             }
+            onRemoveSmod={handleUnbuildSmod}
             onAdd={() => setShowHullmods(true)}
+            onBuildIn={() => setShowBuildIn(true)}
           />
         </div>
       </div>
@@ -279,8 +321,10 @@ export default function ActiveShipPanel({
               baseShip={activeTile.ship}
               hullmodIds={[
                 ...(activeTile.ship.meta.builtInMods ?? []),
-                ...(activeTile.hullmods ?? [])
+                ...(activeTile.hullmods ?? []),
+                ...(activeTile.smods ?? [])
               ]}
+              smodIds={activeTile.smods ?? []}
               capacitors={activeTile.capacitors}
               vents={activeTile.vents}
               fightersOp={fightersOp}
@@ -428,7 +472,8 @@ export default function ActiveShipPanel({
           mountedWeaponIds={activeTile.weapons ?? {}}
           installedHullmodIds={[
             ...(activeTile.ship.meta.builtInMods ?? []),
-            ...(activeTile.hullmods ?? [])
+            ...(activeTile.hullmods ?? []),
+            ...(activeTile.smods ?? [])
           ]}
           onRemoveWeapon={(w) => {
             // Unmount only from the currently open slot.
@@ -443,11 +488,14 @@ export default function ActiveShipPanel({
         <HullmodSelectionModal
           ship={activeTile.ship}
           hullSize={activeTile.ship.meta.hullSize}
-          mountedHullmodIds={activeTile.hullmods ?? []}
+          mountedHullmodIds={[...(activeTile.hullmods ?? []), ...(activeTile.smods ?? [])]}
           remainingOp={availableOp - spentOp}
           onClose={() => setShowHullmods(false)}
           onSelect={(h) => {
             const current = activeTile.hullmods ?? []
+            const smods = activeTile.smods ?? []
+            // S-mods are managed via the Build in modal — don't toggle them here.
+            if (smods.includes(h.id)) return
             if (current.includes(h.id)) {
               onHullmodsChange(current.filter((id) => id !== h.id))
             } else {
@@ -455,6 +503,14 @@ export default function ActiveShipPanel({
               onHullmodsChange([...current, h.id])
             }
           }}
+        />
+      )}
+      {showBuildIn && (
+        <BuildInModal
+          assignedHullmods={assignedHullmods}
+          smodCount={(activeTile.smods ?? []).length}
+          onClose={() => setShowBuildIn(false)}
+          onBuildIn={handleBuildIn}
         />
       )}
 

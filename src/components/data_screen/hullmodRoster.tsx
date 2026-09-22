@@ -1,23 +1,34 @@
 import { resolveHullModSpriteUrl } from "#/lib/csvParser"
 import type { hullMod } from "#/types"
+import type {
+  AssignedHullmod,
+  BuiltInHullmod,
+  SmoddedHullmod
+} from "../../hooks/useLoadoutOp"
 import CommonButton from "../commonBtn"
-import type { AssignedHullmod, BuiltInHullmod } from "../../hooks/useLoadoutOp"
 
 type Props = {
   assignedHullmods: AssignedHullmod[]
   builtInHullmods: BuiltInHullmod[]
+  smoddedHullmods: SmoddedHullmod[]
   onHoverHullmod: (mod: hullMod | null) => void
   onRemoveHullmod: (id: string) => void
+  onRemoveSmod: (id: string) => void
   onAdd: () => void
+  onBuildIn: () => void
 }
 
 export default function HullmodRoster({
   assignedHullmods,
   builtInHullmods,
+  smoddedHullmods,
   onHoverHullmod,
   onRemoveHullmod,
-  onAdd
+  onRemoveSmod,
+  onAdd,
+  onBuildIn
 }: Props) {
+  const hasBuildable = assignedHullmods.some(({ cost }) => cost > 0)
   return (
     <div className="flex gap-1 flex-col items-end">
       <div className="flex flex-col gap-1 items-end max-h-56 overflow-y-auto">
@@ -50,6 +61,50 @@ export default function HullmodRoster({
                 />
               ) : (
                 <span className="h-8 w-8 border border-cyan-800 bg-cyan-900/30" />
+              )}
+            </button>
+          )
+        })}
+        {smoddedHullmods.map(({ id, mod }) => {
+          const spriteUrl = resolveHullModSpriteUrl(mod.sprite)
+          return (
+            <button
+              type="button"
+              key={`smod-${id}`}
+              title="S-mod: built in (0 OP) — click − to un-build"
+              className="flex items-center gap-1 text-sm"
+              onMouseEnter={() => onHoverHullmod(mod)}
+              onMouseLeave={() => onHoverHullmod(null)}
+              onFocus={() => onHoverHullmod(mod)}
+              onBlur={() => onHoverHullmod(null)}
+              onTouchStart={() => onHoverHullmod(mod)}
+              onTouchEnd={() => onHoverHullmod(null)}
+              onTouchCancel={() => onHoverHullmod(null)}
+            >
+              <span className="text-lime-200 font-bold [-webkit-text-stroke:0.5px_var(--color-gray-950)]">
+                {mod.name} (S)
+              </span>
+              <CommonButton
+                cutAllCorners
+                text="-"
+                aria-label={`Un-build ${mod.name}`}
+                title="Un-build: moves back to installed hullmods"
+                className="w-fit px-3"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onRemoveSmod(id)
+                }}
+              />
+              {spriteUrl ? (
+                <img
+                  src={spriteUrl}
+                  alt=""
+                  draggable={false}
+                  className="h-8 w-8 object-contain"
+                  loading="lazy"
+                />
+              ) : (
+                <span className="h-8 w-8 border border-lime-800 bg-lime-900/30" />
               )}
             </button>
           )
@@ -100,9 +155,16 @@ export default function HullmodRoster({
         onClick={onAdd}
       />
       <CommonButton
-        disabled
         text="Build in"
+        aria-label="Build in a hullmod"
+        title={
+          hasBuildable
+            ? "Build in an installed hullmod (0 OP)"
+            : "Nothing worth building in — installed hullmods already cost 0 OP"
+        }
+        disabled={!hasBuildable}
         className="w-32 disabled:opacity-50 disabled:cursor-not-allowed bg-lime-700 py-0.5 self-end"
+        onClick={onBuildIn}
       />
     </div>
   )

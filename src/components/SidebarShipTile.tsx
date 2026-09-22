@@ -60,7 +60,8 @@ export default function SidebarShipTile({
     const hullModById = new Map(getAllHullMods().map((h) => [h.id, h]))
     const discountIds = [
       ...(entry.ship.meta.builtInMods ?? []),
-      ...(entry.hullmods ?? [])
+      ...(entry.hullmods ?? []),
+      ...(entry.smods ?? [])
     ]
     const num = (n: unknown) => (Number.isFinite(Number(n)) ? Number(n) : 0)
     let spent = entry.capacitors + entry.vents

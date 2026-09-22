@@ -140,7 +140,8 @@ export default function ShipSelectionModal({
       customName: "",
       weapons: {},
       fighters: [],
-      hullmods: []
+      hullmods: [],
+      smods: []
     }))
     const mergedEntries = [...existingEntries, ...addedEntries]
     const mergedFleet = hydrateFleet(mergedEntries, allShips, allShipStats)

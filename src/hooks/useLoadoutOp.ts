@@ -17,6 +17,8 @@ import { useWeaponMountInfo } from "./useWeaponMountInfo"
 
 export type AssignedHullmod = { id: string; mod: hullMod; cost: number }
 export type BuiltInHullmod = { id: string; mod: hullMod }
+/** Player-built S-mod: moved out of `hullmods`, costs 0 OP. */
+export type SmoddedHullmod = { id: string; mod: hullMod }
 
 /** All OP accounting + modded stats for one fleet entry. */
 export function useLoadoutOp(activeTile: fleetEntry) {
@@ -29,9 +31,10 @@ export function useLoadoutOp(activeTile: fleetEntry) {
   const allDiscountIds = useMemo(
     () => [
       ...(activeTile.ship.meta.builtInMods ?? []),
-      ...(activeTile.hullmods ?? [])
+      ...(activeTile.hullmods ?? []),
+      ...(activeTile.smods ?? [])
     ],
-    [activeTile.ship.meta.builtInMods, activeTile.hullmods]
+    [activeTile.ship.meta.builtInMods, activeTile.hullmods, activeTile.smods]
   )
   const opOf = useCallback(
     (wid: string | undefined) => {
@@ -124,16 +127,38 @@ export function useLoadoutOp(activeTile: fleetEntry) {
     }
     return out.filter((r): r is BuiltInHullmod => r.mod !== null)
   }, [activeTile.ship.meta.builtInMods, hullModById])
+  // S-mods live in their own array (moved out of `hullmods` when built in).
+  // They cost 0 OP but still apply their base effect via `moddedShip` below
+  // (S-mod bonus effects are a follow-up: see HullmodImpl.applySMod).
+  const smoddedHullmods: SmoddedHullmod[] = useMemo(() => {
+    const out: SmoddedHullmod[] = []
+    for (const id of activeTile.smods ?? []) {
+      if (HIDDEN_BUILTIN_MOD_IDS.has(id)) continue
+      const mod = hullModById.get(id)
+      if (mod) out.push({ id, mod })
+    }
+    return out
+  }, [activeTile.smods, hullModById])
   const hullmodsOp = useMemo(() => {
     return assignedHullmods.reduce((sum, r) => sum + r.cost, 0)
   }, [assignedHullmods])
   const moddedShip = useMemo(
     () =>
-      applyHullmods(activeTile.ship, [
-        ...(activeTile.ship.meta.builtInMods ?? []),
-        ...(activeTile.hullmods ?? [])
-      ]),
-    [activeTile.ship, activeTile.hullmods]
+      applyHullmods(
+        activeTile.ship,
+        [
+          ...(activeTile.ship.meta.builtInMods ?? []),
+          ...(activeTile.hullmods ?? []),
+          ...(activeTile.smods ?? [])
+        ],
+        activeTile.smods ?? []
+      ),
+    [
+      activeTile.ship,
+      activeTile.ship.meta.builtInMods,
+      activeTile.hullmods,
+      activeTile.smods
+    ]
   )
   const { dp: effectiveDP, suppliesRec: effectiveSuppliesRec, delta: deploymentDelta } =
     useMemo(
@@ -142,14 +167,21 @@ export function useLoadoutOp(activeTile: fleetEntry) {
           activeTile.ship,
           [
             ...(activeTile.ship.meta.builtInMods ?? []),
-            ...(activeTile.hullmods ?? [])
+            ...(activeTile.hullmods ?? []),
+            ...(activeTile.smods ?? [])
           ],
           {
             fightersOp,
             hullSize: activeTile.ship.meta.hullSize
           }
         ),
-      [activeTile.ship, activeTile.hullmods, fightersOp]
+      [
+        activeTile.ship,
+        activeTile.ship.meta.builtInMods,
+        activeTile.hullmods,
+        activeTile.smods,
+        fightersOp
+      ]
     )
 
   const spentOp =
@@ -216,6 +248,7 @@ export function useLoadoutOp(activeTile: fleetEntry) {
   const wouldExceedHullmodOp = useCallback(
     (hullmodId: string) => {
       if ((activeTile.hullmods ?? []).includes(hullmodId)) return false
+      if ((activeTile.smods ?? []).includes(hullmodId)) return false
       const mod = hullModById.get(hullmodId)
       if (!mod) return true
       return (
@@ -232,6 +265,36 @@ export function useLoadoutOp(activeTile: fleetEntry) {
       activeTile.capacitors,
       activeTile.vents,
       activeTile.hullmods,
+      activeTile.smods,
+      activeTile.ship.meta.hullSize,
+      availableOp,
+      weaponsOp,
+      fightersOp,
+      hullmodsOp,
+      hullModById
+    ]
+  )
+
+  // Un-building restores the OP cost, so it can fail when the loadout is full.
+  const wouldExceedSmodRemovalOp = useCallback(
+    (hullmodId: string) => {
+      if (!(activeTile.smods ?? []).includes(hullmodId)) return false
+      const mod = hullModById.get(hullmodId)
+      if (!mod) return true
+      return (
+        activeTile.capacitors +
+          activeTile.vents +
+          weaponsOp +
+          fightersOp +
+          hullmodsOp +
+          getHullModCost(mod, activeTile.ship.meta.hullSize) >
+        availableOp
+      )
+    },
+    [
+      activeTile.capacitors,
+      activeTile.vents,
+      activeTile.smods,
       activeTile.ship.meta.hullSize,
       availableOp,
       weaponsOp,
@@ -254,12 +317,14 @@ export function useLoadoutOp(activeTile: fleetEntry) {
     hullmodsOp,
     assignedHullmods,
     builtInHullmods,
+    smoddedHullmods,
     moddedShip,
     deploymentDelta,
     effectiveDP,
     effectiveSuppliesRec,
     wouldExceedOp,
     wouldExceedFighterOp,
-    wouldExceedHullmodOp
+    wouldExceedHullmodOp,
+    wouldExceedSmodRemovalOp
   }
 }

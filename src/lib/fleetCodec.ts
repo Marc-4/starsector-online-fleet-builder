@@ -4,12 +4,12 @@ import { getShipStats } from "./csvParser"
 import { HULL_IDS, HULLMOD_IDS, WEAPON_IDS, WING_IDS } from "./fleetDicts"
 import { newFleetId } from "./id"
 
-type EntryPayload = { h: string; c?: number; v?: number; cr?: number; n?: string; w?: Record<string, string>; fg?: string[]; hm?: string[] }
+type EntryPayload = { h: string; c?: number; v?: number; cr?: number; n?: string; w?: Record<string, string>; fg?: string[]; hm?: string[]; sm?: string[] }
 type PayloadV1 = { v: 1; f: string[] }
 type PayloadV2 = { v: 2; f: EntryPayload[] }
 type Payload = PayloadV1 | PayloadV2
 
-export type DecodedEntry = { hullId: string; capacitors: number; vents: number; cr: number; customName: string; weapons: Record<string, string>; fighters: string[]; hullmods: string[] }
+export type DecodedEntry = { hullId: string; capacitors: number; vents: number; cr: number; customName: string; weapons: Record<string, string>; fighters: string[]; hullmods: string[]; smods: string[] }
 
 const DEFAULT_CR = 70
 
@@ -50,6 +50,7 @@ export function encodeFleetToHashV2(fleet: fleetEntry[]): string {
         e.weapons && Object.keys(e.weapons).length > 0 ? e.weapons : undefined,
       fg: e.fighters && e.fighters.some(Boolean) ? e.fighters : undefined,
       hm: e.hullmods && e.hullmods.length > 0 ? e.hullmods : undefined,
+      sm: e.smods && e.smods.length > 0 ? e.smods : undefined,
     })),
   }
   return deflateHash(new TextEncoder().encode(JSON.stringify(payload)))
@@ -76,8 +77,10 @@ const FLAG_WEAPONS = 0x08
 const FLAG_DENSE_WEAPONS = 0x10
 const FLAG_FIGHTERS = 0x20
 const FLAG_HULLMODS = 0x40
+const FLAG_SMODS = 0x80
 const MAX_FIGHTER_BAYS = 32
 const MAX_HULLMODS_PER_SHIP = 32
+const MAX_SMODS_PER_SHIP = 3
 
 // Upper bounds against corrupt input
 const MAX_SHIPS = 512
@@ -209,6 +212,15 @@ function encodeV3(fleet: fleetEntry[]): Uint8Array {
     const hullmods = (e.hullmods ?? []).filter(
       (h): h is string => typeof h === "string" && !!h
     )
+    // S-mods are stored disjoint from hullmods (built-in moves the id over).
+    // Tolerate overlap from older/corrupt payloads by preferring smods.
+    const smodSet = new Set(
+      (e.smods ?? []).filter(
+        (h): h is string => typeof h === "string" && !!h
+      )
+    )
+    const smods = [...smodSet]
+    const cleanHullmods = hullmods.filter((h) => !smodSet.has(h))
     let flags = 0
     if (name) flags |= FLAG_NAME
     if (cr !== DEFAULT_CR) flags |= FLAG_CR
@@ -216,7 +228,8 @@ function encodeV3(fleet: fleetEntry[]): Uint8Array {
     if (pairs.length > 0) flags |= FLAG_WEAPONS
     if (dense) flags |= FLAG_DENSE_WEAPONS
     if (fighters.length > 0) flags |= FLAG_FIGHTERS
-    if (hullmods.length > 0) flags |= FLAG_HULLMODS
+    if (cleanHullmods.length > 0) flags |= FLAG_HULLMODS
+    if (smods.length > 0) flags |= FLAG_SMODS
     out.push(flags)
 
     writeRef(out, hullIndex, HULL_IDS.length, e.ship.meta.hullId)
@@ -259,8 +272,14 @@ function encodeV3(fleet: fleetEntry[]): Uint8Array {
       }
     }
     if (flags & FLAG_HULLMODS) {
-      writeVarint(out, hullmods.length)
-      for (const h of hullmods) {
+      writeVarint(out, cleanHullmods.length)
+      for (const h of cleanHullmods) {
+        writeRef(out, hullmodIndex, HULLMOD_IDS.length, h)
+      }
+    }
+    if (flags & FLAG_SMODS) {
+      writeVarint(out, smods.length)
+      for (const h of smods) {
         writeRef(out, hullmodIndex, HULLMOD_IDS.length, h)
       }
     }
@@ -276,7 +295,7 @@ function decodeV3(bytes: Uint8Array): DecodedEntry[] {
   const out: DecodedEntry[] = []
   for (let i = 0; i < count; i++) {
     const flags = r.u8()
-    if (flags & ~0x7f) throw new Error("v3: bad flags")
+    if (flags & ~0xff) throw new Error("v3: bad flags")
     if (flags & FLAG_DENSE_WEAPONS && !(flags & FLAG_WEAPONS)) throw new Error("v3: bad flags")
     const hullId = r.ref(HULL_IDS)
     let capacitors = 0
@@ -328,7 +347,13 @@ function decodeV3(bytes: Uint8Array): DecodedEntry[] {
       if (n === 0 || n > MAX_HULLMODS_PER_SHIP) throw new Error("v3: bad hullmod count")
       for (let k = 0; k < n; k++) hullmods.push(r.ref(HULLMOD_IDS))
     }
-    out.push({ hullId, capacitors, vents, cr, customName, weapons, fighters, hullmods })
+    let smods: string[] = []
+    if (flags & FLAG_SMODS) {
+      const n = r.varint()
+      if (n === 0 || n > MAX_SMODS_PER_SHIP) throw new Error("v3: bad smod count")
+      for (let k = 0; k < n; k++) smods.push(r.ref(HULLMOD_IDS))
+    }
+    out.push({ hullId, capacitors, vents, cr, customName, weapons, fighters, hullmods, smods })
   }
   if (!r.done) throw new Error("v3: trailing bytes")
   return out
@@ -368,6 +393,7 @@ export function decodeFleetEntries(hash: string): DecodedEntry[] | null {
           weapons: sanitizeWeapons(e.w),
           fighters: sanitizeFighters(e.fg),
           hullmods: sanitizeHullmods(e.hm),
+          smods: sanitizeSmods(e.sm),
         })
       }
       return out
@@ -376,7 +402,7 @@ export function decodeFleetEntries(hash: string): DecodedEntry[] | null {
       // v1 backward compat: only hullIds
       return (parsed as PayloadV1).f
         .filter((x) => typeof x === "string")
-        .map((hullId) => ({ hullId, capacitors: 0, vents: 0, cr: 70, customName: "", weapons: {}, fighters: [], hullmods: [] }))
+        .map((hullId) => ({ hullId, capacitors: 0, vents: 0, cr: 70, customName: "", weapons: {}, fighters: [], hullmods: [], smods: [] }))
     }
     return null
   } catch {
@@ -393,12 +419,12 @@ export function hydrateFleet(
     ids.length === 0
       ? []
       : typeof ids[0] === "string"
-        ? (ids as string[]).map((hullId) => ({ hullId, capacitors: 0, vents: 0, cr: 70, customName: "", weapons: {}, fighters: [], hullmods: [] }))
+        ? (ids as string[]).map((hullId) => ({ hullId, capacitors: 0, vents: 0, cr: 70, customName: "", weapons: {}, fighters: [], hullmods: [], smods: [] }))
         : (ids as DecodedEntry[])
   const shipById = new Map(allShips.map((s) => [s.hullId, s]))
   const out: fleetEntry[] = []
   for (const entry of entries) {
-    const { hullId, capacitors, vents, cr, customName, weapons, fighters, hullmods } = entry
+    const { hullId, capacitors, vents, cr, customName, weapons, fighters, hullmods, smods } = entry
     const meta = shipById.get(hullId)
     if (!meta) {
       console.warn(`hydrateFleet: unknown hullId ${hullId}`)
@@ -409,7 +435,12 @@ export function hydrateFleet(
       console.warn(`hydrateFleet: missing stats for ${hullId}`)
       continue
     }
-    out.push({ id: newFleetId(), ship: { meta, stats }, cr, capacitors, vents, customName, weapons, fighters, hullmods: sanitizeHullmods(hullmods) })
+    const cleanSmods = sanitizeSmods(smods)
+    const smodSet = new Set(cleanSmods)
+    const cleanHullmods = sanitizeHullmods(hullmods).filter(
+      (h) => !smodSet.has(h)
+    )
+    out.push({ id: newFleetId(), ship: { meta, stats }, cr, capacitors, vents, customName, weapons, fighters, hullmods: cleanHullmods, smods: cleanSmods })
   }
   return out
 }
@@ -426,6 +457,18 @@ function sanitizeHullmods(hm: unknown): string[] {
   const seen = new Set<string>()
   const out: string[] = []
   for (const x of hm.slice(0, MAX_HULLMODS_PER_SHIP)) {
+    if (typeof x !== "string" || !x || seen.has(x)) continue
+    seen.add(x)
+    out.push(x)
+  }
+  return out
+}
+
+function sanitizeSmods(sm: unknown): string[] {
+  if (!Array.isArray(sm)) return []
+  const seen = new Set<string>()
+  const out: string[] = []
+  for (const x of sm.slice(0, MAX_SMODS_PER_SHIP)) {
     if (typeof x !== "string" || !x || seen.has(x)) continue
     seen.add(x)
     out.push(x)

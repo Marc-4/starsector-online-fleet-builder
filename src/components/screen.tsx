@@ -79,7 +79,7 @@ export default function Screen({ children }: { children?: ReactNode }) {
   const mountInfo = useWeaponMountInfo()
   const weaponsOpOf = (
     weapons?: Record<string, string>,
-    entry?: Pick<fleetEntry, "hullmods" | "ship">
+    entry?: Pick<fleetEntry, "hullmods" | "smods" | "ship">
   ) =>
     Object.values(weapons ?? {}).reduce((sum, wid) => {
       const op = opById.get(wid)
@@ -90,7 +90,7 @@ export default function Screen({ children }: { children?: ReactNode }) {
         sum +
         getEffectiveWeaponOp(
           base,
-          [...(entry.ship.meta.builtInMods ?? []), ...(entry.hullmods ?? [])],
+          [...(entry.ship.meta.builtInMods ?? []), ...(entry.hullmods ?? []), ...(entry.smods ?? [])],
           { weaponId: wid, size: info.size, mountType: info.mountType }
         )
       )
@@ -105,6 +105,7 @@ export default function Screen({ children }: { children?: ReactNode }) {
     () => new Map(getAllHullMods().map((h) => [h.id, h])),
     []
   )
+  // S-mods cost 0 OP, so only regular installs count toward hullmod OP.
   const hullmodsOpOf = (hullmods?: string[], hullSize?: string) =>
     (hullmods ?? []).reduce((sum, id) => {
       const mod = hullModById.get(id)
@@ -115,7 +116,7 @@ export default function Screen({ children }: { children?: ReactNode }) {
       fleet.reduce((sum, fe) => {
         const base = fe.ship.stats["supplies/mo"] ?? 0
         const delta = getDeploymentCostDelta(
-          [...(fe.ship.meta.builtInMods ?? []), ...(fe.hullmods ?? [])],
+          [...(fe.ship.meta.builtInMods ?? []), ...(fe.hullmods ?? []), ...(fe.smods ?? [])],
           {
             fightersOp: fightersOpOf(fe.fighters),
             hullSize: fe.ship.meta.hullSize
@@ -213,6 +214,7 @@ export default function Screen({ children }: { children?: ReactNode }) {
         | "weapons"
         | "fighters"
         | "hullmods"
+        | "smods"
       >
     >
   ) => {
@@ -372,12 +374,17 @@ export default function Screen({ children }: { children?: ReactNode }) {
     if (!activeTile) return
     updateEntry(activeTile.id, { hullmods })
   }
+  const onSmodsChange = (smods: string[]) => {
+    if (!activeTile) return
+    updateEntry(activeTile.id, { smods })
+  }
   const onStrip = () => {
     if (!activeTile) return
     updateEntry(activeTile.id, {
       weapons: {},
       fighters: [],
       hullmods: [],
+      smods: [],
       capacitors: 0,
       vents: 0
     })
@@ -493,6 +500,7 @@ export default function Screen({ children }: { children?: ReactNode }) {
               onWeaponsChange={onWeaponsChange}
               onFightersChange={onFightersChange}
               onHullmodsChange={onHullmodsChange}
+              onSmodsChange={onSmodsChange}
               onStrip={onStrip}
             />
           )}

@@ -16,7 +16,15 @@ export function describeAugmentedEnginesSMod(mod: hullMod): string {
   return formatHullmodDesc(rawSModDesc(mod), ["1"])
 }
 
+export function applyAugmentedEnginesSMod(ship: completeShip): completeShip {
+  const next = cloneShip(ship)
+  addStat(next.stats, "max burn", 1)
+  return next
+}
+
 export const INSULATED_ENGINES_MULT = 0.5
+/** S-modded Insulated Engines: sensor profile reduction goes to 90%. */
+export const INSULATED_ENGINES_SMOD_MULT = 0.1
 export function applyInsulatedEngines(ship: completeShip): completeShip {
   const next = cloneShip(ship)
   mulStat(next.stats, "hitpoints", 1.1)
@@ -77,6 +85,19 @@ export function describeConvertedFighterBaySMod(mod: hullMod): string {
   return formatHullmodDesc(rawSModDesc(mod), ["15%"])
 }
 
+// -15% maintenance per converted bay. The bay count comes from the base ship:
+// the base apply already stripped builtInWings by the time S-mods run.
+export function applyConvertedFighterBaySMod(
+  ship: completeShip,
+  base: completeShip
+): completeShip {
+  const count = base.meta.builtInWings?.length ?? 0
+  if (count <= 0) return cloneShip(ship)
+  const next = cloneShip(ship)
+  mulStat(next.stats, "supplies/mo", 0.85 ** count, false)
+  return next
+}
+
 const BURN_BONUS = 1
 const MIN_CREW_MULT = 2
 
@@ -100,23 +121,19 @@ export function describeMilitarizedSubsystemsSMod(mod: hullMod): string {
   return formatHullmodDesc(rawSModDesc(mod), [])
 }
 
+// Negates the base x2 minimum-crew penalty.
+export function applyMilitarizedSubsystemsSMod(
+  ship: completeShip
+): completeShip {
+  const next = cloneShip(ship)
+  mulStat(next.stats, "min crew", 1 / MIN_CREW_MULT, false)
+  return next
+}
+
 // +30/60/100/200 max crew by size (or +30% of base, whichever is higher).
 // Civilian-grade hulls (built-in civgrade) also pay +50% maintenance.
 export function applyAdditionalBerthing(ship: completeShip): completeShip {
-  const next = cloneShip(ship)
-  const base = Math.max(0, Number(next.stats["max crew"] ?? 0))
-  addStat(
-    next.stats,
-    "max crew",
-    Math.max(
-      byHullSize(ship.meta.hullSize, [30, 60, 100, 200]),
-      Math.round(base * 0.3)
-    )
-  )
-  if ((ship.meta.builtInMods ?? []).includes("civgrade")) {
-    mulStat(next.stats, "supplies/mo", 1.5, false)
-  }
-  return next
+  return applyCapacityCommon(ship, "max crew", [30, 60, 100, 200])
 }
 
 export function describeAdditionalBerthing(mod: hullMod): string {
@@ -136,17 +153,28 @@ export function describeAdditionalBerthingSMod(mod: hullMod): string {
 
 // ---- §6 logistics ----
 
+// Flat table value by hull size, or 30% of the stat — whichever is higher.
+function capacityBonus(
+  baseVal: number,
+  hullSize: string,
+  flat: [number, number, number, number]
+): number {
+  return Math.max(
+    byHullSize(hullSize, flat),
+    Math.round(Math.max(0, baseVal) * 0.3)
+  )
+}
+
 function applyCapacityCommon(
   ship: completeShip,
   stat: "max crew" | "fuel" | "cargo",
   flat: [number, number, number, number]
 ): completeShip {
   const next = cloneShip(ship)
-  const base = Math.max(0, Number(next.stats[stat] ?? 0))
   addStat(
     next.stats,
     stat,
-    Math.max(byHullSize(ship.meta.hullSize, flat), Math.round(base * 0.3))
+    capacityBonus(Number(next.stats[stat] ?? 0), ship.meta.hullSize, flat)
   )
   if ((ship.meta.builtInMods ?? []).includes("civgrade")) {
     mulStat(next.stats, "supplies/mo", 1.5, false)
@@ -154,8 +182,47 @@ function applyCapacityCommon(
   return next
 }
 
+// S-mod doubles the capacity bonus and, on civilian hulls, negates the +50%
+// maintenance penalty. The doubled bonus is computed from the UNMODIFIED base
+// ship so the 30%-of-base branch stays exact instead of compounding.
+function applyCapacitySMod(
+  ship: completeShip,
+  base: completeShip,
+  stat: "max crew" | "fuel" | "cargo",
+  flat: [number, number, number, number]
+): completeShip {
+  const next = cloneShip(ship)
+  addStat(
+    next.stats,
+    stat,
+    capacityBonus(Number(base.stats[stat] ?? 0), base.meta.hullSize, flat)
+  )
+  if ((base.meta.builtInMods ?? []).includes("civgrade")) {
+    mulStat(next.stats, "supplies/mo", 1 / 1.5, false)
+  }
+  return next
+}
+
+const BERTHING_FLAT: [number, number, number, number] = [30, 60, 100, 200]
+
+export function applyAdditionalBerthingSMod(
+  ship: completeShip,
+  base: completeShip
+): completeShip {
+  return applyCapacitySMod(ship, base, "max crew", BERTHING_FLAT)
+}
+
 export function applyAuxiliaryFuelTanks(ship: completeShip): completeShip {
   return applyCapacityCommon(ship, "fuel", [30, 60, 100, 200])
+}
+
+const FUEL_FLAT: [number, number, number, number] = [30, 60, 100, 200]
+
+export function applyAuxiliaryFuelTanksSMod(
+  ship: completeShip,
+  base: completeShip
+): completeShip {
+  return applyCapacitySMod(ship, base, "fuel", FUEL_FLAT)
 }
 
 export function describeAuxiliaryFuelTanks(mod: hullMod): string {
@@ -175,6 +242,15 @@ export function describeAuxiliaryFuelTanksSMod(mod: hullMod): string {
 
 export function applyExpandedCargoHolds(ship: completeShip): completeShip {
   return applyCapacityCommon(ship, "cargo", [30, 60, 100, 200])
+}
+
+const CARGO_FLAT: [number, number, number, number] = [30, 60, 100, 200]
+
+export function applyExpandedCargoHoldsSMod(
+  ship: completeShip,
+  base: completeShip
+): completeShip {
+  return applyCapacitySMod(ship, base, "cargo", CARGO_FLAT)
 }
 
 export function describeExpandedCargoHolds(mod: hullMod): string {
@@ -207,6 +283,18 @@ export function describeEfficiencyOverhaul(mod: hullMod): string {
 
 export function describeEfficiencyOverhaulSMod(mod: hullMod): string {
   return formatHullmodDesc(rawSModDesc(mod), ["10%"])
+}
+
+// A further 10% off maintenance, fuel use, and minimum crew (the CR-recovery
+// rate bonus is campaign-level and stays describe-only).
+export function applyEfficiencyOverhaulSMod(
+  ship: completeShip
+): completeShip {
+  const next = cloneShip(ship)
+  mulStat(next.stats, "supplies/mo", 0.9, false)
+  mulStat(next.stats, "fuel/ly", 0.9, false)
+  mulStat(next.stats, "min crew", 0.9, false)
+  return next
 }
 
 // Fleet sensors and combat vision are fleet-level (describe-only).
