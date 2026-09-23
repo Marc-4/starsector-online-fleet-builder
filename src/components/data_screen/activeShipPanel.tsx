@@ -396,21 +396,21 @@ export default function ActiveShipPanel({
     ] as const
     return (
       <div className="flex flex-col gap-2 p-2 pb-8 lg:hidden">
-        <div className="flex flex-col gap-2 rounded border items-end border-cyan-900/60 bg-gray-950/70 p-2">
+        <div className="flex flex-col gap-2 rounded  items-end p-2">
           <CombatReadinessBar
             cr={Math.max(0, activeTile.cr - getCrPenalty(allModIds))}
             maxCr={getMaxCr(allModIds)}
           />
           <StatCluster {...statClusterProps} onInfoToggle={scrollToInfoTab} />
         </div>
-        <div className="flex flex-col gap-2 rounded border border-cyan-900/60 bg-gray-950/70 p-2">
+        <div className="flex flex-col gap-2 rounded  p-2">
           <ShipName
             hullName={activeTile.ship.meta.hullName}
             customName={activeTile.customName}
             onCustomNameChange={onCustomNameChange}
           />
           <div
-            className="flex h-[34vh] min-h-56 items-center justify-center overflow-hidden rounded bg-gray-950/50 touch-manipulation"
+            className="flex h-[34vh] min-h-56 items-center justify-center overflow-hidden rounded touch-manipulation"
             onWheel={handleWheel}
           >
             <ShipDisplay
