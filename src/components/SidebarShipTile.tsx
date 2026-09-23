@@ -105,7 +105,14 @@ export default function SidebarShipTile({
       if (mod) spent += getHullModCost(mod, meta.hullSize)
     }
     return available - spent
-  }, [entry, meta.hullSize, mountInfo, allWeaponStats, allWingStats, hullModById])
+  }, [
+    entry,
+    meta.hullSize,
+    mountInfo,
+    allWeaponStats,
+    allWingStats,
+    hullModById
+  ])
 
   return (
     // biome-ignore lint: dont care.
@@ -124,13 +131,13 @@ export default function SidebarShipTile({
           showEmptySlots={false}
         />
       </div>
-      <h1 className="absolute left-1 max-w-[80%] top-1 ss-cyan-title text-xs">
+      <h1 className="absolute left-1 max-w-[80%]  top-1 ss-cyan-title max-lg:text-xs text-lg">
         {!entry.ship.meta.hullName
           ? "N/A"
           : `${entry.ship.meta.hullName}-class`}
       </h1>
       {unspentOp && (
-        <p className="absolute left-1 bottom-1 text-amber-300 ss-soft-text-shadow text-lg">
+        <p className="absolute left-1 max-lg:text-xs bottom-1 text-amber-300 ss-soft-text-shadow text-lg">
           {unspentOp} Unspent OP
         </p>
       )}

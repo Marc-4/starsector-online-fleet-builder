@@ -1,7 +1,10 @@
+import { useEffect, useState } from "react"
 import { getWeaponStats } from "#/lib/csvParser"
 import { getWeaponMountType } from "#/lib/weaponCompat"
 import { BuildSprite } from "#/lib/weaponSpriteHelper"
 import type { weapon, weaponStats, weaponType } from "#/types"
+import CommonButton from "./commonBtn"
+import WeaponTooltip from "./weaponTooltip"
 
 type Props = {
   weapon: weapon
@@ -42,8 +45,26 @@ export default function WeaponTile({
   onHoverEnd
 }: Props) {
   const stats = getWeaponStats({ weapon: w, weaponStats: allWeaponStats })
+  // Touch has no hover and the modal's tooltip sidecar is desktop-only,
+  // so small-screen rows get an info button that opens the tooltip in a sheet.
+  const [showInfo, setShowInfo] = useState(false)
+
+  useEffect(() => {
+    if (!showInfo) return
+    // Capture phase runs before the modal's own Esc listener, so Esc
+    // closes just this sheet instead of the whole picker.
+    const handler = (ev: KeyboardEvent) => {
+      if (ev.key === "Escape") {
+        ev.stopPropagation()
+        setShowInfo(false)
+      }
+    }
+    window.addEventListener("keydown", handler, true)
+    return () => window.removeEventListener("keydown", handler, true)
+  }, [showInfo])
 
   return (
+    <>
     <button
       onMouseEnter={() => onHoverStart(w)}
       onMouseLeave={() => onHoverEnd()}
@@ -76,7 +97,7 @@ export default function WeaponTile({
       >
         <BuildSprite weapon={w} naturalSize />
       </div>
-      <div className="flex-1 min-w-0 ">
+      <div className="flex-1 min-w-0 max-lg:pr-10">
         <p className="text-cyan-100 text-sm truncate font-semibold w-full">
           {stats?.name ?? w.id}
         </p>
@@ -90,6 +111,53 @@ export default function WeaponTile({
         </span>
         <span className="text-gray-400 text-[11px]">ORDINANCE POINTS</span>
       </div>
+      <span className="absolute top-1 right-1 lg:hidden">
+        <span
+          role="button"
+          tabIndex={0}
+          aria-label={`Show ${stats?.name ?? w.id} info`}
+          title={`${stats?.name ?? w.id} info`}
+          onClick={(e) => {
+            e.stopPropagation()
+            setShowInfo(true)
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault()
+              e.stopPropagation()
+              setShowInfo(true)
+            }
+          }}
+            className="relative flex h-4 w-4 items-center justify-center rounded-full border border-cyan-700 text-[10px] leading-none text-cyan-200 touch-manipulation bg-gray-950/80 after:absolute after:-inset-2 after:content-['']"
+        >
+          i
+        </span>
+      </span>
     </button>
+    {showInfo && (
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={`${stats?.name ?? w.id} info`}
+        className="fixed inset-0 z-50 flex items-end justify-center sm:items-center"
+      >
+        <button
+          type="button"
+          aria-label="Close weapon info"
+          onClick={() => setShowInfo(false)}
+          className="absolute inset-0 bg-gray-950/60 cursor-default"
+        />
+        <div className="relative z-10 flex w-full sm:w-96 max-h-[80dvh] flex-col gap-2 overflow-auto rounded-t-2xl sm:rounded-none border border-cyan-200 bg-gray-950 p-2 shadow-xl">
+          <WeaponTooltip weapon={w} allWeaponStats={allWeaponStats} />
+          <CommonButton
+            text="Close"
+            clipPath={false}
+            onClick={() => setShowInfo(false)}
+            className="py-2"
+          />
+        </div>
+      </div>
+    )}
+    </>
   )
 }

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import {
   getCrPenalty,
   getFluxMult,
@@ -75,6 +75,16 @@ export default function ActiveShipPanel({
     "weapons" | "fighters" | "hullmods" | "info"
   >("weapons")
   const [slotAction, setSlotAction] = useState<weaponSlot | null>(null)
+  const [slotInfoWeapon, setSlotInfoWeapon] = useState<weapon | null>(null)
+  const [slotInfoLoading, setSlotInfoLoading] = useState(false)
+  const slotInfoReqRef = useRef(0)
+
+  const closeSlotAction = useCallback(() => {
+    slotInfoReqRef.current += 1
+    setSlotInfoLoading(false)
+    setSlotInfoWeapon(null)
+    setSlotAction(null)
+  }, [])
   const [selectedSlot, setSelectedSlot] = useState<weaponSlot | null>(null)
   const [lastSlottedId, setLastSlottedId] = useState<string | null>(null)
   const [lastSlottedWingId, setLastSlottedWingId] = useState<string | null>(
@@ -196,6 +206,8 @@ export default function ActiveShipPanel({
   // biome-ignore lint: activeTile is required to reset selectedSlot.
   useEffect(() => {
     setSelectedSlot(null)
+    setSlotInfoWeapon(null)
+    setSlotInfoLoading(false)
     setSlotAction(null)
     setHoveredWeapon(undefined)
     setHoveredWing(null)
@@ -248,8 +260,28 @@ export default function ActiveShipPanel({
 
   const openSlot = (slot: weaponSlot) => {
     setHoveredWeapon(undefined)
+    setSlotInfoWeapon(null)
+    setSlotInfoLoading(false)
     if (coarse && activeTile.weapons?.[slot.id]) setSlotAction(slot)
     else setSelectedSlot(slot)
+  }
+
+  const openSlotInfo = (slot: weaponSlot) => {
+    const wid = activeTile.weapons?.[slot.id]
+    if (!wid) return
+    const req = ++slotInfoReqRef.current
+    setSlotInfoWeapon(null)
+    setSlotInfoLoading(true)
+    void getWeapon({ id: wid })
+      .then((w) => {
+        if (slotInfoReqRef.current === req) setSlotInfoWeapon(w)
+      })
+      .catch(() => {
+        if (slotInfoReqRef.current === req) setSlotInfoWeapon(null)
+      })
+      .finally(() => {
+        if (slotInfoReqRef.current === req) setSlotInfoLoading(false)
+      })
   }
 
   const visibleSlots = useMemo(
@@ -533,7 +565,7 @@ export default function ActiveShipPanel({
             <button
               type="button"
               aria-label="Close slot actions"
-              onClick={() => setSlotAction(null)}
+              onClick={closeSlotAction}
               className="absolute inset-0 bg-gray-950/60"
             />
             <div className="relative z-10 w-full max-h-[92dvh] overflow-auto rounded-t-2xl border border-cyan-200 bg-gray-950 p-3 sm:w-96 sm:rounded-none">
@@ -543,32 +575,68 @@ export default function ActiveShipPanel({
               <p className="mb-2 text-xs text-cyan-200/70">
                 Mounted: {activeTile.weapons?.[slotAction.id] ?? "Empty"}
               </p>
-              <div className="flex flex-col gap-2">
-                <CommonButton
-                  text="Fit / Replace weapon"
-                  onClick={() => {
-                    setSelectedSlot(slotAction)
-                    setSlotAction(null)
-                  }}
-                  className="py-2"
-                />
-                {activeTile.weapons?.[slotAction.id] && (
+              {slotInfoWeapon || slotInfoLoading ? (
+                <div className="flex flex-col gap-2">
+                  {slotInfoLoading && !slotInfoWeapon ? (
+                    <p className="text-cyan-200/60 text-sm text-center py-8 animate-pulse">
+                      Loading weapon info…
+                    </p>
+                  ) : (
+                    slotInfoWeapon && (
+                      <div className="max-h-[60dvh] overflow-auto">
+                        <WeaponTooltip
+                          weapon={slotInfoWeapon}
+                          allWeaponStats={allWeaponStats}
+                        />
+                      </div>
+                    )
+                  )}
                   <CommonButton
-                    text="Remove weapon"
+                    text="Back"
+                    clipPath={false}
                     onClick={() => {
-                      handleSlotRightClick(slotAction)
-                      setSlotAction(null)
+                      slotInfoReqRef.current += 1
+                      setSlotInfoLoading(false)
+                      setSlotInfoWeapon(null)
                     }}
                     className="py-2"
                   />
-                )}
-                <CommonButton
-                  text="Close"
-                  clipPath={false}
-                  onClick={() => setSlotAction(null)}
-                  className="py-2"
-                />
-              </div>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-2">
+                  <CommonButton
+                    text="Fit / Replace weapon"
+                    onClick={() => {
+                      setSelectedSlot(slotAction)
+                      closeSlotAction()
+                    }}
+                    className="py-2"
+                  />
+                  {activeTile.weapons?.[slotAction.id] && (
+                    <>
+                      <CommonButton
+                        text="Info"
+                        onClick={() => openSlotInfo(slotAction)}
+                        className="py-2"
+                      />
+                      <CommonButton
+                        text="Remove weapon"
+                        onClick={() => {
+                          handleSlotRightClick(slotAction)
+                          closeSlotAction()
+                        }}
+                        className="py-2"
+                      />
+                    </>
+                  )}
+                  <CommonButton
+                    text="Close"
+                    clipPath={false}
+                    onClick={closeSlotAction}
+                    className="py-2"
+                  />
+                </div>
+              )}
             </div>
           </div>
         )}
