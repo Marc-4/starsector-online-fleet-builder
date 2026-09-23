@@ -192,6 +192,7 @@ import {
   applyMilitarizedSubsystems,
   applyMilitarizedSubsystemsSMod,
   applyVastHangar,
+  applyVastHangarMitigation,
   describeAdditionalBerthing,
   describeAdditionalBerthingSMod,
   describeAdvancedGroundSupport,
@@ -253,11 +254,20 @@ import {
 } from "./special"
 
 export type { HullmodTable } from "./describe"
+export { getConvertedBayFightersOp } from "./logistics"
 
 export type DeploymentCostCtx = {
   /** Total OP spent on fitted fighter wings. */
   fightersOp: number
   hullSize: string
+  /** All installed hullmod ids (built-ins + regular + S-mods). */
+  modIds?: string[]
+  /**
+   * OP of wings fitted in Converted-Hangar-added bays (bays past the hull's
+   * native count). Only used when Design Compromises scopes the Converted
+   * Hangar increase to the converted bay.
+   */
+  convertedBayFightersOp?: number
 }
 
 export type WeaponOpCtx = {
@@ -290,7 +300,10 @@ export type HullmodImpl = {
   /**
    * Loadout-aware deployment/supply cost delta. Absent when the mod does not
    * touch deployment cost. Receives fighter OP because apply() only sees base
-   * ship stats (e.g. Converted Hangar: ceil(fightersOp / 5), min 1).
+   * ship stats (e.g. Converted Hangar: ceil(fightersOp / 5), min 1), plus the
+   * installed mod list and converted-bay fighter OP for hullmod interactions
+   * (Vast Hangar negates the increase; Design Compromises scopes it to the
+   * converted bay).
    */
   getDeploymentCostDelta?: (ctx: DeploymentCostCtx) => number
   /**
@@ -736,6 +749,13 @@ export function applyHullmods(
   for (const id of ids) {
     const apply = HULLMOD_IMPLS[id]?.apply
     if (apply) next = apply(next, ship)
+  }
+  // Vast Hangar negates every Converted Hangar penalty: cancel the +20
+  // minimum crew here (apply() only sees one mod at a time, so the
+  // interaction lives with the orchestrator). Bays still stack +1/+1 and the
+  // deployment increase is zeroed in getConvertedHangarDeploymentDelta.
+  if (ids.includes("converted_hangar") && ids.includes("vast_hangar")) {
+    next = applyVastHangarMitigation(next)
   }
   // S-mod bonuses stack on top of every base effect (e.g. Adaptive Shields
   // divides the arc AFTER the base ×0.7 penalty). Only player-built S-mods

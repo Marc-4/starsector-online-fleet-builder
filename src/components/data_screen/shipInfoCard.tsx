@@ -208,7 +208,8 @@ export default function ShipInfoCard({
   smodIds = [],
   capacitors = 0,
   vents = 0,
-  fightersOp = 0
+  fightersOp = 0,
+  convertedBayFightersOp
 }: {
   ship: completeShip
   baseShip?: completeShip
@@ -218,6 +219,7 @@ export default function ShipInfoCard({
   capacitors?: number
   vents?: number
   fightersOp?: number
+  convertedBayFightersOp?: number
 }) {
   const s = ship.stats
   const m = ship.meta
@@ -246,7 +248,9 @@ export default function ShipInfoCard({
   const baseDp = Number((b ?? s)["supplies/mo"] ?? 0)
   const deploymentDelta = getDeploymentCostDelta(hullmodIds, {
     fightersOp,
-    hullSize: m.hullSize
+    hullSize: m.hullSize,
+    modIds: hullmodIds,
+    convertedBayFightersOp
   })
 
   const shieldUpkeepCur = b

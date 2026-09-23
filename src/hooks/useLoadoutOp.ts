@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
 import {
   applyHullmods,
+  getConvertedBayFightersOp,
   getEffectiveDeploymentCost,
   getEffectiveWeaponOp,
   HIDDEN_BUILTIN_MOD_IDS
@@ -96,6 +97,15 @@ export function useLoadoutOp(activeTile: fleetEntry) {
       0
     )
   }, [activeTile.fighters, wingOpOf])
+  // Wings past the hull's native bay count sit in Converted-Hangar-added
+  // bays; only these count toward the DP increase under Design Compromises.
+  const convertedBayFightersOp = useMemo(() => {
+    return getConvertedBayFightersOp(
+      Number(activeTile.ship.stats["fighter bays"] ?? 0),
+      activeTile.fighters ?? [],
+      wingOpOf
+    )
+  }, [activeTile.ship, activeTile.fighters, wingOpOf])
   const fluxById = useMemo(
     () =>
       new Map(
@@ -177,26 +187,26 @@ export function useLoadoutOp(activeTile: fleetEntry) {
     ]
   )
   const { dp: effectiveDP, suppliesRec: effectiveSuppliesRec, delta: deploymentDelta } =
-    useMemo(
-      () =>
-        getEffectiveDeploymentCost(
-          activeTile.ship,
-          [
-            ...(activeTile.ship.meta.builtInMods ?? []),
-            ...(activeTile.hullmods ?? []),
-            ...(activeTile.smods ?? [])
-          ],
-          {
-            fightersOp,
-            hullSize: activeTile.ship.meta.hullSize
-          }
-        ),
+    useMemo(() => {
+      const modIds = [
+        ...(activeTile.ship.meta.builtInMods ?? []),
+        ...(activeTile.hullmods ?? []),
+        ...(activeTile.smods ?? [])
+      ]
+      return getEffectiveDeploymentCost(activeTile.ship, modIds, {
+        fightersOp,
+        hullSize: activeTile.ship.meta.hullSize,
+        modIds,
+        convertedBayFightersOp
+      })
+    },
       [
         activeTile.ship,
         activeTile.ship.meta.builtInMods,
         activeTile.hullmods,
         activeTile.smods,
-        fightersOp
+        fightersOp,
+        convertedBayFightersOp
       ]
     )
 
@@ -327,8 +337,8 @@ export function useLoadoutOp(activeTile: fleetEntry) {
     wingOpOf,
     weaponsOp,
     fightersOp,
-    weaponFluxPerSecond,
-    availableOp,
+    convertedBayFightersOp,
+    weaponFluxPerSecond,    availableOp,
     spentOp,
     hullmodsOp,
     assignedHullmods,

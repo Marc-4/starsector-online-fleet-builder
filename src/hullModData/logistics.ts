@@ -358,22 +358,68 @@ export function describeRecoveryShuttlesSMod(mod: hullMod): string {
   return formatHullmodDesc(rawSModDesc(mod), ["95%"])
 }
 
+export const CONVERTED_HANGAR_MIN_CREW = 20
+/** Fighter OP per +1 deployment / supply-recovery point. */
+export const CONVERTED_HANGAR_OP_PER_DP = 5
+
 export function applyConvertedHangar(ship: completeShip): completeShip {
   const next = cloneShip(ship)
   addStat(next.stats, "fighter bays", 1)
-  addStat(next.stats, "min crew", 20)
+  addStat(next.stats, "min crew", CONVERTED_HANGAR_MIN_CREW)
   return next
+}
+
+/**
+ * Vast Hangar negates every Converted Hangar penalty (vanilla VastHangar:
+ * "all of the penalties and modifiers, including those to the ship's
+ * deployment cost, are negated"). The bays themselves stack (+1/+1, matching
+ * vanilla's "bays added by Converted Hangar increased by 1"); only the +20
+ * minimum-crew penalty is cancelled here. Deployment cost is cancelled in
+ * getConvertedHangarDeploymentDelta; refit/replacement-rate effects are
+ * fighter-level and stay describe-only.
+ */
+export function applyVastHangarMitigation(ship: completeShip): completeShip {
+  const next = cloneShip(ship)
+  addStat(next.stats, "min crew", -CONVERTED_HANGAR_MIN_CREW)
+  return next
+}
+
+/**
+ * Fighter OP fitted in Converted-Hangar-added bays. The `fighters` loadout
+ * array is bay-indexed with native bays first, so wings at indices past the
+ * hull's native bay count sit in the converted bay(s).
+ */
+export function getConvertedBayFightersOp(
+  nativeBays: number,
+  fighters: readonly (string | undefined)[],
+  wingOpOf: (wingId: string | undefined) => number
+): number {
+  return fighters
+    .slice(Math.max(0, Math.round(nativeBays)))
+    .reduce((sum, wingId) => sum + wingOpOf(wingId), 0)
 }
 
 /**
  * Vanilla Converted Hangar: +1 DP and +1 supply-to-recover per 5 OP spent on
  * fighters (fighter OP / 5 rounded up), minimum +1 once installed — even with
  * empty bays.
+ *
+ * Two hullmod interactions narrow what "fighters" means:
+ * - Vast Hangar: every penalty negated, deployment cost included → 0.
+ * - Design Compromises (e.g. Anubis: 1 native bay + 1 converted bay): only
+ *   the converted bay's wings count toward the increase.
  */
 export function getConvertedHangarDeploymentDelta(ctx: {
   fightersOp: number
+  modIds?: string[]
+  convertedBayFightersOp?: number
 }): number {
-  return Math.max(1, Math.ceil(ctx.fightersOp / 5))
+  const modIds = ctx.modIds ?? []
+  if (modIds.includes("vast_hangar")) return 0
+  const op = modIds.includes("design_compromises")
+    ? (ctx.convertedBayFightersOp ?? ctx.fightersOp)
+    : ctx.fightersOp
+  return Math.max(1, Math.ceil(op / CONVERTED_HANGAR_OP_PER_DP))
 }
 
 export function describeConvertedHangar(mod: hullMod): string {

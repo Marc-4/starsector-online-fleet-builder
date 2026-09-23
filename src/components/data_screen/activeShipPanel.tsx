@@ -108,6 +108,7 @@ export default function ActiveShipPanel({
     wingOpOf,
     weaponsOp,
     fightersOp,
+    convertedBayFightersOp,
     weaponFluxPerSecond,
     availableOp,
     spentOp,
@@ -566,6 +567,7 @@ export default function ActiveShipPanel({
               capacitors={activeTile.capacitors}
               vents={activeTile.vents}
               fightersOp={fightersOp}
+              convertedBayFightersOp={convertedBayFightersOp}
             />
           </div>
         )}
@@ -810,6 +812,7 @@ export default function ActiveShipPanel({
               capacitors={activeTile.capacitors}
               vents={activeTile.vents}
               fightersOp={fightersOp}
+              convertedBayFightersOp={convertedBayFightersOp}
             />
           </div>
         </>

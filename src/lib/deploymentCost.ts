@@ -14,7 +14,8 @@ export function getEntryDeploymentCost(
   entry: Pick<fleetEntry, "ship" | "hullmods" | "smods" | "fighters"> & {
     ship: completeShip
   },
-  fightersOp: number
+  fightersOp: number,
+  convertedBayFightersOp?: number
 ): { dp: number; suppliesRec: number; delta: number } {
   const ids = [
     ...(entry.ship.meta.builtInMods ?? []),
@@ -23,7 +24,9 @@ export function getEntryDeploymentCost(
   ]
   return getEffectiveDeploymentCost(entry.ship, ids, {
     fightersOp,
-    hullSize: entry.ship.meta.hullSize
+    hullSize: entry.ship.meta.hullSize,
+    modIds: ids,
+    convertedBayFightersOp
   })
 }
 

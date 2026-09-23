@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react"
 import {
   applyHullmods,
+  getConvertedBayFightersOp,
   getDeploymentCostDelta,
   getHighResSensorBonus,
   getSensorMults,
@@ -111,9 +112,19 @@ export function useFleetAggregates(fleet: fleetEntry[]): FleetAggregates {
       )
       // DP tracks base maintenance: upkeep modifiers (e.g. Efficiency
       // Overhaul) change supplies/mo but not deployment cost.
+      const convertedBayFightersOp = getConvertedBayFightersOp(
+        Number(entry.ship.stats["fighter bays"] ?? 0),
+        entry.fighters ?? [],
+        (wingId) => (wingId ? num(wingOpById.get(wingId)) : 0)
+      )
       out.totalDp +=
         num(entry.ship.stats["supplies/mo"]) +
-        getDeploymentCostDelta(modIds, { fightersOp, hullSize })
+        getDeploymentCostDelta(modIds, {
+          fightersOp,
+          hullSize,
+          modIds,
+          convertedBayFightersOp
+        })
 
       const burn = num(s["max burn"])
       if (burn > 0) slowestBurn = Math.min(slowestBurn, burn)
