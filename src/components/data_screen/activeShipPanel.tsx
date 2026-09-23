@@ -258,6 +258,19 @@ export default function ActiveShipPanel({
     onWeaponsChange(next)
   }
 
+  const tabsRef = useRef<HTMLDivElement>(null)
+  // Compact layout: the ? button jumps to the Info tab instead of a popover.
+  const scrollToInfoTab = useCallback(() => {
+    setCompactTab("info")
+    const reduceMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)"
+    ).matches
+    tabsRef.current?.scrollIntoView({
+      behavior: reduceMotion ? "auto" : "smooth",
+      block: "start"
+    })
+  }, [])
+
   const openSlot = (slot: weaponSlot) => {
     setHoveredWeapon(undefined)
     setSlotInfoWeapon(null)
@@ -388,7 +401,7 @@ export default function ActiveShipPanel({
             cr={Math.max(0, activeTile.cr - getCrPenalty(allModIds))}
             maxCr={getMaxCr(allModIds)}
           />
-          <StatCluster {...statClusterProps} />
+          <StatCluster {...statClusterProps} onInfoToggle={scrollToInfoTab} />
         </div>
         <div className="flex flex-col gap-2 rounded border border-cyan-900/60 bg-gray-950/70 p-2">
           <ShipName
@@ -436,9 +449,10 @@ export default function ActiveShipPanel({
           </p>
         </div>
         <div
+          ref={tabsRef}
           role="tablist"
           aria-label="Ship sections"
-          className="ss-chip-rail sticky top-0 z-20 bg-gray-950/90 py-1"
+          className="ss-chip-rail sticky top-0 z-20 bg-gray-950/90 py-1 scroll-mt-2"
         >
           {tabs.map((t) => (
             <button
