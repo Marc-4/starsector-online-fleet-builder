@@ -1,10 +1,32 @@
 import type { projectile } from "#/types"
 
-const projModules = import.meta.glob<string>("../weaponData/proj/*.proj", {
-  query: "?raw",
-  import: "default",
-  eager: false
-})
+const DATA_BASE = `${import.meta.env.BASE_URL}data/`
+
+const textCache = new Map<string, Promise<string>>()
+function fetchProjText(stem: string): Promise<string> {
+  const path = `proj/${stem}.proj`
+  let pending = textCache.get(path)
+  if (!pending) {
+    pending = fetch(`${DATA_BASE}${path}`).then((res) => {
+      if (!res.ok) throw new Error(`Projectile ${stem} not found`)
+      return res.text()
+    })
+    pending.catch(() => textCache.delete(path))
+    textCache.set(path, pending)
+  }
+  return pending
+}
+
+let manifestCache: Promise<string[]> | null = null
+function fetchProjManifest(): Promise<string[]> {
+  if (!manifestCache) {
+    manifestCache = fetch(`${DATA_BASE}proj-manifest.json`).then((res) => {
+      if (!res.ok) throw new Error("Projectile manifest not found")
+      return res.json() as Promise<string[]>
+    })
+  }
+  return manifestCache
+}
 
 function stripComments(s: string): string {
   return s
@@ -75,29 +97,28 @@ let indexPromise: Promise<void> | null = null
 async function ensureIndex(): Promise<void> {
   if (indexPromise) return indexPromise
   indexPromise = (async () => {
-    const entries = Object.entries(projModules)
+    const stems = await fetchProjManifest()
     const results = await Promise.allSettled(
-      entries.map(async ([key, loader]) => {
-        const content = await loader()
-        const fallbackId = key.split("/").pop()?.replace(/\.proj$/, "") ?? key
+      stems.map(async (stem) => {
+        const content = await fetchProjText(stem)
+        const fallbackId = stem
         try {
           const parsed = parseProjectile(content, fallbackId)
-          return { key, parsed }
+          return { stem, parsed }
         } catch (e) {
           console.warn(`Failed to parse projectile ${fallbackId}:`, e)
-          return { key, parsed: null }
+          return { stem, parsed: null }
         }
       })
     )
     for (const r of results) {
       if (r.status !== "fulfilled" || !r.value.parsed) continue
-      const { key, parsed } = r.value
+      const { stem, parsed } = r.value
       const p = parsed as projectile
       cache.set(p.id, p)
       // Also cache by filename so direct hits skip the index next time.
-      const stem = key.split("/").pop()?.replace(/\.proj$/, "")
-      if (stem && stem !== p.id && !cache.has(stem)) cache.set(stem, p)
-      if (!idIndex.has(p.id)) idIndex.set(p.id, key)
+      if (stem !== p.id && !cache.has(stem)) cache.set(stem, p)
+      if (!idIndex.has(p.id)) idIndex.set(p.id, stem)
     }
   })()
   return indexPromise
@@ -109,24 +130,17 @@ export async function getProjectile({
   id: string
 }): Promise<projectile | null> {
   if (cache.has(id)) return cache.get(id) ?? null
-  const directKey = `../weaponData/proj/${id}.proj`
-  const direct = projModules[directKey]
-  if (direct) {
-    try {
-      const content = await direct()
-      const parsed = parseProjectile(content, id)
-      cache.set(id, parsed)
-      cache.set(parsed.id, parsed)
-      idIndex.set(parsed.id, directKey)
-      return parsed
-    } catch (e) {
-      console.warn(`Failed to parse projectile ${id}:`, e)
-      cache.set(id, null)
-      return null
-    }
+  try {
+    const content = await fetchProjText(id)
+    const parsed = parseProjectile(content, id)
+    cache.set(id, parsed)
+    cache.set(parsed.id, parsed)
+    idIndex.set(parsed.id, id)
+    return parsed
+  } catch {
+    // Filename may differ from .proj id (e.g. locust_srm.proj holds id
+    // "locust"). Fall back to a full index scan keyed by parsed id.
   }
-  // Filename may differ from .proj id (e.g. locust_srm.proj holds id
-  // "locust"). Fall back to a full index scan keyed by parsed id.
   await ensureIndex()
   return cache.get(id) ?? null
 }

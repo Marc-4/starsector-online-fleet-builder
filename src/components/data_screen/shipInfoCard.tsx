@@ -256,15 +256,16 @@ export default function ShipInfoCard({
     <div
       role="dialog"
       aria-label={`${m.hullName} info`}
-      className="w-full font-serif text-lg bg-gray-950 border border-gray-700 px-5 py-2 shadow-2xl"
+      className="w-max min-w-full font-serif text-lg bg-gray-950 border border-gray-700 px-5 py-2 shadow-2xl"
     >
-      <div className="grid grid-cols-[1.8fr_1fr] text-center text-cyan-100 bg-cyan-800 border-b border-gray-700 pb-0.5 mb-1">
-        <p>Logistical data</p>
-        <p>Combat performance</p>
+      <div className="grid grid-cols-[1.8fr_1fr] text-center text-cyan-100 bg-cyan-800 border-b border-gray-700 pb-0.5 mb-1 max-lg:grid-cols-1 max-lg:gap-0.5">
+        <p className="max-lg:hidden">Logistical data</p>
+        <p className="max-lg:hidden">Combat performance</p>
+        <p className="hidden max-lg:block">Logistical and Combat Data</p>
       </div>
 
-      <div className="grid grid-cols-[1.7fr_1fr] gap-8">
-        <div className="grid grid-cols-2 gap-6">
+      <div className="grid grid-cols-[1.7fr_1fr] gap-8 max-lg:gap-4 max-lg:grid-cols-1">
+        <div className="grid grid-cols-2 gap-6 max-lg:grid-cols-1 max-lg:gap-2">
           <div className="flex flex-col gap-0.5 text-white">
             {LOGISTICS_A.slice(0, 2).map((spec) => (
               <NumRow key={spec.label} spec={spec} s={s} b={b} />

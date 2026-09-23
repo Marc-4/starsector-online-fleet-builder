@@ -136,7 +136,6 @@ export type shipStats = {
   maxPieces: number
   "travel drive": null
   number: number
-  number: number
 }
 
 export type completeShip = {

@@ -132,7 +132,7 @@ export default function StatCluster({
   useEffect(() => () => clearHold(), [clearHold])
 
   return (
-    <div className="relative flex flex-col w-fit m-1 ml-2 max-sm:m-0.5 max-sm:scale-[0.85] max-sm:origin-top-right">
+    <div className="relative flex flex-col w-fit m-1 ml-2 max-w-full">
       <div className="flex gap-2 items-center">
         <CommonButton
           text="?"
@@ -143,7 +143,7 @@ export default function StatCluster({
           aria-expanded={showInfo}
         />
         <fieldset
-          className="relative flex self-end items-center justify-center w-[300px] sm:w-96 h-7 sm:h-8 bg-gray-950 border border-gray-950 rounded-xs overflow-hidden"
+          className="relative flex self-end items-center justify-center w-[300px] max-w-[72vw] sm:w-96 h-9 sm:h-8 bg-gray-950 border border-gray-950 rounded-xs overflow-hidden"
           aria-label={`Ordnance Points ${spentOp} of ${availableOp ?? "N/A"}`}
         >
           <div

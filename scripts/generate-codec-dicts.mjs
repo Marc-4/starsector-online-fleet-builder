@@ -7,10 +7,11 @@ import { fileURLToPath } from "node:url"
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const root = path.resolve(__dirname, "..")
-const shipDataDir = path.join(root, "src/shipData")
-const skinsDir = path.join(shipDataDir, "skins")
-const weaponDataDir = path.join(root, "src/weaponData")
+const shipDataDir = path.join(root, "public/data/ships")
+const skinsDir = path.join(root, "public/data/skins")
+const weaponDataDir = path.join(root, "public/data/weapons")
 const outFile = path.join(root, "src/lib/fleetDicts.ts")
+const dataDir = path.join(root, "public", "data")
 
 async function basenames(dir, ext) {
   try {
@@ -80,7 +81,7 @@ for (const name of await basenames(skinsDir, ".skin")) {
   }
 }
 try {
-  const manifest = JSON.parse(await readFile(path.join(shipDataDir, "manifest.json"), "utf8"))
+  const manifest = JSON.parse(await readFile(path.join(dataDir, "ship-manifest.json"), "utf8"))
   if (Array.isArray(manifest)) hullIds.push(...manifest)
 } catch {
   /* ignore */
@@ -89,7 +90,7 @@ try {
 // --- weapons: .wpn basenames + weapon_data.csv ids ---
 const weaponIds = await basenames(weaponDataDir, ".wpn")
 try {
-  const rows = parseCsv(await readFile(path.join(weaponDataDir, "weapon_data.csv"), "utf8"))
+  const rows = parseCsv(await readFile(path.join(dataDir, "weapon_data.csv"), "utf8"))
   const header = rows[0].map((h) => h.trim().toLowerCase())
   const idCol = header.indexOf("id")
   if (idCol >= 0) for (const r of rows.slice(1)) if (r[idCol]) weaponIds.push(r[idCol].trim())
@@ -100,7 +101,7 @@ try {
 // --- wings: wing_data.csv ids ---
 const wingIds = []
 try {
-  const rows = parseCsv(await readFile(path.join(shipDataDir, "wing_data.csv"), "utf8"))
+  const rows = parseCsv(await readFile(path.join(dataDir, "wing_data.csv"), "utf8"))
   const header = rows[0].map((h) => h.trim().toLowerCase())
   const idCol = header.indexOf("id")
   if (idCol >= 0) for (const r of rows.slice(1)) if (r[idCol]) wingIds.push(r[idCol].trim())
@@ -111,7 +112,7 @@ try {
 // --- hullmods: hull_mods.csv ids ---
 const hullmodIds = []
 try {
-  const rows = parseCsv(await readFile(path.join(root, "src/hullModData", "hull_mods.csv"), "utf8"))
+  const rows = parseCsv(await readFile(path.join(dataDir, "hull_mods.csv"), "utf8"))
   const header = rows[0].map((h) => h.trim().toLowerCase())
   const idCol = header.indexOf("id")
   if (idCol >= 0) for (const r of rows.slice(1)) if (r[idCol]) hullmodIds.push(r[idCol].trim())

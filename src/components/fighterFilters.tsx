@@ -31,7 +31,7 @@ export default function FighterFilters({
                 onClick={() =>
                   onToggle(activeRoleFilters, setActiveRoleFilters, t)
                 }
-                className={`text-xs px-2 py-0.5 border text-cyan-200 border-cyan-800 ${active ? "bg-cyan-900" : "bg-transparent border-cyan-800  hover:brightness-110"}`}
+                className={`text-xs px-2 py-1 min-h-9 border touch-manipulation text-cyan-200 border-cyan-800 ${active ? "bg-cyan-900" : "bg-transparent border-cyan-800  hover:brightness-110"}`}
               >
                 {t.toLowerCase().replace("_", " ")}
               </button>
@@ -60,7 +60,7 @@ export default function FighterFilters({
                 onClick={() =>
                   onToggle(activeDesignTypeFilters, setActiveDesignTypeFilters, t)
                 }
-                className={`text-xs px-2 py-0.5 border text-cyan-200 border-cyan-800 ${active ? "bg-cyan-900" : "bg-transparent border-cyan-800  hover:brightness-110"}`}
+                className={`text-xs px-2 py-1 min-h-9 border touch-manipulation text-cyan-200 border-cyan-800 ${active ? "bg-cyan-900" : "bg-transparent border-cyan-800  hover:brightness-110"}`}
               >
                 {t.toLowerCase().replace("_", " ")}
               </button>

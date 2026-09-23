@@ -1,17 +1,50 @@
 import Parser from "papaparse"
 import type { hullMod, ship, shipStats, weapon, weaponStats, wingStats } from "#/types"
-import hullModDataCSV from "../hullModData/hull_mods.csv?raw"
-import shipDataCSV from "../shipData/ship_data.csv?raw"
-import wingDataCSV from "../shipData/wing_data.csv?raw"
-import weaponDataCSV from "../weaponData/weapon_data.csv?raw"
 import { getAllShipSkins } from "./shipParser"
 
-export async function getAllShipStats(): Promise<shipStats[]> {
-  const base = Parser.parse(shipDataCSV, {
+const DATA_BASE = `${import.meta.env.BASE_URL}data/`
+
+const textCache = new Map<string, Promise<string>>()
+function fetchCsvText(file: string): Promise<string> {
+  let pending = textCache.get(file)
+  if (!pending) {
+    pending = fetch(`${DATA_BASE}${file}`).then((res) => {
+      if (!res.ok) throw new Error(`Failed to load data/${file}: ${res.status}`)
+      return res.text()
+    })
+    textCache.set(file, pending)
+  }
+  return pending
+}
+
+// wing_data.csv ships with a run of empty trailing headers (",,,...").
+// Papa treats repeated "" as duplicates ("Duplicate headers found and
+// renamed"). Give empties unique names so parsing stays warning-free.
+function parseCsv<T>(text: string): T[] {
+  const { data } = Parser.parse<Record<string, unknown>>(text, {
     header: true,
     skipEmptyLines: true,
-    dynamicTyping: true
-  }).data as shipStats[]
+    dynamicTyping: true,
+    transformHeader: (h: string, i: number) => {
+      const t = h.trim()
+      return t === "" ? `__empty_${i}` : t
+    }
+  })
+  return (data as T[]).filter((row) => {
+    const r = row as Record<string, unknown>
+    return Object.keys(r).some((k) => !k.startsWith("__empty_") && r[k] !== null && r[k] !== "")
+  })
+}
+
+let shipStatsCache: Promise<shipStats[]> | null = null
+let weaponStatsCache: Promise<weaponStats[]> | null = null
+let hullModsCache: Promise<hullMod[]> | null = null
+let wingStatsCache: Promise<wingStats[]> | null = null
+
+export function getAllShipStats(): Promise<shipStats[]> {
+  if (shipStatsCache) return shipStatsCache
+  shipStatsCache = (async () => {
+  const base = parseCsv<shipStats>(await fetchCsvText("ship_data.csv"))
   const byId = new Map(base.map((s) => [s.id, s]))
   const skins = await getAllShipSkins()
   for (const skin of skins) {
@@ -43,6 +76,8 @@ export async function getAllShipStats(): Promise<shipStats[]> {
     base.push(clone)
   }
   return base
+  })()
+  return shipStatsCache
 }
 
 export function getShipStats({
@@ -60,14 +95,14 @@ export function getShipStats({
   return stats
 }
 
-export function getAllWeaponStats(): weaponStats[] {
-  const data = Parser.parse(weaponDataCSV, {
-    header: true,
-    skipEmptyLines: true,
-    dynamicTyping: true
-  }).data as weaponStats[]
+export function getAllWeaponStats(): Promise<weaponStats[]> {
+  if (weaponStatsCache) return weaponStatsCache
+  weaponStatsCache = (async () => {
+  const data = parseCsv<weaponStats>(await fetchCsvText("weapon_data.csv"))
   // filter empty rows (name/id empty)
   return data.filter((w) => w.id && String(w.id).trim() !== "")
+  })()
+  return weaponStatsCache
 }
 
 export function getWeaponStats({  weapon,
@@ -163,13 +198,13 @@ export function getWeaponFluxPerSecond(
   return perShot * shotsPerSec
 }
 
-export function getAllHullMods(): hullMod[] {
-  const data = Parser.parse(hullModDataCSV, {
-    header: true,
-    skipEmptyLines: true,
-    dynamicTyping: true
-  }).data as hullMod[]
+export function getAllHullMods(): Promise<hullMod[]> {
+  if (hullModsCache) return hullModsCache
+  hullModsCache = (async () => {
+  const data = parseCsv<hullMod>(await fetchCsvText("hull_mods.csv"))
   return data.filter((h) => h.id && String(h.id).trim() !== "")
+  })()
+  return hullModsCache
 }
 
 export function isHullModDMod(h: hullMod | null): boolean {
@@ -419,13 +454,13 @@ export function getHullModInapplicability(
   return null
 }
 
-export function getAllWingStats(): wingStats[] {
-  const data = Parser.parse(wingDataCSV, {
-    header: true,
-    skipEmptyLines: true,
-    dynamicTyping: true
-  }).data as wingStats[]
+export function getAllWingStats(): Promise<wingStats[]> {
+  if (wingStatsCache) return wingStatsCache
+  wingStatsCache = (async () => {
+  const data = parseCsv<wingStats>(await fetchCsvText("wing_data.csv"))
   return data.filter((w) => w.id && String(w.id).trim() !== "")
+  })()
+  return wingStatsCache
 }
 
 export function getWingStats({

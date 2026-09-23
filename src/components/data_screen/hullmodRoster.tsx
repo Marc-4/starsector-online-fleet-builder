@@ -1,3 +1,4 @@
+import { useEffect, useState, type TouchEvent } from "react"
 import { resolveHullModSpriteUrl } from "#/lib/csvParser"
 import type { hullMod } from "#/types"
 import type {
@@ -29,8 +30,36 @@ export default function HullmodRoster({
   onBuildIn
 }: Props) {
   const hasBuildable = assignedHullmods.some(({ cost }) => cost > 0)
+  // Touch has no hover: tapping a row pins its tooltip, tapping it again
+  // unpins it. Mouse hover behavior is untouched.
+  const [pinnedId, setPinnedId] = useState<string | null>(null)
+
+  // Drop a stale pin when the loadout changes (e.g. switching ships).
+  useEffect(() => {
+    setPinnedId(null)
+  }, [assignedHullmods, builtInHullmods, smoddedHullmods])
+
+  const touchToggle = (key: string, mod: hullMod) => ({
+    onTouchEnd: (e: TouchEvent<HTMLButtonElement>) => {
+      // Let taps on the inner − button fall through to their click action.
+      if ((e.target as HTMLElement).closest("button") !== e.currentTarget)
+        return
+      e.preventDefault()
+      if (pinnedId === key) {
+        setPinnedId(null)
+        onHoverHullmod(null)
+      } else {
+        setPinnedId(key)
+        onHoverHullmod(mod)
+      }
+    },
+    onTouchCancel: () => {
+      setPinnedId(null)
+      onHoverHullmod(null)
+    }
+  })
   return (
-    <div className="flex gap-1 flex-col items-end">
+    <div className="flex gap-1 flex-col w-fit">
       <div className="flex flex-col gap-1 items-end max-h-56 overflow-y-auto">
         {builtInHullmods.map(({ id, mod }) => {
           const spriteUrl = resolveHullModSpriteUrl(mod.sprite)
@@ -39,16 +68,15 @@ export default function HullmodRoster({
               type="button"
               key={`built-in-${id}`}
               title="Built into this hull"
+              aria-label={`Built-in hullmod: ${mod.name}`}
               className="flex items-center gap-1 text-sm"
               onMouseEnter={() => onHoverHullmod(mod)}
               onMouseLeave={() => onHoverHullmod(null)}
               onFocus={() => onHoverHullmod(mod)}
               onBlur={() => onHoverHullmod(null)}
-              onTouchStart={() => onHoverHullmod(mod)}
-              onTouchEnd={() => onHoverHullmod(null)}
-              onTouchCancel={() => onHoverHullmod(null)}
+              {...touchToggle(`built-in-${id}`, mod)}
             >
-              <span className="text-white font-bold [-webkit-text-stroke:0.5px_var(--color-gray-950)]">
+              <span className="max-sm:hidden text-white font-bold [-webkit-text-stroke:0.5px_var(--color-gray-950)]">
                 {mod.name}
               </span>
               {spriteUrl ? (
@@ -72,16 +100,15 @@ export default function HullmodRoster({
               type="button"
               key={`smod-${id}`}
               title="S-mod: built in (0 OP) — click − to un-build"
+              aria-label={`S-mod: ${mod.name}`}
               className="flex items-center gap-1 text-sm"
               onMouseEnter={() => onHoverHullmod(mod)}
               onMouseLeave={() => onHoverHullmod(null)}
               onFocus={() => onHoverHullmod(mod)}
               onBlur={() => onHoverHullmod(null)}
-              onTouchStart={() => onHoverHullmod(mod)}
-              onTouchEnd={() => onHoverHullmod(null)}
-              onTouchCancel={() => onHoverHullmod(null)}
+              {...touchToggle(`smod-${id}`, mod)}
             >
-              <span className="text-lime-200 font-bold [-webkit-text-stroke:0.5px_var(--color-gray-950)]">
+              <span className="max-sm:hidden text-lime-200 font-bold [-webkit-text-stroke:0.5px_var(--color-gray-950)]">
                 {mod.name} (S)
               </span>
               <CommonButton
@@ -115,16 +142,15 @@ export default function HullmodRoster({
             <button
               type="button"
               key={id}
+              aria-label={`Hullmod: ${mod.name}, ${cost} OP`}
               className="flex items-center gap-1 text-sm"
               onMouseEnter={() => onHoverHullmod(mod)}
               onMouseLeave={() => onHoverHullmod(null)}
               onFocus={() => onHoverHullmod(mod)}
               onBlur={() => onHoverHullmod(null)}
-              onTouchStart={() => onHoverHullmod(mod)}
-              onTouchEnd={() => onHoverHullmod(null)}
-              onTouchCancel={() => onHoverHullmod(null)}
+              {...touchToggle(id, mod)}
             >
-              <span className="text-cyan-100">{mod.name}</span>
+              <span className="max-sm:hidden text-cyan-100">{mod.name}</span>
               <span className="text-amber-300 text-lg font-bold ">{cost}</span>
 
               <CommonButton

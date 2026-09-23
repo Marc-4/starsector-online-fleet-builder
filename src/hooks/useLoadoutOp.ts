@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import {
   applyHullmods,
   getEffectiveDeploymentCost,
@@ -12,7 +12,7 @@ import {
   getHullModCost,
   getWeaponFluxPerSecond
 } from "#/lib/csvParser"
-import type { fleetEntry, hullMod } from "#/types"
+import type { fleetEntry, hullMod, weaponStats, wingStats } from "#/types"
 import { useWeaponMountInfo } from "./useWeaponMountInfo"
 
 export type AssignedHullmod = { id: string; mod: hullMod; cost: number }
@@ -22,7 +22,28 @@ export type SmoddedHullmod = { id: string; mod: hullMod }
 
 /** All OP accounting + modded stats for one fleet entry. */
 export function useLoadoutOp(activeTile: fleetEntry) {
-  const allWeaponStats = useMemo(() => getAllWeaponStats(), [])
+  const [allWeaponStats, setAllWeaponStats] = useState<weaponStats[]>([])
+  const [allWingStats, setAllWingStats] = useState<wingStats[]>([])
+  const [hullModById, setHullModById] = useState<Map<string, hullMod>>(
+    new Map()
+  )
+  useEffect(() => {
+    let cancelled = false
+    void (async () => {
+      const [weapons, wings, mods] = await Promise.all([
+        getAllWeaponStats(),
+        getAllWingStats(),
+        getAllHullMods()
+      ])
+      if (cancelled) return
+      setAllWeaponStats(weapons)
+      setAllWingStats(wings)
+      setHullModById(new Map(mods.map((h) => [h.id, h])))
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [])
   const opById = useMemo(
     () => new Map(allWeaponStats.map((s) => [s.id, Number(s.OPs)])),
     [allWeaponStats]
@@ -57,7 +78,6 @@ export function useLoadoutOp(activeTile: fleetEntry) {
       0
     )
   }, [activeTile.weapons, opOf])
-  const allWingStats = useMemo(() => getAllWingStats(), [])
   const wingOpById = useMemo(
     () => new Map(allWingStats.map((s) => [s.id, Number(s["op cost"])])),
     [allWingStats]
@@ -98,10 +118,6 @@ export function useLoadoutOp(activeTile: fleetEntry) {
     )
   }, [activeTile.weapons, fluxOf])
   const availableOp = activeTile.ship.stats["ordnance points"] ?? 0
-  const hullModById = useMemo(
-    () => new Map(getAllHullMods().map((h) => [h.id, h])),
-    []
-  )
   const assignedHullmods: AssignedHullmod[] = useMemo(() => {
     const out: AssignedHullmod[] = []
     for (const id of activeTile.hullmods ?? []) {

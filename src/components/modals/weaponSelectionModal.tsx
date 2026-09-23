@@ -221,33 +221,31 @@ export default function WeaponSelectionModal({
       <div
         aria-hidden="true"
         onClick={onClose}
-        className="fixed inset-0 z-30 bg-transparent cursor-default"
+        className="fixed inset-0 z-30 bg-gray-950/60 cursor-default"
       />
-      <div className="relative z-40 flex gap-1 w-[80%] max-lg:flex-col mx-auto h-full justify-center items-center pointer-events-none">
+      <div className="fixed inset-0 z-40 flex flex-col lg:flex-row gap-2 w-[95%] sm:w-[90%] lg:w-[80%] mx-auto max-h-[92dvh] my-auto justify-center lg:items-center overflow-y-auto lg:overflow-visible py-2 pointer-events-none">
         {showWeaponTooltip ? (
-          <div className="flex w-[40%] min-w-80 h-fit">
+          <div className="hidden lg:flex w-[40%] min-w-80 h-fit max-h-[86dvh] overflow-auto">
             <WeaponTooltip
               weapon={showWeaponTooltip}
               allWeaponStats={allWeaponStats}
             />
           </div>
         ) : (
-          <div className="flex w-[40%] min-w-80 opacity-0 h-64">
-            {/*<WeaponTooltip
-            weapon={}
-            allWeaponStats={allWeaponStats}
-          />*/}
-          </div>
+          <div
+            className="hidden lg:flex w-[40%] min-w-80 opacity-0 h-64 pointer-events-none"
+            aria-hidden="true"
+          />
         )}
         <div
           role="dialog"
           aria-modal="true"
           aria-label={`Weapon selection for ${slot.id}`}
-          className="relative z-40 flex items-center w-[40%] min-w-80 justify-center pointer-events-none bg-gray-950"
+          className="relative z-40 flex items-center w-full lg:w-[60%] lg:min-w-80 justify-center pointer-events-none bg-gray-950"
         >
-          <div className="flex w-full z-40 flex-col gap-2 p-1 border border-cyan-200 pointer-events-auto shadow-xl">
+          <div className="flex w-full z-40 flex-col gap-2 p-1 border border-cyan-200 pointer-events-auto shadow-xl max-h-[88dvh]">
             <div className="flex m-1 mb-0 p-1 pb-0 gap-1 justify-between items-start">
-              <div className="gap-2 flex flex-col flex-1">
+              <div className="gap-2 flex flex-col flex-1 min-w-0">
                 <div className="flex gap-2 items-center flex-wrap">
                   <h2 className="text-cyan-200 text-sm">
                     {slot.id} • {slot.type} {slot.size}
@@ -257,7 +255,7 @@ export default function WeaponSelectionModal({
                 <div className="flex gap-2 items-center">
                   <h2 className="text-cyan-200 text-sm">Search: </h2>
                   <input
-                    className="border border-cyan-200 flex-1 max-w-[180px] text-cyan-200 text-sm px-1 bg-transparent"
+                    className="border border-cyan-200 flex-1 w-full max-w-[180px] text-cyan-200 text-sm px-2 py-0 bg-transparent"
                     type="search"
                     value={searchString}
                     onChange={(e) =>
@@ -286,7 +284,7 @@ export default function WeaponSelectionModal({
               />
             </div>
 
-            <div className="w-full flex-1 flex flex-col gap-1 p-2 max-h-72 min-h-72 overflow-auto">
+            <div className="w-full flex-1 flex flex-col gap-1 p-2 max-h-[52dvh] lg:max-h-72 lg:min-h-72 overflow-y-auto overscroll-contain">
               {filteredWeapons.map((w) => {
                 const base = Number(
                   getWeaponStats({ weapon: w, weaponStats: allWeaponStats })

@@ -401,6 +401,47 @@ a {
 @utility ss-ship-img {
   @apply max-w-full max-h-full brightness-80 object-center object-contain;
 }
+@utility ss-touch-target {
+  @apply min-h-11 min-w-11 touch-manipulation select-none;
+}
+@utility ss-chip-rail {
+  @apply flex gap-1 overflow-x-auto pb-1 -mb-1 touch-manipulation;
+}
+@utility ss-sheet-scroll {
+  @apply overflow-y-auto overscroll-contain touch-manipulation;
+}
+
+:root {
+  --ss-touch-min: 2.75rem;
+  --ss-font-min: 0.8125rem;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  touch-action: manipulation;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Mouse/keyboard-only hints: hidden on touch devices. */
+@media (hover: none), (pointer: coarse) {
+  .ss-fine-pointer-only {
+    display: none !important;
+  }
+}
+@media (hover: hover) and (pointer: fine) {
+  .ss-coarse-pointer-only {
+    display: none !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rise-in {
+    animation: none;
+  }
+}
 
 @layer base {
   * {

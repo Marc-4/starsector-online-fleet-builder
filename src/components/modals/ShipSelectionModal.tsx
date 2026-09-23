@@ -183,13 +183,13 @@ export default function ShipSelectionModal({
         onClick={onClose}
         className="absolute inset-0 bg-gray-950/60"
       />
-      <div className="relative z-10 flex flex-col gap-2 w-[80%] h-[80%] max-md:w-[95%] max-md:h-[93%] bg-gray-950/30 p-1 border border-cyan-200 overflow-hidden">
+      <div className="relative z-10 flex flex-col gap-2 w-[95%] sm:w-[90%] lg:w-[80%] max-h-[92dvh] sm:max-h-[86dvh] bg-gray-950/95 p-1 border border-cyan-200 overflow-hidden">
         <div className="flex max-md:flex-col m-1 mb-0 p-1 pb-0 gap-1 justify-center max-md:justify-start">
-          <div className="gap-2 flex flex-col min-w-0 flex-1 max-md:overflow-y-auto max-md:max-h-[32vh] max-md:pr-8">
+          <div className="gap-2 flex flex-col min-w-0 flex-1 max-lg:overflow-y-auto max-lg:max-h-[30dvh] lg:pr-8">
             <div className="flex gap-2 items-center flex-wrap">
               <h2 className="text-cyan-200 ">Search: </h2>
               <input
-                className="border border-cyan-200 w-56 max-md:w-full max-md:max-w-56 text-cyan-200"
+                className="border border-cyan-200 w-full max-w-56 px-2 py-0 text-cyan-200"
                 type="search"
                 value={searchString}
                 onChange={(e) =>
@@ -210,7 +210,7 @@ export default function ShipSelectionModal({
 
             <div className="flex gap-2">
               <p className="text-cyan-200 text-xs">{`showing ${filteredShipCount} of ${totalShipCount} ships`}</p>
-              <span className="text-xs text-gray-400">
+              <span className="text-xs text-gray-400 ss-fine-pointer-only">
                 alt + click to single out a filter
               </span>
             </div>
@@ -222,7 +222,7 @@ export default function ShipSelectionModal({
             className="cursor-pointer rounded-xs ml-auto max-md:ml-0 max-md:absolute max-md:top-1 max-md:right-1 w-7 h-7 px-2 font-bold hover:brightness-110 text-2xl text-cyan-200 flex items-center justify-center shrink-0"
           />
         </div>
-        <div className="w-full flex-1 min-h-0 mb-4 grid grid-cols-[repeat(auto-fit,13rem)] max-md:grid-cols-[repeat(auto-fit,minmax(9rem,1fr))] justify-center gap-2 max-md:gap-1.5 content-start p-4 max-md:p-2 overflow-auto [&>*]:max-md:w-full [&>*]:max-md:h-44">
+        <div className="w-full flex-1 min-h-[40dvh] lg:min-h-[50dvh] max-h-[52dvh] lg:max-h-[56dvh] mb-4 grid grid-cols-[repeat(auto-fit,13rem)] max-lg:grid-cols-[repeat(auto-fit,minmax(9rem,1fr))] justify-center gap-2 max-lg:gap-1.5 content-start p-4 max-lg:p-2 overflow-y-auto overscroll-contain [&>*]:max-lg:w-full [&>*]:max-lg:h-44">
           {filteredShips.map((ship, i) => {
             return (
               <ShipTile

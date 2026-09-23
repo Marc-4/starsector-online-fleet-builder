@@ -7,7 +7,7 @@ import {
 } from "#/lib/csvParser"
 import { getEffectiveWeaponOp } from "#/hullModData"
 import { useWeaponMountInfo } from "#/hooks/useWeaponMountInfo"
-import type { fleetEntry } from "#/types"
+import type { fleetEntry, hullMod, weaponStats, wingStats } from "#/types"
 import ShipDisplay from "./data_screen/shipDisplay"
 import CommonButton from "./commonBtn"
 
@@ -49,15 +49,36 @@ export default function SidebarShipTile({
   const zoom = targetMax > 0 ? targetMax / maxDim : 0.5
 
   const mountInfo = useWeaponMountInfo()
+  const [allWeaponStats, setAllWeaponStats] = useState<weaponStats[]>([])
+  const [allWingStats, setAllWingStats] = useState<wingStats[]>([])
+  const [hullModById, setHullModById] = useState<Map<string, hullMod>>(
+    new Map()
+  )
+  useEffect(() => {
+    let cancelled = false
+    void (async () => {
+      const [weapons, wings, mods] = await Promise.all([
+        getAllWeaponStats(),
+        getAllWingStats(),
+        getAllHullMods()
+      ])
+      if (cancelled) return
+      setAllWeaponStats(weapons)
+      setAllWingStats(wings)
+      setHullModById(new Map(mods.map((h) => [h.id, h])))
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [])
   const unspentOp = useMemo(() => {
     const available = entry.ship.stats["ordnance points"] ?? 0
     const weaponOpById = new Map(
-      getAllWeaponStats().map((s) => [s.id, Number(s.OPs)])
+      allWeaponStats.map((s) => [s.id, Number(s.OPs)])
     )
     const wingOpById = new Map(
-      getAllWingStats().map((s) => [s.id, Number(s["op cost"])])
+      allWingStats.map((s) => [s.id, Number(s["op cost"])])
     )
-    const hullModById = new Map(getAllHullMods().map((h) => [h.id, h]))
     const discountIds = [
       ...(entry.ship.meta.builtInMods ?? []),
       ...(entry.hullmods ?? []),
@@ -84,7 +105,14 @@ export default function SidebarShipTile({
       if (mod) spent += getHullModCost(mod, meta.hullSize)
     }
     return available - spent
-  }, [entry, meta.hullSize, mountInfo])
+  }, [
+    entry,
+    meta.hullSize,
+    mountInfo,
+    allWeaponStats,
+    allWingStats,
+    hullModById
+  ])
 
   return (
     // biome-ignore lint: dont care.
@@ -103,13 +131,13 @@ export default function SidebarShipTile({
           showEmptySlots={false}
         />
       </div>
-      <h1 className="absolute left-1 max-w-[80%] top-1 ss-cyan-title text-xs">
+      <h1 className="absolute left-1 max-w-[80%]  top-1 ss-cyan-title max-lg:text-xs text-lg">
         {!entry.ship.meta.hullName
           ? "N/A"
           : `${entry.ship.meta.hullName}-class`}
       </h1>
       {unspentOp && (
-        <p className="absolute left-1 bottom-1 text-amber-300 ss-soft-text-shadow text-lg">
+        <p className="absolute left-1 max-lg:text-xs bottom-1 text-amber-300 ss-soft-text-shadow text-lg">
           {unspentOp} Unspent OP
         </p>
       )}
