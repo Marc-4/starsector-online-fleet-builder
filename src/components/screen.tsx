@@ -13,12 +13,13 @@ import {
   hydrateFleet
 } from "#/lib/fleetCodec"
 import { getMaxCapsVents } from "#/lib/fluxLimits"
-import { getDeploymentCostDelta, getEffectiveWeaponOp } from "#/hullModData"
+import { getEffectiveWeaponOp } from "#/hullModData"
 import { getAllShips } from "#/lib/shipParser"
 import { useWeaponMountInfo } from "#/hooks/useWeaponMountInfo"
 import type { fleetEntry } from "#/types"
 import AddShipButton from "./addShipBtn"
 import ActiveShipPanel from "./data_screen/activeShipPanel"
+import FleetStats from "./fleetStats"
 import SidebarShipTile from "./SidebarShipTile"
 import Spinner from "./spinner"
 
@@ -126,24 +127,6 @@ export default function Screen({ children }: { children?: ReactNode }) {
       const mod = hullModById.get(id)
       return sum + (mod ? getHullModCost(mod, hullSize) : 0)
     }, 0)
-  const totalFleetDP = useMemo(
-    () =>
-      fleet.reduce((sum, fe) => {
-        const base = fe.ship.stats["supplies/mo"] ?? 0
-        const delta = getDeploymentCostDelta(
-          [...(fe.ship.meta.builtInMods ?? []), ...(fe.hullmods ?? []), ...(fe.smods ?? [])],
-          {
-            fightersOp: fightersOpOf(fe.fighters),
-            hullSize: fe.ship.meta.hullSize
-          }
-        )
-        return sum + base + delta
-      }, 0),
-    // biome-ignore lint: fightersOpOf/wingOpById are derived from allWingStats.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [fleet, allWingStats]
-  )
-
   const syncHash = (next: fleetEntry[]) => {
     if (next.length === 0) {
       history.replaceState(
@@ -451,17 +434,8 @@ export default function Screen({ children }: { children?: ReactNode }) {
           lg:w-[15%] lg:max-2xl:w-[17%] lg:max-xl:w-[19%] lg:max-lg:w-[21%]
           lg:flex-col lg:gap-0 lg:overflow-x-hidden lg:overflow-y-auto lg:bg-gray-950/70 lg:pb-0"
       >
-        <div className="sticky left-0 z-10 flex shrink-0 items-center gap-3 self-center bg-gray-950/85 px-2 py-1 text-sm text-amber-300 backdrop-blur-sm lg:w-full lg:justify-center lg:self-auto lg:bg-transparent lg:py-4 lg:text-base">
-          {(() => {
-            const totalShips = fleet.length
-            return (
-              <>
-                <p>{`${totalShips === 1 ? `${totalShips} ship` : `${totalShips} ships`}`}</p>
-                <div className="h-4 w-px bg-amber-300" />
-                <p>{`${totalFleetDP} DP`}</p>
-              </>
-            )
-          })()}
+        <div className="hidden shrink-0 lg:block lg:w-full">
+          <FleetStats fleet={fleet} />
         </div>
         {sortedFleet.map((entry) => (
           <div
@@ -479,6 +453,9 @@ export default function Screen({ children }: { children?: ReactNode }) {
         <div className="w-24 shrink-0 sm:w-28 lg:w-full lg:shrink-0">
           <AddShipButton />
         </div>
+      </div>
+      <div className="shrink-0 lg:hidden">
+        <FleetStats fleet={fleet} compact />
       </div>
       <div
         ref={gridRef}

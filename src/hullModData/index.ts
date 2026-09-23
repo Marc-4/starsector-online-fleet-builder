@@ -878,6 +878,60 @@ export function getMaxCr(ids: string[]): number {
 }
 
 /**
+ * Flat sensor-strength bonus from High Resolution Sensors (+50/75/100/150 by
+ * hull size). Fleet-level diminishing returns are applied by the caller.
+ */
+const HIRES_STRENGTH_BY_HULL_SIZE: Record<string, number> = {
+  FRIGATE: 50,
+  DESTROYER: 75,
+  CRUISER: 100,
+  CAPITAL_SHIP: 150
+}
+export function getHighResSensorBonus(
+  ids: string[],
+  hullSize: string
+): number {
+  if (!ids.includes("hiressensors")) return 0
+  return HIRES_STRENGTH_BY_HULL_SIZE[(hullSize || "").toUpperCase()] ?? 0
+}
+
+/**
+ * Flat sensor-profile bonus from Drive Field Stabilizer (+200 on its own
+ * ship, alongside the fleetwide +1 burn).
+ */
+export function getStabilizerProfileBonus(ids: string[]): number {
+  return ids.includes("drive_field_stabilizer") ? 200 : 0
+}
+
+/**
+ * Final ship sensor profile: increases (e.g. Civ-grade ×2) scale the base,
+ * flat bonuses (stabilizer +200) add on top, and reductions (e.g. Insulated
+ * Engines ×0.5) scale the total — so an Ox lands on 30×2+200=260 while an
+ * insulated stabilizer ship lands on (30+200)×0.5=115.
+ */
+export function getSensorProfile(
+  base: number,
+  ids: string[],
+  smodIds: string[] = []
+): number {
+  const smodded = new Set(smodIds)
+  let up = 1
+  let down = 1
+  for (const id of ids) {
+    let m: number | undefined
+    if (id === "insulatedengine" && smodded.has(id)) {
+      m = INSULATED_ENGINES_SMOD_MULT
+    } else {
+      m = SENSOR_MULTS[id]?.profile
+    }
+    if (m === undefined) continue
+    if (m >= 1) up *= m
+    else down *= m
+  }
+  return (base * up + getStabilizerProfileBonus(ids)) * down
+}
+
+/**
  * Combined sensor multipliers for a hullmod id list (sensors live outside
  * shipStats, so they chain here instead of in applyHullmods).
  * S-modded Insulated Engines reduce the profile to 90% (×0.1) instead of 50%.

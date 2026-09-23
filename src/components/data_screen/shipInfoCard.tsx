@@ -1,8 +1,10 @@
 import {
   getDeploymentCostDelta,
   getFluxMult,
+  getHighResSensorBonus,
   getMaxCr,
   getSensorMults,
+  getSensorProfile,
   getVentMult
 } from "#/hullModData"
 import { getModifiedStat } from "#/lib/statModifier"
@@ -223,8 +225,10 @@ export default function ShipInfoCard({
 
   const sensorMults = getSensorMults(hullmodIds, smodIds)
   const sensorBase = sensorProfileByHullSize(m.hullSize)
-  const sensorProfile = sensorBase * sensorMults.profile
-  const sensorStrength = sensorBase * sensorMults.strength
+  const sensorProfile = getSensorProfile(sensorBase, hullmodIds, smodIds)
+  const sensorStrength =
+    sensorBase * sensorMults.strength +
+    getHighResSensorBonus(hullmodIds, m.hullSize)
 
   const fluxCap = getModifiedStat(s, "max flux", { capacitors })
   const fluxDiss = getModifiedStat(s, "flux dissipation", {
