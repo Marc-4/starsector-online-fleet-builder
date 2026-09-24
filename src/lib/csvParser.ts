@@ -476,13 +476,14 @@ export function getWingStats({
 export function isWingSelectable(stats: wingStats | null): boolean {
   if (!stats) return false
   const tags = (stats.tags || "").toLowerCase()
+  // NOTE: `no_sell` (not sold in markets, e.g. Remnant Flash/Spark/Lux) and
+  // `auto_fighter` (crewless drone wing, e.g. Wasp) do NOT make a wing
+  // unusable in the refit screen — they are still player-selectable.
   if (
-    tags.includes("no_sell") ||
     tags.includes("no_drop") ||
     tags.includes("no_dealer") ||
     tags.includes("restricted") ||
     tags.includes("hide_in_codex") ||
-    tags.includes("auto_fighter") ||
     tags.includes("swarm_fighter")
   )
     return false
