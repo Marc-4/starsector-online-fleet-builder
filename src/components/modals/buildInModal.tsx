@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 import { MAX_SMODS } from "#/hullModData"
-import { resolveHullModSpriteUrl } from "#/lib/csvParser"
+import { isHullModBuildable, resolveHullModSpriteUrl } from "#/lib/csvParser"
 import type { hullMod } from "#/types"
 import type { AssignedHullmod } from "../../hooks/useLoadoutOp"
 import CommonButton from "../commonBtn"
@@ -9,19 +9,34 @@ import HullmodTooltip from "../hullmodTooltip"
 export default function BuildInModal({
   assignedHullmods,
   smodCount,
+  builtInModIds = [],
   onClose,
   onBuildIn
 }: {
   assignedHullmods: AssignedHullmod[]
   smodCount: number
+  /** Hull-native built-in mod ids — `no_build_in` mods already on the hull stay as-is. */
+  builtInModIds?: string[]
   onClose: () => void
   onBuildIn: (id: string) => void
 }) {
   const [hovered, setHovered] = useState<hullMod | null>(null)
   const full = smodCount >= MAX_SMODS
+  const native = new Set(builtInModIds.map((id) => id.toLowerCase()))
   // 0-OP hullmods gain nothing from being built in — leave them out so they
-  // don't waste one of the limited S-mod slots.
-  const buildable = assignedHullmods.filter(({ cost }) => cost > 0)
+  // don't waste one of the limited S-mod slots. `no_build_in` hullmods
+  // (e.g. Safety Overrides) can never be built in unless native to the hull.
+  const buildable = assignedHullmods.filter(
+    ({ id, mod, cost }) =>
+      cost > 0 &&
+      (isHullModBuildable(mod) || native.has(id.toLowerCase()))
+  )
+  const unbuildable = assignedHullmods.filter(
+    ({ id, mod, cost }) =>
+      cost > 0 &&
+      !isHullModBuildable(mod) &&
+      !native.has(id.toLowerCase())
+  )
 
   useEffect(() => {
     const handler = (ev: KeyboardEvent) => {
@@ -76,12 +91,18 @@ export default function BuildInModal({
             </div>
 
             <div className="w-full flex-1 flex flex-col gap-0 p-2 pt-0 max-h-[52dvh] lg:max-h-72 lg:min-h-72 overflow-y-auto overscroll-contain">
-              {buildable.length === 0 && (
+              {buildable.length === 0 && unbuildable.length === 0 && (
                 <div className="text-cyan-200/60 text-sm text-center py-8">
                   {assignedHullmods.length === 0
-                    ? "No hullmods installed — install one first, then build it in."
-                    : "Nothing worth building in — the installed hullmods already cost 0 OP."}
+                    ? "No hullmods installed"
+                    : "Nothing to build in"}
                 </div>
+              )}
+              {unbuildable.length > 0 && (
+                <p className="text-cyan-200/60 text-xs text-center px-2 pb-1">
+                  {unbuildable.map(({ mod }) => mod.name).join(", ")} can
+                  never be built in.
+                </p>
               )}
               {buildable.map(({ id, mod }) => {
                 const spriteUrl = resolveHullModSpriteUrl(mod.sprite)

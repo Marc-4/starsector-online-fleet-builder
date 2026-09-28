@@ -212,6 +212,16 @@ export function isHullModDMod(h: hullMod | null): boolean {
   return `,${(h.tags || "").toLowerCase().replace(/\s+/g, "")},`.includes(",dmod,")
 }
 
+/** Vanilla S-mod rule: hullmods tagged `no_build_in` (e.g. Safety Overrides,
+// Phase Anchor) can never be built in — unless the hull already carries the
+// mod natively (checked by callers via `builtInMods`). */
+export function isHullModBuildable(h: hullMod | null): boolean {
+  if (!h) return false
+  return !`,${(h.tags || "").toLowerCase().replace(/\s+/g, "")},`.includes(
+    ",no_build_in,"
+  )
+}
+
 export function isHullModSelectable(h: hullMod | null): boolean {
   if (!h) return false
   const id = String(h.id ?? "").trim()

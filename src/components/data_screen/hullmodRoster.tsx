@@ -1,5 +1,5 @@
 import { useEffect, useState, type TouchEvent } from "react"
-import { resolveHullModSpriteUrl } from "#/lib/csvParser"
+import { isHullModBuildable, resolveHullModSpriteUrl } from "#/lib/csvParser"
 import type { hullMod } from "#/types"
 import type {
   AssignedHullmod,
@@ -29,7 +29,14 @@ export default function HullmodRoster({
   onAdd,
   onBuildIn
 }: Props) {
-  const hasBuildable = assignedHullmods.some(({ cost }) => cost > 0)
+  // Mirrors BuildInModal: 0-OP and `no_build_in` mods (unless hull-native)
+  // are never worth/are never allowed to be built in.
+  const nativeIds = new Set(builtInHullmods.map(({ id }) => id.toLowerCase()))
+  const hasBuildable = assignedHullmods.some(
+    ({ id, mod, cost }) =>
+      cost > 0 &&
+      (isHullModBuildable(mod) || nativeIds.has(id.toLowerCase()))
+  )
   // Touch has no hover: tapping a row pins its tooltip, tapping it again
   // unpins it. Mouse hover behavior is untouched.
   const [pinnedId, setPinnedId] = useState<string | null>(null)
@@ -185,8 +192,8 @@ export default function HullmodRoster({
         aria-label="Build in a hullmod"
         title={
           hasBuildable
-            ? "Build in an installed hullmod (0 OP)"
-            : "Nothing worth building in — installed hullmods already cost 0 OP"
+            ? "Build in an installed hullmod"
+            : "Nothing to build in"
         }
         disabled={!hasBuildable}
         className="w-32 disabled:opacity-50 disabled:cursor-not-allowed bg-lime-700 py-0.5 self-end"

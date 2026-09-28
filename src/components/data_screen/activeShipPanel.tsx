@@ -6,7 +6,7 @@ import {
   getVentMult,
   MAX_SMODS
 } from "#/hullModData"
-import { getAllShipStats } from "#/lib/csvParser"
+import { getAllShipStats, isHullModBuildable } from "#/lib/csvParser"
 import { getMaxCapsVents } from "#/lib/fluxLimits"
 import { getModifiedStat } from "#/lib/statModifier"
 import { canMountWeapon } from "#/lib/weaponCompat"
@@ -175,11 +175,27 @@ export default function ActiveShipPanel({
       if (!current.includes(id)) return
       if (smods.includes(id)) return
       if (smods.length >= MAX_SMODS) return
+      // `no_build_in` hullmods (e.g. Safety Overrides) can never be built
+      // in — unless the hull already carries the mod natively.
+      const native = new Set(
+        (activeTile.ship.meta.builtInMods ?? []).map((m) => m.toLowerCase())
+      )
+      if (!native.has(id.toLowerCase())) {
+        const entry = assignedHullmods.find((r) => r.id === id)
+        if (!isHullModBuildable(entry?.mod ?? null)) return
+      }
       onHullmodsChange(current.filter((x) => x !== id))
       onSmodsChange([...smods, id])
       setShowBuildIn(false)
     },
-    [activeTile.hullmods, activeTile.smods, onHullmodsChange, onSmodsChange]
+    [
+      activeTile.hullmods,
+      activeTile.smods,
+      activeTile.ship.meta.builtInMods,
+      assignedHullmods,
+      onHullmodsChange,
+      onSmodsChange
+    ]
   )
 
   const handleUnbuildSmod = useCallback(
@@ -713,6 +729,7 @@ export default function ActiveShipPanel({
           <BuildInModal
             assignedHullmods={assignedHullmods}
             smodCount={(activeTile.smods ?? []).length}
+            builtInModIds={activeTile.ship.meta.builtInMods ?? []}
             onClose={() => setShowBuildIn(false)}
             onBuildIn={handleBuildIn}
           />
@@ -993,6 +1010,7 @@ export default function ActiveShipPanel({
         <BuildInModal
           assignedHullmods={assignedHullmods}
           smodCount={(activeTile.smods ?? []).length}
+          builtInModIds={activeTile.ship.meta.builtInMods ?? []}
           onClose={() => setShowBuildIn(false)}
           onBuildIn={handleBuildIn}
         />
