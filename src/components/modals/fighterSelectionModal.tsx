@@ -4,7 +4,7 @@ import {
   getAllWingStats,
   isWingSelectable
 } from "#/lib/csvParser"
-import { getAllShips } from "#/lib/shipParser"
+import { getCachedShips } from "#/lib/shipParser"
 import type { ship, shipStats, wingStats } from "#/types"
 import CommonButton from "../commonBtn"
 import { getWingHullIds } from "#/lib/csvParser"
@@ -126,7 +126,7 @@ export default function FighterSelectionModal({
       try {
         const [wings, ships, stats] = await Promise.all([
           getAllWingStats(),
-          getAllShips(),
+          getCachedShips(),
           getAllShipStats()
         ])
         setAllWings(wings.sort((a, b) => a.id.localeCompare(b.id)))
