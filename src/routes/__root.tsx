@@ -19,7 +19,7 @@ export const Route = createRootRoute({
         content: "width=device-width, initial-scale=1"
       },
       {
-        title: "Starsector Fleet Builder & Ship Builder – Free Online Refit Tool"
+        title: "Starsector Fleet Builder & Ship Builder"
       },
       {
         name: "description",
@@ -37,7 +37,7 @@ export const Route = createRootRoute({
       { property: "og:site_name", content: SITE_NAME },
       {
         property: "og:title",
-        content: "Starsector Fleet Builder & Ship Builder – Free Online Refit Tool"
+        content: "Starsector Fleet Builder & Ship Builder"
       },
       { property: "og:description", content: SITE_DESCRIPTION },
       { property: "og:url", content: `${SITE_URL}/` },
@@ -45,7 +45,7 @@ export const Route = createRootRoute({
       { name: "twitter:card", content: "summary_large_image" },
       {
         name: "twitter:title",
-        content: "Starsector Fleet Builder & Ship Builder – Free Online Refit Tool"
+        content: "Starsector Fleet Builder & Ship Builder"
       },
       { name: "twitter:description", content: SITE_DESCRIPTION },
       { name: "twitter:image", content: OG_IMAGE }

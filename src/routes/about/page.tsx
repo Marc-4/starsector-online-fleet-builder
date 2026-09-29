@@ -8,7 +8,7 @@ export const Route = createFileRoute("/about/page")({
       {
         name: "description",
         content:
-          "About this free online Starsector fleet builder and ship builder: plan refits, weapons, vents, capacitors and hullmods in your browser and share fleets via URL."
+          "About this Starsector fleet builder and ship builder: plan refits, weapons, vents, capacitors and hullmods in your browser and share fleets via URL."
       }
     ]
   })
