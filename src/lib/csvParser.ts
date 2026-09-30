@@ -5,7 +5,7 @@ import { getAllShipSkins } from "./shipParser"
 const DATA_BASE = `${import.meta.env.BASE_URL}data/`
 
 const textCache = new Map<string, Promise<string>>()
-function fetchCsvText(file: string): Promise<string> {
+export function fetchCsvText(file: string): Promise<string> {
   let pending = textCache.get(file)
   if (!pending) {
     pending = fetch(`${DATA_BASE}${file}`).then((res) => {
@@ -20,7 +20,7 @@ function fetchCsvText(file: string): Promise<string> {
 // wing_data.csv ships with a run of empty trailing headers (",,,...").
 // Papa treats repeated "" as duplicates ("Duplicate headers found and
 // renamed"). Give empties unique names so parsing stays warning-free.
-function parseCsv<T>(text: string): T[] {
+export function parseCsv<T>(text: string): T[] {
   const { data } = Parser.parse<Record<string, unknown>>(text, {
     header: true,
     skipEmptyLines: true,

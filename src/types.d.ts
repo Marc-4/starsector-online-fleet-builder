@@ -162,6 +162,7 @@ export type fleetEntry = {
    * S-mod bonus effect.
    */
   smods?: string[]
+  assignedOfficer?: officer
 }
 
 export type hullMod = {
@@ -325,4 +326,46 @@ export type projectile = {
   /** Anchor point in box units, Cartesian origin bottom-left, nose = +Y. */
   center?: [number, number]
   [key: string]: any
+}
+
+export type officerPersonality = {
+  id: string
+  name: string
+  desc: string
+}
+
+export type officerNameEntry = {
+  name: string
+  gender: "" | "m" | "f" | "m, f"
+  usage: string // f, l, "f, l"
+  category: string
+}
+
+export type officerSkillMeta = {
+  id: string
+  name: string
+  tier: number | null
+  description: string
+  icon: string | null
+  tags: string | null
+  combatOfficer: boolean
+}
+
+export type officerSkillDef = {
+  id: string
+  governingAptitude: string | null
+  elite: boolean
+  scope: string | null
+}
+
+export type officer = {
+  id: string
+  firstName: string
+  lastName: string
+  gender: "m" | "f"
+  portrait: string // e.g. "portrait_hegemony01.png" (resolved via resolvePortraitUrl)
+  personality: string // personality id
+  level: number
+  eliteSkills: string[]
+  skills: string[] // skill ids (max 8, includes elites)
 }
