@@ -485,7 +485,7 @@ export default function Screen({ children }: { children?: ReactNode }) {
           )}
           {children}
         </div>
-        <div className="ss-fine-pointer-only pointer-events-none absolute bottom-6 right-3 z-20 text-right text-xs font-normal text-blue-200/70 leading-tight">
+        <div className="ss-fine-pointer-only pointer-events-none absolute bottom-6 right-3 text-right text-xs font-normal text-blue-200/70 leading-tight">
           <p>right click to remove weapon/fighter</p>
           <p>shift + click to place the previously placed weapon/fighter</p>
         </div>
