@@ -6,16 +6,24 @@ import type {
   weapon,
   weaponSlot,
   weaponStats,
-  wingStats,
+  wingStats
 } from "#/types"
-import type { AssignedHullmod, BuiltInHullmod, SmoddedHullmod } from "../../hooks/useLoadoutOp"
+import type {
+  AssignedHullmod,
+  BuiltInHullmod,
+  SmoddedHullmod
+} from "../../hooks/useLoadoutOp"
 import { MAX_ZOOM_DESKTOP, MIN_ZOOM, ZOOM_STEP } from "../../hooks/useShipZoom"
+import { useState } from "react"
+import type { officer } from "#/types"
 import CommonButton from "../commonBtn"
+import OfficerSelectionModal from "../modals/officerSelectionModal"
 import ActiveShipModals from "./activeShipModals"
 import CombatReadinessBar from "./combatReadinessBar"
 import FighterBayColumn from "./fighterBayColumn"
 import HoverTooltipPanel from "./hoverTooltipPanel"
 import HullmodRoster from "./hullmodRoster"
+import OfficerPortrait from "./officerPortrait"
 import ShipDisplay from "./shipDisplay"
 import ShipInfoCard from "./shipInfoCard"
 import ShipName from "./shipName"
@@ -70,7 +78,10 @@ export type DesktopShipViewProps = {
   setShowHullmods: (v: boolean) => void
   showBuildIn: boolean
   setShowBuildIn: (v: boolean) => void
-  remainingOpForSlot: (slotId: string, opOf: (wid: string | undefined) => number) => number
+  remainingOpForSlot: (
+    slotId: string,
+    opOf: (wid: string | undefined) => number
+  ) => number
   remainingOp: number
   onSelectWeapon: (slot: weaponSlot, w: weapon) => void
   onRemoveWeapon: (slot: weaponSlot, w: weapon) => void
@@ -78,11 +89,13 @@ export type DesktopShipViewProps = {
   onBuildIn: (id: string) => void
   onHullmodsChange: (hullmods: string[]) => void
   onCustomNameChange: (value: string) => void
+  onOfficerChange: (officer: officer | undefined) => void
   onStrip: () => void
 }
 
 export default function DesktopShipView(p: DesktopShipViewProps) {
   const { activeTile, moddedShip } = p
+  const [showOfficer, setShowOfficer] = useState(false)
   return (
     <>
       <div className="absolute top-1 left-1 right-1 z-20 flex flex-col gap-2 min-[1127px]:flex-row min-[1127px]:items-start min-[1127px]:justify-between pointer-events-none">
@@ -101,7 +114,9 @@ export default function DesktopShipView(p: DesktopShipViewProps) {
               smoddedHullmods={p.smoddedHullmods}
               onHoverHullmod={p.setHoveredHullmod}
               onRemoveHullmod={(id) =>
-                p.onHullmodsChange((activeTile.hullmods ?? []).filter((x) => x !== id))
+                p.onHullmodsChange(
+                  (activeTile.hullmods ?? []).filter((x) => x !== id)
+                )
               }
               onRemoveSmod={p.handleUnbuildSmod}
               onAdd={() => p.setShowHullmods(true)}
@@ -131,7 +146,27 @@ export default function DesktopShipView(p: DesktopShipViewProps) {
           </div>
         </>
       )}
-      <div className="flex flex-col gap-1 absolute left-2 top-[25%] w-fit h-fit">
+      <div className="absolute left-2 top-20 flex flex-col gap-1">
+        <OfficerPortrait
+          officer={activeTile.assignedOfficer}
+          onClick={() => setShowOfficer(true)}
+        />
+      </div>
+      {showOfficer && (
+        <OfficerSelectionModal
+          officer={activeTile.assignedOfficer}
+          onClose={() => setShowOfficer(false)}
+          onSave={(officer) => {
+            p.onOfficerChange(officer)
+            setShowOfficer(false)
+          }}
+          onRemove={() => {
+            p.onOfficerChange(undefined)
+            setShowOfficer(false)
+          }}
+        />
+      )}
+      <div className="flex flex-col gap-1 absolute left-2 top-60 w-fit h-fit">
         <FighterBayColumn
           entryId={activeTile.id}
           builtInWings={moddedShip.meta.builtInWings ?? []}
@@ -165,17 +200,18 @@ export default function DesktopShipView(p: DesktopShipViewProps) {
           mountedWeaponIds={activeTile.weapons ?? {}}
         />
       </div>
-      {(p.hoveredWeapon || p.hoveredWing || p.hoveredHullmod) && !p.selectedSlot && (
-        <div className="absolute left-1 top-16 z-30 w-[35%] lg:w-[50%] xl:w-[45%] h-fit overflow-auto pointer-events-none">
-          <HoverTooltipPanel
-            weapon={p.hoveredWeapon}
-            wing={p.hoveredWing}
-            hullmod={p.hoveredHullmod}
-            allWeaponStats={p.allWeaponStats}
-            allShipStats={p.allShipStats}
-          />
-        </div>
-      )}
+      {(p.hoveredWeapon || p.hoveredWing || p.hoveredHullmod) &&
+        !p.selectedSlot && (
+          <div className="absolute left-1 top-16 z-30 w-[35%] lg:w-[50%] xl:w-[45%] h-fit overflow-auto pointer-events-none">
+            <HoverTooltipPanel
+              weapon={p.hoveredWeapon}
+              wing={p.hoveredWing}
+              hullmod={p.hoveredHullmod}
+              allWeaponStats={p.allWeaponStats}
+              allShipStats={p.allShipStats}
+            />
+          </div>
+        )}
       <ActiveShipModals
         activeTile={activeTile}
         selectedSlot={p.selectedSlot}

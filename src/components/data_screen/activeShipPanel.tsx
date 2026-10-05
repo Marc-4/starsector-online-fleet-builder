@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react"
 import { getAllShipStats } from "#/lib/csvParser"
-import type { fleetEntry, shipStats, weaponSlot } from "#/types"
+import type { fleetEntry, officer, shipStats, weaponSlot } from "#/types"
 import { useLayoutMode } from "../../hooks/useLayoutMode"
 import { useLoadoutActions } from "../../hooks/useLoadoutActions"
 import { useLoadoutOp } from "../../hooks/useLoadoutOp"
@@ -21,6 +21,7 @@ type Props = {
   onFightersChange: (fighters: string[]) => void
   onHullmodsChange: (hullmods: string[]) => void
   onSmodsChange: (smods: string[]) => void
+  onOfficerChange: (officer: officer | undefined) => void
   onStrip: () => void
 }
 
@@ -35,6 +36,7 @@ export default function ActiveShipPanel({
   onFightersChange,
   onHullmodsChange,
   onSmodsChange,
+  onOfficerChange,
   onStrip
 }: Props) {
   const { zoom, setZoom, handleWheel, handlePinchMove, handlePinchStart } =
@@ -254,6 +256,7 @@ export default function ActiveShipPanel({
       setShowInfo={setShowInfo}
       handlePinchStart={handlePinchStart}
       handlePinchMove={handlePinchMove}
+      onOfficerChange={onOfficerChange}
     />
   )
 }

@@ -16,10 +16,12 @@ import { getMaxCapsVents } from "#/lib/fluxLimits"
 import { getEffectiveWeaponOp } from "#/hullModData"
 import { getAllShips } from "#/lib/shipParser"
 import { useWeaponMountInfo } from "#/hooks/useWeaponMountInfo"
-import type { fleetEntry } from "#/types"
+import type { fleetEntry, officer } from "#/types"
 import AddShipButton from "./addShipBtn"
 import ActiveShipPanel from "./data_screen/activeShipPanel"
+import OfficerPortrait from "./data_screen/officerPortrait"
 import FleetStats from "./fleetStats"
+import OfficerSelectionModal from "./modals/officerSelectionModal"
 import SidebarShipTile from "./SidebarShipTile"
 import Spinner from "./spinner"
 
@@ -40,6 +42,8 @@ export default function Screen({ children }: { children?: ReactNode }) {
   const ready = bgLoaded && grid
   const [fleet, setFleet] = useState<fleetEntry[]>([])
   const [activeTile, setActiveTile] = useState<fleetEntry>()
+  const [captain, setCaptain] = useState<officer | null>(null)
+  const [showCaptain, setShowCaptain] = useState(false)
   const prevFleetLenRef = useRef(0)
 
   useEffect(() => {
@@ -212,6 +216,7 @@ export default function Screen({ children }: { children?: ReactNode }) {
         | "fighters"
         | "hullmods"
         | "smods"
+        | "assignedOfficer"
       >
     >
   ) => {
@@ -375,6 +380,10 @@ export default function Screen({ children }: { children?: ReactNode }) {
     if (!activeTile) return
     updateEntry(activeTile.id, { smods })
   }
+  const onOfficerChange = (officer: fleetEntry["assignedOfficer"]) => {
+    if (!activeTile) return
+    updateEntry(activeTile.id, { assignedOfficer: officer })
+  }
   const onStrip = () => {
     if (!activeTile) return
     updateEntry(activeTile.id, {
@@ -435,6 +444,18 @@ export default function Screen({ children }: { children?: ReactNode }) {
           lg:flex-col lg:gap-0 lg:overflow-x-hidden lg:overflow-y-auto lg:bg-gray-950/70 lg:pb-0"
       >
         <div className="hidden shrink-0 lg:block lg:w-full">
+          <div className="flex flex-col items-center gap-1 py-2">
+            <span className="text-xs text-cyan-200/70">Fleet captain</span>
+            <OfficerPortrait
+              officer={captain}
+              onClick={() => setShowCaptain(true)}
+            />
+            {captain && (
+              <span className="text-xs text-cyan-100 text-center">
+                {captain.firstName} {captain.lastName} · {captain.level}
+              </span>
+            )}
+          </div>
           <FleetStats fleet={fleet} />
         </div>
         {sortedFleet.map((entry) => (
@@ -454,7 +475,13 @@ export default function Screen({ children }: { children?: ReactNode }) {
           <AddShipButton />
         </div>
       </div>
-      <div className="shrink-0 lg:hidden">
+      <div className="shrink-0 lg:hidden flex items-center gap-2">
+        <div className="flex flex-col items-center gap-1">
+          <OfficerPortrait
+            officer={captain}
+            onClick={() => setShowCaptain(true)}
+          />
+        </div>
         <FleetStats fleet={fleet} compact />
       </div>
       <div
@@ -468,6 +495,21 @@ export default function Screen({ children }: { children?: ReactNode }) {
         ></div>
         {renderGrid()}
         <div className="relative z-10 w-full min-h-full">
+          {showCaptain && (
+            <OfficerSelectionModal
+              captainMode
+              officer={captain}
+              onClose={() => setShowCaptain(false)}
+              onSave={(officer) => {
+                setCaptain(officer)
+                setShowCaptain(false)
+              }}
+              onRemove={() => {
+                setCaptain(null)
+                setShowCaptain(false)
+              }}
+            />
+          )}
           {activeTile && (
             <ActiveShipPanel
               activeTile={activeTile}
@@ -480,6 +522,7 @@ export default function Screen({ children }: { children?: ReactNode }) {
               onFightersChange={onFightersChange}
               onHullmodsChange={onHullmodsChange}
               onSmodsChange={onSmodsChange}
+              onOfficerChange={onOfficerChange}
               onStrip={onStrip}
             />
           )}

@@ -66,7 +66,8 @@ export default function FighterBay({
 
   if (locked) {
     return (
-      <div
+      <button
+        type="button"
         aria-label={wingId ? `Built-in wing ${wingId}` : "Built-in fighter bay"}
         title={
           wingId
@@ -88,7 +89,7 @@ export default function FighterBay({
             {wingId || ""}
           </span>
         )}
-      </div>
+      </button>
     )
   }
 
