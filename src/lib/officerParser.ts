@@ -4,6 +4,7 @@ import type {
   officerPersonality,
   officerSkillDef,
   officerSkillMeta,
+  officerType,
 } from "#/types"
 import { fetchCsvText, parseCsv } from "./csvParser"
 
@@ -12,8 +13,37 @@ const BASE = import.meta.env.BASE_URL || "/"
 
 export const OFFICER_MAX_LEVEL = 8
 export const OFFICER_MAX_SKILLS = 8
+export const OFFICER_TYPE_MAX_LEVEL: Record<officer["type"], number> = {
+  captain: 15,
+  officer: 5,
+  "ai-core": 8,
+}
+
+/** Max level for an officer of the given type. Plain officers cap at 5. */
+export function maxLevelForType(type: officer["type"]): number {
+  return OFFICER_TYPE_MAX_LEVEL[type] ?? OFFICER_MAX_LEVEL
+}
+export const OFFICER_TYPE_MAX_SKILLS: Record<officer["type"], number> = {
+  captain: 15,
+  officer: 5,
+  "ai-core": 8,
+}
+
+/** Max skills for an officer of the given type (matches the level cap). */
+export function maxSkillsForType(type: officer["type"]): number {
+  return OFFICER_TYPE_MAX_SKILLS[type] ?? OFFICER_MAX_SKILLS
+}
+
+/** Selectable skill cap: officer level, bounded by the type cap. */
+export function maxSkillsForOfficer(officer: Pick<officer, "type" | "level">): number {
+  return Math.min(
+    Math.max(1, officer.level),
+    maxSkillsForType(officer.type ?? "officer"),
+  )
+}
 export const OFFICER_SKILL_TIERS: Record<number, number> = {
   1: 1, 2: 1, 3: 2, 4: 2, 5: 3, 6: 4, 7: 5, 8: 5,
+  9: 5, 10: 5, 11: 5, 12: 5, 13: 5, 14: 5, 15: 5,
 }
 
 // .skill files are officer-specific JSON-with-comments (like .wpn/.ship),
@@ -139,21 +169,69 @@ export async function getPickableOfficerSkills(): Promise<officerSkillMeta[]> {
   })
 }
 
+/** Captain (player) skill pool: every skill, including non-combat ones.
+ *  `aptitude_*` rows are tree icons, not skills. */
+export async function getPickableCaptainSkills(): Promise<officerSkillMeta[]> {
+  const all = await getAllOfficerSkillMeta()
+  return all.filter((s) => {
+    if (s.id.startsWith("aptitude_")) return false
+    const tags = (s.tags ?? "").toLowerCase()
+    if (tags.includes("npc_only") || tags.includes("deprecated")) return false
+    return true
+  })
+}
+
 const skillDefCache = new Map<string, Promise<officerSkillDef | null>>()
+/** Quote bare (unquoted) enum values vanilla .skill files use for scope etc.
+ *  e.g. `"scope":CUSTOM` -> `"scope":"CUSTOM"`. */
+function quoteBareSkillValues(s: string): string {
+  return s.replace(
+    /("[A-Za-z0-9_]+"(\s*:\s*))(ALL_SHIPS|ALL_COMBAT_SHIPS|PILOTED_SHIP|FLEET|CHARACTER|CUSTOM|SHIP)(?=[\s,\}\]])/g,
+    `$1"$3"`,
+  )
+}
+
+/** Regex fallback so a single unparseable field never hides the whole skill. */
+function parseSkillDefFallback(
+  id: string,
+  raw: string,
+): officerSkillDef | null {
+  const gov =
+    raw.match(/"governingAptitude"\s*:\s*"([^"]+)"/)?.[1] ??
+    raw.match(/governingAptitude\s*:\s*"?([A-Za-z0-9_]+)"?/)?.[1] ??
+    null
+  if (!gov && !raw.includes(id)) return null
+  const scope =
+    raw.match(/"scope"\s*:\s*"([^"]+)"/)?.[1] ??
+    raw.match(/"scope"\s*:\s*([A-Za-z0-9_]+)/)?.[1] ??
+    null
+  return {
+    id,
+    governingAptitude: gov,
+    elite: /"elite"\s*:\s*true/.test(raw),
+    scope,
+  } as officerSkillDef
+}
+
 export function getOfficerSkillDef(id: string): Promise<officerSkillDef | null> {
   let pending = skillDefCache.get(id)
   if (!pending) {
     pending = fetchSkillText(id)
       .then((raw) => {
-        const parsed = JSON.parse(stripSkillComments(raw)) as Record<string, unknown>
-        return {
-          id: String(parsed.id ?? id),
-          governingAptitude: parsed.governingAptitude
-            ? String(parsed.governingAptitude)
-            : null,
-          elite: parsed.elite === true,
-          scope: parsed.scope ? String(parsed.scope) : null,
-        } as officerSkillDef
+        const cleaned = quoteBareSkillValues(stripSkillComments(raw))
+        try {
+          const parsed = JSON.parse(cleaned) as Record<string, unknown>
+          return {
+            id: String(parsed.id ?? id),
+            governingAptitude: parsed.governingAptitude
+              ? String(parsed.governingAptitude)
+              : null,
+            elite: parsed.elite === true,
+            scope: parsed.scope ? String(parsed.scope) : null,
+          } as officerSkillDef
+        } catch {
+          return parseSkillDefFallback(id, raw)
+        }
       })
       .catch(() => null)
     skillDefCache.set(id, pending)
@@ -227,9 +305,10 @@ export function randomPortrait(rand: () => number = Math.random): string {
 
 // ---- officer factory / validation ----
 
-/** Create a level-1 officer with random name/portrait/personality. Caller adds skills on level-up. */
+/** Create a level-1 officer with random name/portrait. Caller adds skills on level-up. */
 export async function createOfficer(opts?: {
   gender?: "m" | "f"
+  type?: officerType
   rand?: () => number
 }): Promise<officer> {
   const rand = opts?.rand ?? Math.random
@@ -237,38 +316,123 @@ export async function createOfficer(opts?: {
     gender: opts?.gender,
     rand,
   })
-  const personalities = await getAllPersonalities()
   return {
     id: crypto.randomUUID(),
     firstName: first,
     lastName: last,
     gender,
     portrait: randomPortrait(rand),
-    personality: personalities.length ? pick(personalities, rand).id : "steady",
+    personality: "steady",
+    type: opts?.type ?? "officer",
     level: 1,
     eliteSkills: [],
     skills: [],
   }
 }
 
-/** Skill tier required to unlock at a given officer level (vanilla gating). */
+/** Skill tier unlocked at a given level (captain tiering). */
 export function skillTierForLevel(level: number): number {
-  return OFFICER_SKILL_TIERS[Math.min(Math.max(level, 1), 8)] ?? 1
+  return OFFICER_SKILL_TIERS[Math.min(Math.max(level, 1), 15)] ?? 1
 }
 
-/** Validate a skill pick: known, pickable, tier-gated, not duplicate, under cap. */
+/**
+ * Captain tier ladders. Each aptitude groups its CSV tiers into visual
+ * rungs (matching the in-game tree); `requires[i]` = skill points needed
+ * across all lower rungs to take a skill in rung `i`.
+ * One taken skill = one point. Sources: skill_data.csv reqPoints,
+ * AptitudeDesc ("top tier requires 4, second top-tier skill +2 lower"),
+ * Fractal "Skill Changes, Part 1" (combat 8+2, leadership 6+2+2,
+ * technology 2+2+4+2, industry 3+2+3+2).
+ */
+export const CAPTAIN_TIER_LADDERS: Record<
+  string,
+  { tiers: number[][]; requires: number[] }
+> = {
+  combat: { tiers: [[1, 2, 3, 4], [5]], requires: [0, 4] },
+  leadership: { tiers: [[1, 2, 3], [4], [5]], requires: [0, 3, 4] },
+  technology: { tiers: [[1], [2], [4], [5]], requires: [0, 1, 2, 4] },
+  industry: { tiers: [[1], [3], [4], [5]], requires: [0, 1, 2, 4] },
+}
+
+/** Extra lower-tier points needed for the 2nd capstone in an aptitude. */
+export const CAPTAIN_SECOND_CAPSTONE_EXTRA = 2
+
+/** Rung index of a CSV tier within its aptitude ladder (-1 = not gated). */
+export function captainSkillRung(aptitude: string, csvTier: number | null): number {
+  const ladder = CAPTAIN_TIER_LADDERS[aptitude.toLowerCase()]
+  if (!ladder || csvTier == null) return -1
+  return ladder.tiers.findIndex((rung) => rung.includes(csvTier))
+}
+
+/** Prerequisite check for a captain skill. Returns a reason when blocked. */
+export function captainTierBlockReason(opts: {
+  takenIds: string[]
+  skill: officerSkillMeta
+  metaById: Map<string, officerSkillMeta>
+  aptitudeOf: (id: string) => string | undefined
+}): string | null {
+  const aptitude = opts.aptitudeOf(opts.skill.id)?.toLowerCase()
+  if (!aptitude) return null
+  const ladder = CAPTAIN_TIER_LADDERS[aptitude]
+  if (!ladder) return null
+  const rung = captainSkillRung(aptitude, opts.skill.tier)
+  if (rung <= 0) return null
+  let lower = 0
+  let topTaken = 0
+  for (const id of opts.takenIds) {
+    if (opts.aptitudeOf(id)?.toLowerCase() !== aptitude) continue
+    const meta = opts.metaById.get(id)
+    if (!meta) continue
+    const r = captainSkillRung(aptitude, meta.tier)
+    if (r >= 0 && r < rung) lower += 1
+    else if (
+      r === rung &&
+      rung === ladder.tiers.length - 1 &&
+      id !== opts.skill.id
+    )
+      topTaken += 1
+  }
+  let need = ladder.requires[rung] ?? 0
+  // 2nd capstone in the same aptitude costs +2 points in lower tiers
+  // (6 lower + 2 capstones = 8 total in the aptitude).
+  if (rung === ladder.tiers.length - 1 && topTaken >= 1)
+    need += CAPTAIN_SECOND_CAPSTONE_EXTRA
+  if (lower < need)
+    return `Requires ${need} ${aptitude} ${need === 1 ? "point" : "points"} in lower tiers (${lower}/${need})`
+  return null
+}
+
+/** Validate a skill pick: known, pickable, not duplicate, under cap.
+ *  Captains additionally follow their aptitude tier ladders. */
 export async function canPickSkill(
   officer: officer,
   skill: officerSkillMeta,
-  newLevel = officer.level,
 ): Promise<string | null> {
   if (officer.skills.includes(skill.id)) return "Skill already taken"
-  if (officer.skills.length >= OFFICER_MAX_SKILLS) return "Max 8 skills"
-  const pickable = await getPickableOfficerSkills()
+  const maxSkills = maxSkillsForOfficer(officer)
+  if (officer.skills.length >= maxSkills) return `Max ${maxSkills} skills`
+  const pickable =
+    officer.type === "captain"
+      ? await getPickableCaptainSkills()
+      : await getPickableOfficerSkills()
   if (!pickable.some((s) => s.id === skill.id)) return "Not an officer skill"
-  if ((skill.tier ?? 1) > skillTierForLevel(newLevel))
-    return `Requires level ${Object.keys(OFFICER_SKILL_TIERS).find(
-      (l) => OFFICER_SKILL_TIERS[Number(l)] === skill.tier,
-    ) ?? newLevel}+`
+  if (officer.type === "captain") {
+    const metas = await getAllOfficerSkillMeta()
+    const metaById = new Map(metas.map((m) => [m.id, m]))
+    const defs = await Promise.all(
+      [...officer.skills, skill.id].map((id) => getOfficerSkillDef(id)),
+    )
+    const aptitudeById = new Map<string, string>()
+    ;[...officer.skills, skill.id].forEach((id, i) => {
+      const gov = defs[i]?.governingAptitude
+      if (gov) aptitudeById.set(id, gov)
+    })
+    return captainTierBlockReason({
+      takenIds: officer.skills,
+      skill,
+      metaById,
+      aptitudeOf: (id) => aptitudeById.get(id),
+    })
+  }
   return null
 }
