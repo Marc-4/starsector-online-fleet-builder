@@ -13,6 +13,14 @@ export default function OfficerPortraitSelectionModal({
 }) {
   const [portraitGroup, setPortraitGroup] = useState<string>("All")
   const [searchString, setSearchString] = useState("")
+  const [loaded, setLoaded] = useState<Set<string>>(new Set())
+  const markLoaded = (file: string) =>
+    setLoaded((prev) => {
+      if (prev.has(file)) return prev
+      const next = new Set(prev)
+      next.add(file)
+      return next
+    })
 
   useEffect(() => {
     const handler = (ev: KeyboardEvent) => {
@@ -86,26 +94,39 @@ export default function OfficerPortraitSelectionModal({
               />
             </div>
             <div className="grid grid-cols-5 sm:grid-cols-8 gap-1 p-2 max-h-[52dvh] lg:max-h-96 overflow-y-auto overscroll-contain">
-              {filteredPortraits.map((port) => (
-                <button
-                  key={port.file}
-                  type="button"
-                  title={port.file}
-                  onClick={() => {
-                    onSelect(port.file)
-                    onClose()
-                  }}
-                  className={`border p-0.5 ${current === port.file ? "border-amber-300" : "border-cyan-900 hover:border-cyan-500"}`}
-                >
-                  <img
-                    src={port.url}
-                    alt={port.file}
-                    draggable={false}
-                    loading="lazy"
-                    className="h-14 w-full object-cover"
-                  />
-                </button>
-              ))}
+              {filteredPortraits.map((port) => {
+                const isLoaded = loaded.has(port.file)
+                return (
+                  <button
+                    key={port.file}
+                    type="button"
+                    title={port.file}
+                    onClick={() => {
+                      onSelect(port.file)
+                      onClose()
+                    }}
+                    className={`relative border p-0.5 aspect-square ${current === port.file ? "border-amber-300" : "border-cyan-900 hover:border-cyan-500"}`}
+                  >
+                    {!isLoaded && (
+                      <span
+                        aria-hidden="true"
+                        className="absolute inset-0 flex items-center justify-center bg-cyan-950/40"
+                      >
+                        <span className="h-5 w-5 animate-spin rounded-full border-2 border-cyan-800 border-t-cyan-200" />
+                      </span>
+                    )}
+                    <img
+                      src={port.url}
+                      alt={port.file}
+                      draggable={false}
+                      loading="lazy"
+                      onLoad={() => markLoaded(port.file)}
+                      onError={() => markLoaded(port.file)}
+                      className={`h-full w-full object-cover ${isLoaded ? "" : "invisible"}`}
+                    />
+                  </button>
+                )
+              })}
             </div>
           </div>
         </div>
