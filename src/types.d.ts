@@ -358,6 +358,8 @@ export type officerSkillDef = {
   scope: string | null
 }
 
+export type officerType = "captain" | "officer" | "ai-core"
+
 export type officer = {
   id: string
   firstName: string
@@ -365,6 +367,7 @@ export type officer = {
   gender: "m" | "f"
   portrait: string // e.g. "portrait_hegemony01.png" (resolved via resolvePortraitUrl)
   personality: string // personality id
+  type: officerType
   level: number
   eliteSkills: string[]
   skills: string[] // skill ids (max 8, includes elites)
