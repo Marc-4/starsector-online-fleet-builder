@@ -35,6 +35,7 @@ export default function ShipSelectionModal({
   )
   const [searchString, setSearchString] = useState("")
   const [allShipStats, setAllShipStats] = useState<shipStats[]>([])
+  const [isLoading, setIsLoading] = useState(true)
   const totalSelectedShipsDPCost = useMemo(
     () =>
       selectedShips.reduce((sum, s) => {
@@ -151,16 +152,24 @@ export default function ShipSelectionModal({
   }
 
   useEffect(() => {
+    let cancelled = false
     void (async () => {
-      const ships = await getAllShips()
-      setAllShips(ships.sort((a, b) => a.hullName.localeCompare(b.hullName)))
+      setIsLoading(true)
+      try {
+        const [ships, shipStats] = await Promise.all([
+          getAllShips(),
+          getAllShipStats()
+        ])
+        if (cancelled) return
+        setAllShips(ships.sort((a, b) => a.hullName.localeCompare(b.hullName)))
+        setAllShipStats(shipStats.filter((ship) => ship.id))
+      } finally {
+        if (!cancelled) setIsLoading(false)
+      }
     })()
-  }, [])
-  useEffect(() => {
-    void (async () => {
-      const shipStats = await getAllShipStats()
-      setAllShipStats(shipStats.filter((ship) => ship.id))
-    })()
+    return () => {
+      cancelled = true
+    }
   }, [])
   useEffect(() => {
     const handler = (ev: KeyboardEvent) => {
@@ -222,7 +231,7 @@ export default function ShipSelectionModal({
             className="cursor-pointer rounded-xs ml-auto max-md:ml-0 max-md:absolute max-md:top-1 max-md:right-1 w-7 h-7 px-2 font-bold hover:brightness-110 text-2xl text-cyan-200 flex items-center justify-center shrink-0"
           />
         </div>
-        <div className="w-full flex-1 min-h-[40dvh] lg:min-h-[50dvh] max-h-[52dvh] lg:max-h-[56dvh] mb-4 grid grid-cols-[repeat(auto-fit,13rem)] max-lg:grid-cols-[repeat(auto-fit,minmax(9rem,1fr))] justify-center gap-2 max-lg:gap-1.5 content-start p-4 max-lg:p-2 overflow-y-auto overscroll-contain [&>*]:max-lg:w-full [&>*]:max-lg:h-44">
+        <div className="w-full flex-1 min-h-[40dvh] lg:min-h-[50dvh] max-h-[52dvh] lg:max-h-[56dvh] mb-4 grid grid-cols-[repeat(auto-fit,13rem)] max-lg:grid-cols-[repeat(auto-fit,minmax(9rem,1fr))] justify-center gap-2 max-lg:gap-1.5 content-start p-4 max-lg:p-2 overflow-y-auto overscroll-contain [&>div]:max-lg:w-full [&>div]:max-lg:h-44">
           {filteredShips.map((ship, i) => {
             return (
               <ShipTile
@@ -236,6 +245,17 @@ export default function ShipSelectionModal({
               />
             )
           })}
+          {isLoading ? (
+            <p className="col-span-full text-cyan-200/60 text-sm text-center py-8 animate-pulse">
+              Loading ships…
+            </p>
+          ) : (
+            filteredShips.length === 0 && (
+              <p className="col-span-full text-cyan-200/60 text-sm text-center py-8">
+                No ships found
+              </p>
+            )
+          )}
         </div>
         <div className="flex items-end justify-between gap-2 px-1 pb-1 max-md:text-sm">
           <div className="text-amber-300 flex gap-0 flex-col leading-tight">
