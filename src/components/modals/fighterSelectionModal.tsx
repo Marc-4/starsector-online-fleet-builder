@@ -206,37 +206,37 @@ export default function FighterSelectionModal({
             </div>
 
             <div className="w-full flex-1 flex flex-col gap-1 p-2 max-h-[52dvh] lg:max-h-72 lg:min-h-72 overflow-y-auto overscroll-contain">
+              {filteredWings.map((w) => {
+                const op = Number(w["op cost"])
+                const unaffordable =
+                  remainingOpForSlot != null &&
+                  Number.isFinite(op) &&
+                  mountedWingId !== w.id &&
+                  op > remainingOpForSlot
+                return (
+                  <FighterTile
+                    key={w.id}
+                    wing={w}
+                    allShips={allShips}
+                    allShipStats={allShipStats}
+                    onSelect={onSelect}
+                    onClose={onClose}
+                    onHover={setHoveredWing}
+                    mounted={mountedWingId === w.id}
+                    disabled={unaffordable}
+                  />
+                )
+              })}
               {isLoading ? (
                 <p className="text-cyan-200/60 text-sm text-center py-8 animate-pulse">
                   Loading fighters…
                 </p>
               ) : (
-                filteredWings.map((w) => {
-                  const op = Number(w["op cost"])
-                  const unaffordable =
-                    remainingOpForSlot != null &&
-                    Number.isFinite(op) &&
-                    mountedWingId !== w.id &&
-                    op > remainingOpForSlot
-                  return (
-                    <FighterTile
-                      key={w.id}
-                      wing={w}
-                      allShips={allShips}
-                      allShipStats={allShipStats}
-                      onSelect={onSelect}
-                      onClose={onClose}
-                      onHover={setHoveredWing}
-                      mounted={mountedWingId === w.id}
-                      disabled={unaffordable}
-                    />
-                  )
-                })
-              )}
-              {!isLoading && filteredWings.length === 0 && (
-                <p className="text-cyan-200/60 text-sm text-center py-8">
-                  No fighter wings found
-                </p>
+                filteredWings.length === 0 && (
+                  <p className="text-cyan-200/60 text-sm text-center py-8">
+                    No fighter wings found
+                  </p>
+                )
               )}
             </div>
           </div>
